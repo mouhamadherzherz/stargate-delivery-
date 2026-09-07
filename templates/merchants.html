@@ -13,11 +13,11 @@
             <p class="text-sm text-slate-500 mt-1">متابعة حسابات المحلات والصفحات الأونلاين، ودفع مصاري الأوردرات الواصلة وإصدار كشوفات الحساب.</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-            <button onclick="openModal('merchantCategoriesModal')" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-md shadow-purple-600/20 text-xs transition" title="تعديل وزيادة تصنيفات المتاجر والمحلات">
-                <i class="fa-solid fa-tags"></i>
-                <span>إدارة التصنيفات 🏷️</span>
+            <button onclick="openModal('addMerchantCategoryModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black px-4 py-2.5 rounded-xl shadow-md shadow-purple-600/20 transition text-xs">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>إضافة تصنيف جديد 🏷️</span>
             </button>
-            <button onclick="openModal('newMerchantModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#00D26A] to-[#00B359] hover:from-[#00B359] hover:to-[#008F47] text-white font-black px-5 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition">
+            <button onclick="openModal('newMerchantModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#00D26A] to-[#00B359] hover:from-[#00B359] hover:to-[#008F47] text-white font-black px-5 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition text-xs">
                 <i class="fa-solid fa-store"></i>
                 <span>إضافة محل / بيج جديد</span>
             </button>
@@ -334,14 +334,14 @@
         </form>
     </div>
 <!-- MODAL: MANAGE MERCHANT CATEGORIES -->
-<div id="merchantCategoriesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+<div id="addMerchantCategoryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
                 <i class="fa-solid fa-tags text-purple-600"></i>
-                <span>إدارة وتعديل تصنيفات المتاجر والبيجات</span>
+                <span>إضافة وتعديل تصنيفات المتاجر والبيجات</span>
             </h3>
-            <button onclick="closeModal('merchantCategoriesModal')" class="text-slate-400 hover:text-slate-600 p-1">
+            <button onclick="closeModal('addMerchantCategoryModal')" class="text-slate-400 hover:text-slate-600 p-1">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
@@ -383,7 +383,7 @@
         </div>
 
         <div class="mt-4 pt-3 flex items-center justify-end border-t border-slate-100">
-            <button type="button" onclick="closeModal('merchantCategoriesModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2 rounded-xl text-xs transition">إغلاق</button>
+            <button type="button" onclick="closeModal('addMerchantCategoryModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2 rounded-xl text-xs transition">إغلاق</button>
         </div>
     </div>
 </div>
