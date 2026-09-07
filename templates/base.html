@@ -473,10 +473,10 @@
             });
         }
 
-        // Auto Security Screen Lock & Session Protection
+        // Auto Security Screen Lock & Session Protection (10 Minutes Inactivity)
         (function() {
             let inactivityTimer;
-            const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 Minutes auto-lock
+            const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 Minutes auto-lock
 
             function resetInactivityTimer() {
                 clearTimeout(inactivityTimer);
@@ -491,18 +491,6 @@
                 document.addEventListener(evt, resetInactivityTimer, { passive: true });
             });
             resetInactivityTimer();
-
-            // Lock or logout on tab/page close or hide if configured
-            window.addEventListener('pagehide', function() {
-                sessionStorage.setItem('stargate_was_closed', 'true');
-            });
-
-            if (sessionStorage.getItem('stargate_was_closed') === 'true') {
-                sessionStorage.removeItem('stargate_was_closed');
-                fetch('/logout', { method: 'GET', keepalive: true }).then(() => {
-                    location.href = '/login';
-                }).catch(() => {});
-            }
         })();
     </script>
     {% block scripts %}{% endblock %}
