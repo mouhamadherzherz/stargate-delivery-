@@ -386,25 +386,72 @@
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
-        // Add temporary typing bubble
-        const typingId = appendTypingIndicator();
+        const msgId = appendStreamingMessage();
 
         try {
-            const res = await fetch('/api/ai/chat', {
+            const res = await fetch('/api/ai/chat_stream', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({prompt: prompt})
             });
-            const data = await res.json();
-            removeTypingIndicator(typingId);
-            appendMessage('bot', data.reply || 'تمت معالجة الطلب.');
+            
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                const chunkStr = decoder.decode(value);
+                const lines = chunkStr.split('\n');
+                for (let line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            if (data.chunk) {
+                                updateStreamingMessage(msgId, data.chunk);
+                            }
+                        } catch(err) {}
+                    }
+                }
+            }
         } catch (err) {
-            removeTypingIndicator(typingId);
-            appendMessage('bot', 'عذراً، حدث خطأ أثناء الاتصال بالمستشار الذكي. يرجى إعادة المحاولة.');
+            updateStreamingMessage(msgId, '\n\n❌ حدث خطأ أثناء الاتصال بالمستشار الذكي.');
         } finally {
             sendBtn.disabled = false;
             sendBtn.innerHTML = '<span>إرسال</span><i class="fa-solid fa-paper-plane"></i>';
         }
+    }
+
+    function appendStreamingMessage() {
+        const container = document.getElementById('chatMessages');
+        const id = 'stream_' + Date.now();
+        const msgDiv = document.createElement('div');
+        msgDiv.id = id;
+        msgDiv.className = 'flex items-start gap-3';
+        msgDiv.innerHTML = `
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs shrink-0 mt-1 shadow-sm">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="bg-white p-4 rounded-2xl rounded-tr-none border border-slate-200 shadow-xs max-w-[88%] text-slate-800 text-xs leading-relaxed content-area">
+                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce inline-block"></span>
+            </div>
+        `;
+        msgDiv.setAttribute('data-raw', '');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+        return id;
+    }
+
+    function updateStreamingMessage(id, chunk) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let raw = el.getAttribute('data-raw') || '';
+        raw += chunk;
+        el.setAttribute('data-raw', raw);
+        const contentArea = el.querySelector('.content-area');
+        contentArea.innerHTML = renderAiContent(raw);
+        const container = document.getElementById('chatMessages');
+        container.scrollTop = container.scrollHeight;
     }
 
     function sendQuickPrompt(promptText) {

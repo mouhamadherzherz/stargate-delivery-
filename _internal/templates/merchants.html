@@ -12,7 +12,7 @@
             </h2>
             <p class="text-sm text-slate-500 mt-1">متابعة حسابات المحلات والصفحات الأونلاين، ودفع مصاري الأوردرات الواصلة وإصدار كشوفات الحساب.</p>
         </div>
-        <button onclick="openModal('newMerchantModal')" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md shadow-red-600/20 transition">
+        <button onclick="openModal('newMerchantModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#00D26A] to-[#00B359] hover:from-[#00B359] hover:to-[#008F47] text-white font-black px-5 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition">
             <i class="fa-solid fa-store"></i>
             <span>إضافة محل / بيج جديد</span>
         </button>
@@ -24,11 +24,11 @@
             <div class="relative flex-1 max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3.5 text-slate-400 text-sm"></i>
                 <input type="text" id="merchantSearchInput" placeholder="بحث بالاسم، المحل، الهاتف، أو التصنيف..." 
-                       class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-10 pl-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                       class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-10 pl-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-[#00B5FF] focus:bg-white transition"
                        oninput="filterMerchantsList()">
             </div>
             <div class="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                <span>المعروض: <span id="visibleMerchantsCount" class="font-mono text-red-600 text-sm font-black">{{ merchants|length }}</span></span>
+                <span>المعروض: <span id="visibleMerchantsCount" class="font-mono text-[#00B5FF] text-sm font-black">{{ merchants|length }}</span></span>
                 <span class="text-slate-300">|</span>
                 <span>الإجمالي: <span class="font-mono text-slate-800 text-sm font-black">{{ merchants|length }}</span></span>
             </div>
@@ -36,7 +36,7 @@
 
         <!-- Quick Category Filter Pills -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs pt-1 border-t border-slate-100" id="categoryPills">
-            <button type="button" onclick="selectCategoryFilter('')" class="cat-pill active-cat px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-red-600 text-white shadow-xs" data-cat="">
+            <button type="button" onclick="selectCategoryFilter('')" class="cat-pill active-cat px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-[#00B5FF] text-white shadow-xs" data-cat="">
                 🏪 الكل
             </button>
             <button type="button" onclick="selectCategoryFilter('مطعم وسناك')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="مطعم وسناك">
