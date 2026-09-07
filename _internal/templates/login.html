@@ -34,10 +34,10 @@
         .glow-btn { animation: pulse-glow 2s ease-in-out infinite; }
         .bg-particles {
             background:
-                radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 70%),
-                linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+                radial-gradient(circle at 10% 20%, rgba(0, 181, 255, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(255, 122, 0, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(0, 210, 106, 0.15) 0%, transparent 70%),
+                linear-gradient(135deg, #101038 0%, #1E1B54 50%, #0B0B26 100%);
         }
         input:focus { outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
         .input-field {
@@ -61,15 +61,21 @@
     </div>
 
     <div class="relative w-full max-w-md card-login">
-        <!-- Logo Section -->
+        <!-- Official Logo & Welcome Banner Section -->
         <div class="text-center mb-8">
-            <div class="logo-float inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-6 relative">
-                <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 shadow-2xl"></div>
-                <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400/30 to-transparent"></div>
-                <span class="relative text-5xl">🚀</span>
+            <div class="inline-flex items-center justify-center p-4 bg-white rounded-3xl shadow-2xl mb-4 border border-white/20 transition-all">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Experts Logo" class="h-24 w-auto object-contain">
             </div>
-            <h1 class="text-3xl font-black text-white tracking-tight">Stargate Delivery</h1>
-            <p class="text-slate-400 text-sm mt-2 font-medium">نظام إدارة الدليفري المتكامل بالذكاء الاصطناعي</p>
+            <h1 class="text-3xl font-black text-white tracking-tight">STARGATE EXPERTS</h1>
+            <p class="text-sky-400 text-xs mt-1 font-bold tracking-wider uppercase">Your gateway to a world of expertise</p>
+
+            <!-- Warm Welcome Banner -->
+            <div class="mt-4 p-3.5 bg-gradient-to-r from-[#1E1B54]/90 via-[#00B5FF]/20 to-[#FF7A00]/20 border border-[#00B5FF]/40 rounded-2xl backdrop-blur-md shadow-xl">
+                <p class="text-white text-sm font-black flex items-center justify-center gap-2 tracking-wide">
+                    <span class="text-xl">👋</span>
+                    <span>أهلاً وسهلاً بكم في المنظومة الإدارية والتشغيلية المتقدمة</span>
+                </p>
+            </div>
         </div>
 
         <!-- Flash Messages -->
@@ -139,7 +145,7 @@
                     <div>
                         <label class="block text-slate-300 text-sm font-semibold mb-2">
                             <i class="fa-solid fa-lock ml-1 text-blue-400"></i>
-                            رمز PIN للمدير
+                            رمز PIN الخاص بك (للمدير أو الموظف)
                         </label>
                         <input type="password" name="pin" id="pin" autocomplete="off"
                                class="input-field w-full px-4 py-4 rounded-xl text-center tracking-[1em] text-white text-2xl placeholder-slate-500 transition-all"
@@ -149,9 +155,9 @@
 
                 <!-- Submit Button -->
                 <button type="submit"
-                        class="glow-btn w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold rounded-xl transition-all duration-300 text-sm mt-4 shadow-lg">
-                    <i class="fa-solid fa-right-to-bracket ml-2"></i>
-                    دخول للنظام
+                        class="w-full py-4 bg-gradient-to-r from-[#00B5FF] via-[#009EDC] to-[#0084B8] hover:from-[#FF7A00] hover:to-[#E06C00] text-white font-black rounded-xl shadow-lg shadow-[#00B5FF]/30 hover:shadow-[#FF7A00]/40 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 text-base">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>دخول إلى النظام</span>
                 </button>
             </form>
 
