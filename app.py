@@ -4130,6 +4130,67 @@ def api_ai_chat():
     conn.close()
     return jsonify({'reply': reply})
 
+@app.route('/api/ai/chat_stream', methods=['POST'])
+@login_required
+def api_ai_chat_stream():
+    data = request.get_json() or {}
+    prompt = data.get('prompt', '').strip()
+    if not prompt:
+        return Response('data: {"chunk": "يرجى كتابة سؤالك للبدء في التحليل."}\n\n', mimetype='text/event-stream')
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT gemini_api_key FROM settings WHERE id = 1")
+    row = cursor.fetchone()
+    api_key = row['gemini_api_key'] if row and row['gemini_api_key'] else None
+
+    if not api_key:
+        reply = smart_ai_engine._local_ai_answer(prompt, conn)
+        conn.close()
+        return Response(f'data: {json.dumps({"chunk": reply})}\n\n', mimetype='text/event-stream')
+    
+    context = smart_ai_engine._get_system_context(conn)
+    tool_instructions = """
+    ==== تعليمات أوامر النظام (System Commands) ====
+    أنت لست مجرد مساعد، بل يمكنك تعديل قاعدة البيانات. إذا طلب منك المستخدم إضافة طلبية جديدة، يجب عليك صياغة الأمر التالي ضمن ردك لكي ينفذه النظام تلقائياً:
+    [CMD:ADD_ORDER:{"name": "اسم الزبون", "price": 100000, "city": "المنطقة"}]
+    
+    مثال للرد: "تم إضافة الطلبية بنجاح [CMD:ADD_ORDER:{"name": "سارة", "price": 50000, "city": "بيروت"}]"
+    """
+    full_context = context + '\n' + tool_instructions
+
+    def generate():
+        import json
+        import re
+        from gemini_client import ask_gemini_stream
+        from datetime import datetime
+        full_reply = ''
+        for chunk in ask_gemini_stream(api_key, prompt, full_context):
+            full_reply += chunk
+            yield f'data: {json.dumps({"chunk": chunk})}\n\n'
+        
+        cmds = re.findall(r'\[CMD:([A-Z_]+):(.*?)\]', full_reply)
+        if cmds:
+            for cmd_type, cmd_args in cmds:
+                try:
+                    args = json.loads(cmd_args)
+                    if cmd_type == 'ADD_ORDER':
+                        name = args.get('name', 'غير محدد')
+                        price = float(args.get('price', 0))
+                        city = args.get('city', 'غير محدد')
+                        trk = f'AI-{datetime.now().strftime("%y%m%d%H%M%S")}'
+                        cursor.execute('''INSERT INTO orders 
+                            (tracking_number, recipient_name, recipient_city, order_price, delivery_fee, status)
+                            VALUES (?, ?, ?, ?, ?, ?)''', 
+                            (trk, name, city, price, 268500, 'pending'))
+                        conn.commit()
+                        yield f'data: {json.dumps({"chunk": "\\n\\n✅ **تم تنفيذ الأمر بنجاح:** تمت إضافة الطلب في قاعدة البيانات!"})}\n\n'
+                except Exception as e:
+                    yield f'data: {json.dumps({"chunk": "\\n\\n❌ **فشل تنفيذ الأمر:** " + str(e)})}\n\n'
+        conn.close()
+
+    return Response(generate(), mimetype='text/event-stream')
+
 @app.route('/api/ai/parse-order', methods=['POST'])
 @login_required
 def api_ai_parse_order():
