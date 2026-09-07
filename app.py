@@ -2803,8 +2803,8 @@ def add_customer_route():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
     pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
+    if pin and len(pin) < 4:
+        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
         return redirect(url_for('employees_list'))
     city = request.form.get('city', 'بيروت').strip()
     address = request.form.get('address', '').strip()
@@ -2827,8 +2827,8 @@ def edit_customer_route(customer_id):
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
     pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
+    if pin and len(pin) < 4:
+        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
         return redirect(url_for('employees_list'))
     city = request.form.get('city', 'بيروت').strip()
     address = request.form.get('address', '').strip()
@@ -2902,8 +2902,8 @@ def add_agent_route():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
     pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
+    if pin and len(pin) < 4:
+        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
         return redirect(url_for('employees_list'))
     if not name:
         flash("يرجى كتابة اسم الموظف", "warning")
