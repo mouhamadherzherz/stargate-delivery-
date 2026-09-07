@@ -3776,17 +3776,22 @@ def add_employee():
     role = request.form.get('role', 'employee').strip()
     phone = request.form.get('phone', '').strip()
     pin = request.form.get('pin', '').strip()
+    confirm_pin = request.form.get('confirm_pin', '').strip()
     job_title = request.form.get('job_title', '').strip()
     job_type = request.form.get('job_type', '').strip()
     perms_list = request.form.getlist('permissions')
     custom_permissions = ','.join(perms_list) if perms_list else 'orders_view'
 
     if not username or not password or not display_name:
-        flash("جميع الحقول الأساسية مطلوبة!", "warning")
+        flash("جميع الحقول الأساسية (اسم المستخدم، كلمة المرور، الاسم الكامل) مطلوبة!", "warning")
         return redirect(url_for('employees_list'))
 
     if len(password) < 6:
         flash("كلمة المرور يجب أن تكون 6 أحرف على الأقل!", "warning")
+        return redirect(url_for('employees_list'))
+
+    if pin and confirm_pin and pin != confirm_pin:
+        flash("رمز PIN غير متطابق مع التأكيد!", "warning")
         return redirect(url_for('employees_list'))
 
     hashed_pw = hash_password(password)
@@ -3796,14 +3801,14 @@ def add_employee():
     cursor = conn.cursor()
     try:
         cursor.execute("""
-        INSERT INTO employees (username, password_hash, display_name, role, phone, pin, job_title, job_type, custom_permissions)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO employees (username, password_hash, display_name, role, phone, pin, job_title, job_type, custom_permissions, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         """, (username, hashed_pw, display_name, role, phone, hashed_pin, job_title, job_type, custom_permissions))
         conn.commit()
         log_audit(cursor, 'add', 'employee', cursor.lastrowid, f'username={username}')
         flash(f"تمت إضافة الموظف [{display_name}] بنجاح 👤", "success")
     except sqlite3.IntegrityError:
-        flash(f"اسم المستخدم [{username}] مسجل مسبقاً!", "danger")
+        flash(f"اسم المستخدم [{username}] مسجل مسبقاً! يرجى اختيار اسم مستخدم آخر.", "danger")
     except Exception as e:
         flash(f"خطأ أثناء إضافة الموظف: {e}", "danger")
     finally:
@@ -3814,12 +3819,16 @@ def add_employee():
 @admin_required
 def edit_employee(emp_id):
     display_name = request.form.get('display_name', '').strip()
+    new_username = request.form.get('new_username', '').strip()
     role = request.form.get('role', 'employee').strip()
     phone = request.form.get('phone', '').strip()
-    password = request.form.get('password', '').strip()
+    new_password = request.form.get('new_password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
     pin = request.form.get('pin', '').strip()
+    confirm_pin = request.form.get('confirm_pin', '').strip()
     job_title = request.form.get('job_title', '').strip()
     job_type = request.form.get('job_type', '').strip()
+    is_active = 1 if request.form.get('is_active') in ('1', 'on', 'true') else 0
     perms_list = request.form.getlist('permissions')
     custom_permissions = ','.join(perms_list) if perms_list else 'orders_view'
 
@@ -3833,30 +3842,50 @@ def edit_employee(emp_id):
         return redirect(url_for('employees_list'))
 
     try:
-        if password:
-            if len(password) < 6:
-                flash("كلمة المرور يجب أن تكون 6 أحرف على الأقل!", "warning")
+        # Check username change
+        target_username = emp['username']
+        if new_username and new_username != emp['username']:
+            cursor.execute("SELECT id FROM employees WHERE username = ? AND id != ?", (new_username, emp_id))
+            if cursor.fetchone():
+                conn.close()
+                flash(f"اسم المستخدم [{new_username}] مسجل لموظف آخر!", "danger")
                 return redirect(url_for('employees_list'))
-            cursor.execute("UPDATE employees SET password_hash = ? WHERE id = ?", (hash_password(password), emp_id))
+            target_username = new_username
+
+        if new_password:
+            if len(new_password) < 6:
+                conn.close()
+                flash("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل!", "warning")
+                return redirect(url_for('employees_list'))
+            if confirm_password and new_password != confirm_password:
+                conn.close()
+                flash("كلمتا المرور غير متطابقتين!", "warning")
+                return redirect(url_for('employees_list'))
+            cursor.execute("UPDATE employees SET password_hash = ? WHERE id = ?", (hash_password(new_password), emp_id))
 
         if pin:
+            if confirm_pin and pin != confirm_pin:
+                conn.close()
+                flash("رمز PIN غير متطابق مع التأكيد!", "warning")
+                return redirect(url_for('employees_list'))
             cursor.execute("UPDATE employees SET pin = ? WHERE id = ?", (hash_pin(pin), emp_id))
 
         cursor.execute("""
         UPDATE employees
-        SET display_name = ?, role = ?, phone = ?, job_title = ?, job_type = ?, custom_permissions = ?
+        SET username = ?, display_name = ?, role = ?, phone = ?, job_title = ?, job_type = ?, is_active = ?, custom_permissions = ?
         WHERE id = ?
-        """, (display_name, role, phone, job_title, job_type, custom_permissions, emp_id))
+        """, (target_username, display_name, role, phone, job_title, job_type, is_active, custom_permissions, emp_id))
 
         # Update live session if editing logged-in user
         if session.get('user_id') == emp_id:
+            session['username'] = target_username
             session['display_name'] = display_name
             session['user_role'] = role
             session['custom_permissions'] = custom_permissions
 
         conn.commit()
-        log_audit(cursor, 'edit', 'employee', emp_id, f'name={display_name}')
-        flash(f"تم تحديث بيانات الموظف [{display_name}] بنجاح ✏️", "success")
+        log_audit(cursor, 'edit', 'employee', emp_id, f'username={target_username}, name={display_name}')
+        flash(f"تم تحديث جميع بيانات وصلاحيات الموظف [{display_name}] بنجاح ✏️", "success")
     except Exception as e:
         flash(f"خطأ أثناء التعديل: {e}", "danger")
     finally:

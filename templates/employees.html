@@ -389,12 +389,12 @@
 
                         <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز PIN جديد للدخول السريع:</label>
-                    <input type="password" id="edit_pin" name="pin" maxlength="4" placeholder="اتركه فارغاً للإبقاء الحالي" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز PIN جديد للدخول السريع (6 أرقام أو أكثر):</label>
+                    <input type="password" id="edit_pin" name="pin" placeholder="اتركه فارغاً للإبقاء الحالي" minlength="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">تأكيد رمز PIN الجديد:</label>
-                    <input type="password" id="edit_confirm_pin" name="confirm_pin" maxlength="4" placeholder="تأكيد الرمز" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500">
+                    <input type="password" id="edit_confirm_pin" name="confirm_pin" placeholder="تأكيد الرمز" minlength="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
 
