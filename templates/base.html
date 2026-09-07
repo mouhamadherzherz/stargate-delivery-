@@ -2,10 +2,11 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1E1B54">
     <meta name="application-name" content="stargate experts">
     <title>{{ title or company_name }} - نظام محاسبة وإدارة الدلفري</title>
     <!-- Local Offline Tailwind CSS Engine -->
@@ -13,6 +14,14 @@
     <script>
         tailwind.config = {
             theme: {
+                screens: {
+                    'xs': '480px',
+                    'sm': '640px',
+                    'md': '768px',
+                    'lg': '1024px',
+                    'xl': '1280px',
+                    '2xl': '1536px',
+                },
                 extend: {
                     colors: {
                         stargate: {
@@ -49,6 +58,7 @@
     <style>
         body {
             font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         @media print {
             .no-print {
@@ -60,6 +70,16 @@
             body {
                 background: white !important;
                 color: black !important;
+            }
+        }
+        /* Mobile Touch & Table responsiveness */
+        @media (max-width: 768px) {
+            .table-responsive-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            input, select, textarea, button {
+                font-size: 16px !important; /* Prevents auto-zoom on iOS */
             }
         }
         /* Custom scrollbar */
