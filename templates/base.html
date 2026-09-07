@@ -2,11 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#1E1B54">
+    <meta name="theme-color" content="#1e3a8a">
     <meta name="application-name" content="stargate experts">
     <title>{{ title or company_name }} - نظام محاسبة وإدارة الدلفري</title>
     <!-- Local Offline Tailwind CSS Engine -->
@@ -14,31 +13,16 @@
     <script>
         tailwind.config = {
             theme: {
-                screens: {
-                    'xs': '480px',
-                    'sm': '640px',
-                    'md': '768px',
-                    'lg': '1024px',
-                    'xl': '1280px',
-                    '2xl': '1536px',
-                },
                 extend: {
                     colors: {
-                        stargate: {
-                            navy: '#1E1B54',
-                            cyan: '#00B5FF',
-                            orange: '#FF7A00',
-                            green: '#00D26A',
-                            dark: '#0F172A'
-                        },
                         brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#00B5FF',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#1E1B54',
-                            900: '#0F172A',
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
                         }
                     },
                     fontFamily: {
@@ -58,7 +42,6 @@
     <style>
         body {
             font-family: 'Cairo', sans-serif;
-            -webkit-tap-highlight-color: transparent;
         }
         @media print {
             .no-print {
@@ -70,16 +53,6 @@
             body {
                 background: white !important;
                 color: black !important;
-            }
-        }
-        /* Mobile Touch & Table responsiveness */
-        @media (max-width: 768px) {
-            .table-responsive-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            input, select, textarea, button {
-                font-size: 16px !important; /* Prevents auto-zoom on iOS */
             }
         }
         /* Custom scrollbar */
@@ -101,66 +74,42 @@
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <!-- Mobile Overlay Backlayer -->
-    <div id="mobileOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
-
     <!-- Mobile Navigation Bar -->
-    <header class="bg-[#1E1B54] text-white shadow-lg lg:hidden flex items-center justify-between p-3.5 sticky top-0 z-50 border-b border-white/10">
+    <header class="bg-slate-900 text-white shadow-md lg:hidden flex items-center justify-between p-4 sticky top-0 z-50 border-b border-slate-800">
         <div class="flex items-center space-x-3 space-x-reverse">
-            <button id="mobileMenuBtn" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white focus:outline-none flex items-center justify-center">
-                <i class="fa-solid fa-bars text-lg text-[#00B5FF]"></i>
+            <button id="mobileMenuBtn" class="p-2 rounded-lg hover:bg-slate-800 text-white focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
             </button>
             <div class="flex items-center gap-2">
-                <span class="text-lg">🇱🇧</span>
-                <span class="font-black text-base tracking-wide text-white">{{ company_name }}</span>
+                <span class="text-xl">🇱🇧</span>
+                <span class="font-bold text-lg tracking-wide">{{ company_name }}</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج؟');" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition">
+            <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-xl flex items-center gap-1 shadow-xs transition" title="تسكير النظام وتسجيل الخروج">
                 <i class="fa-solid fa-power-off text-xs"></i>
-                <span>خروج 🔒</span>
+                <span>تسكير 🔒</span>
             </a>
+            <div class="text-xs bg-emerald-950 text-emerald-300 px-3 py-1.5 rounded-full border border-emerald-800 font-bold font-mono">
+                1$ = {{ exchange_rate|format_currency }} ل.ل
+            </div>
         </div>
     </header>
 
-    <!-- Mobile Sticky Bottom Navigation Bar for ultra-fast thumb navigation -->
-    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1E1B54]/95 backdrop-blur-lg border-t border-white/10 z-50 px-2 py-1.5 flex items-center justify-around text-slate-300">
-        <a href="{{ url_for('dashboard') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'dashboard' else 'text-slate-300' }}">
-            <i class="fa-solid fa-chart-pie text-lg"></i>
-            <span class="text-[10px] mt-0.5">الرئيسية</span>
-        </a>
-        <a href="{{ url_for('orders_list') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'orders' else 'text-slate-300' }}">
-            <i class="fa-solid fa-box-open text-lg"></i>
-            <span class="text-[10px] mt-0.5">الطلبات</span>
-        </a>
-        <a href="{{ url_for('ai_assistant_view') }}" class="flex flex-col items-center justify-center py-1 px-2 rounded-xl {{ 'text-amber-300 font-black' if active_page == 'ai_assistant' else 'text-amber-400' }}">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#00B5FF] to-[#FF7A00] flex items-center justify-center text-white shadow-md shadow-cyan-500/20 -mt-4 border-2 border-[#1E1B54]">
-                <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
-            </div>
-            <span class="text-[10px] mt-0.5 font-bold">الذكاء</span>
-        </a>
-        <a href="{{ url_for('couriers_list') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'couriers' else 'text-slate-300' }}">
-            <i class="fa-solid fa-motorcycle text-lg"></i>
-            <span class="text-[10px] mt-0.5">السائقين</span>
-        </a>
-        <a href="{{ url_for('merchants_list') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'merchants' else 'text-slate-300' }}">
-            <i class="fa-solid fa-store text-lg"></i>
-            <span class="text-[10px] mt-0.5">التجار</span>
-        </a>
-    </div>
-
     <div class="flex flex-1 relative overflow-hidden">
         <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="w-64 bg-[#1E1B54] text-slate-200 flex flex-col shrink-0 fixed inset-y-0 right-0 z-40 transform translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out border-l border-white/10 shadow-2xl">
+        <aside id="sidebar" class="w-64 bg-slate-900 text-slate-200 flex flex-col shrink-0 fixed inset-y-0 right-0 z-40 transform translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out">
             <!-- Sidebar Header -->
-            <div class="p-5 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#1E1B54] to-[#151240]">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="p-1.5 bg-white rounded-2xl shadow-lg border border-cyan-500/30 flex items-center justify-center shrink-0">
-                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Logo" class="h-10 w-auto object-contain">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 via-white to-green-700 flex items-center justify-center text-slate-900 shadow-lg shadow-red-500/20 font-black text-lg border border-red-500">
+                        🇱🇧
                     </div>
                     <div>
-                        <h1 class="font-black text-white text-base tracking-wide leading-tight">STARGATE</h1>
-                        <span class="text-[11px] text-[#00B5FF] font-black block tracking-wider uppercase">EXPERTS</span>
+                        <h1 class="font-black text-white text-base tracking-wide">{{ company_name }}</h1>
+                        <span class="text-xs text-red-400 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-tree text-emerald-400"></i> نظام الدليفري والمحاسبة
+                        </span>
                     </div>
                 </div>
                 <button id="closeSidebarBtn" class="lg:hidden text-slate-400 hover:text-white p-1">
@@ -170,80 +119,80 @@
 
             <!-- Navigation Links (Lebanese dialect with Role Protection) -->
             <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
-                <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'dashboard' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-chart-pie text-lg w-6 text-center text-[#FF7A00]"></i>
+                <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'dashboard' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-chart-pie text-lg w-6 text-center"></i>
                     <span>لوحة المتابعة العامة</span>
                 </a>
 
-                <a href="{{ url_for('ai_assistant_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'ai_assistant' else 'text-cyan-300 hover:bg-white/10 hover:text-white' }}">
+                <a href="{{ url_for('ai_assistant_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold' if active_page == 'ai_assistant' else 'text-indigo-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-wand-magic-sparkles text-lg w-6 text-center text-amber-300"></i>
                     <span class="flex-1">المساعد الذكي (AI)</span>
-                    <span class="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black">جديد</span>
+                    <span class="text-[10px] bg-indigo-500/40 text-indigo-200 px-2 py-0.5 rounded-full font-bold">جديد</span>
                 </a>
 
-                <a href="{{ url_for('orders_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'orders' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-box-open text-lg w-6 text-center text-[#00D26A]"></i>
+                <a href="{{ url_for('orders_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'orders' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-box-open text-lg w-6 text-center"></i>
                     <span>الأوردرات والطلبيات</span>
                 </a>
 
-                <a href="{{ url_for('customers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'customers' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-address-book text-lg w-6 text-center text-[#00B5FF]"></i>
+                <a href="{{ url_for('customers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'customers' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-address-book text-lg w-6 text-center"></i>
                     <span>دليل الزبائن والعناوين</span>
                 </a>
 
-                <a href="{{ url_for('couriers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'couriers' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-motorcycle text-lg w-6 text-center text-[#FF7A00]"></i>
+                <a href="{{ url_for('couriers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'couriers' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-motorcycle text-lg w-6 text-center"></i>
                     <span>شباب الدليفري والكاش</span>
                 </a>
 
-                <a href="{{ url_for('merchants_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'merchants' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-store text-lg w-6 text-center text-[#00D26A]"></i>
+                <a href="{{ url_for('merchants_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'merchants' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-store text-lg w-6 text-center"></i>
                     <span>المحلات والتجار (البيجات)</span>
                 </a>
 
                 {% if is_admin %}
-                <div class="pt-3 pb-1 px-4">
-                    <span class="text-[11px] uppercase tracking-wider text-amber-400 font-black">إدارة النظام 👑</span>
+                <div class="pt-2 pb-1 px-4">
+                    <span class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">إدارة النظام 👑</span>
                 </div>
 
-                <a href="{{ url_for('admin_panel') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition {{ 'bg-gradient-to-r from-[#FF7A00] to-[#E06C00] text-white shadow-lg shadow-[#FF7A00]/30' if active_page == 'admin' else 'text-amber-300 hover:bg-white/10 hover:text-white' }}">
+                <a href="{{ url_for('admin_panel') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-amber-500 text-slate-900 shadow-md shadow-amber-500/30 font-black' if active_page == 'admin' else 'text-amber-300 hover:bg-slate-800 hover:text-white font-bold' }}">
                     <i class="fa-solid fa-crown text-lg w-6 text-center text-amber-400"></i>
                     <span>لوحة تحكم المدير العام</span>
                 </a>
 
-                <a href="{{ url_for('employees_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'employees' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-users-gear text-lg w-6 text-center text-cyan-300"></i>
+                <a href="{{ url_for('employees_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'employees' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-users-gear text-lg w-6 text-center"></i>
                     <span>إدارة الموظفين والحسابات</span>
                 </a>
 
-                <a href="{{ url_for('settings_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'settings' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-gears text-lg w-6 text-center text-slate-300"></i>
-                    <span>الإعدادات</span>
+                <a href="{{ url_for('settings_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'settings' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-gears text-lg w-6 text-center"></i>
+                    <span>الإعدادات وتصفير الداتا</span>
                 </a>
                 {% endif %}
 
                 {% if has_permission('reports_view') or has_permission('treasury_view') %}
-                <div class="pt-3 pb-1 px-4">
-                    <span class="text-[11px] uppercase tracking-wider text-[#00B5FF] font-black">المالية والتقارير 📊</span>
+                <div class="pt-2 pb-1 px-4">
+                    <span class="text-[10px] uppercase tracking-wider text-red-400 font-bold">المالية والتقارير 📊</span>
                 </div>
                 {% endif %}
 
                 {% if has_permission('reports_view') %}
-                <a href="{{ url_for('settlements_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'settlements' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-file-invoice-dollar text-lg w-6 text-center text-[#00D26A]"></i>
+                <a href="{{ url_for('settlements_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'settlements' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-file-invoice-dollar text-lg w-6 text-center"></i>
                     <span>سندات التسكير والدفع</span>
                 </a>
                 {% endif %}
 
                 {% if has_permission('treasury_view') %}
-                <a href="{{ url_for('treasury_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'treasury' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
-                    <i class="fa-solid fa-vault text-lg w-6 text-center text-amber-400"></i>
+                <a href="{{ url_for('treasury_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'treasury' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-vault text-lg w-6 text-center"></i>
                     <span>الصندوق والمصاريف</span>
                 </a>
                 {% endif %}
 
                 {% if has_permission('reports_view') %}
-                <a href="{{ url_for('reports_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'reports' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                <a href="{{ url_for('reports_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'reports' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
                     <span>تقارير الأرباح والمحاسبة</span>
                 </a>
@@ -277,36 +226,37 @@
         <!-- Main Content Area -->
         <main class="flex-1 flex flex-col min-w-0 overflow-y-auto bg-slate-50">
             <!-- Top Header Desktop -->
-            <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 hidden lg:flex items-center justify-between px-6 py-3 shadow-xs gap-4 sticky top-0 z-30">
+            <header class="bg-white border-b border-slate-200 hidden lg:flex items-center justify-between px-6 py-3 shadow-xs gap-4">
                 <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
-                    <span class="text-xs bg-[#00D26A]/10 text-[#008f47] px-3.5 py-1.5 rounded-full font-bold border border-[#00D26A]/30 flex items-center gap-1.5 shadow-xs" title="سعر الصرف المعتمد">
-                        <i class="fa-solid fa-money-bill-transfer text-[#00D26A]"></i> 1$ = {{ exchange_rate|format_currency }} ل.ل
+                    <span class="text-xs bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-full font-bold border border-emerald-200 flex items-center gap-1.5 shadow-xs" title="سعر الصرف المعتمد">
+                        <i class="fa-solid fa-money-bill-transfer text-emerald-600"></i> 1$ = {{ exchange_rate|format_currency }} ل.ل
                     </span>
 
                     {% if is_admin %}
                     <!-- Quick Street Cash Badge -->
-                    <a href="{{ url_for('couriers_list') }}" class="text-xs bg-[#FF7A00]/10 hover:bg-[#FF7A00]/20 text-[#D46500] px-3.5 py-1.5 rounded-full font-black border border-[#FF7A00]/30 flex items-center gap-1.5 shadow-xs transition" title="كاش مقبوض بالشارع مع السائقين">
-                        <i class="fa-solid fa-motorcycle text-[#FF7A00]"></i>
+                    <a href="{{ url_for('couriers_list') }}" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 px-3 py-1.5 rounded-full font-black border border-amber-300 flex items-center gap-1.5 shadow-xs transition" title="كاش مقبوض بالشارع مع السائقين">
+                        <i class="fa-solid fa-motorcycle text-amber-600"></i>
                         <span>كاش الشارع:</span>
-                        <span class="font-mono text-[#FF7A00] font-black">{{ street_cash|to_usd(exchange_rate) }}</span>
+                        <span class="font-mono text-amber-700">{{ street_cash|to_usd(exchange_rate) }}</span>
                     </a>
 
                     <!-- Quick Whish Badge -->
-                    <a href="{{ url_for('treasury_view') }}" class="text-xs bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] px-3.5 py-1.5 rounded-full font-black border border-[#00B5FF]/30 flex items-center gap-1.5 shadow-xs transition" title="رصيد بطاقة Whish الإلكترونية المنفصلة">
-                        <i class="fa-solid fa-credit-card text-[#00B5FF]"></i>
+                    <a href="{{ url_for('treasury_view') }}" class="text-xs bg-purple-50 hover:bg-purple-100 text-purple-900 px-3 py-1.5 rounded-full font-black border border-purple-300 flex items-center gap-1.5 shadow-xs transition" title="رصيد بطاقة Whish الإلكترونية المنفصلة">
+                        <i class="fa-solid fa-credit-card text-purple-600"></i>
                         <span>ويش:</span>
-                        <span class="font-mono text-[#00B5FF] font-black">{{ whish_balance|to_usd(exchange_rate) }}</span>
+                        <span class="font-mono text-purple-700">{{ whish_balance|to_usd(exchange_rate) }}</span>
                     </a>
 
                     <!-- Active Role Badge & Switcher -->
-                    <span class="text-xs bg-[#1E1B54] text-white px-3.5 py-1.5 rounded-full font-black border border-[#1E1B54]/40 flex items-center gap-1.5 shadow-xs">
+                    <span class="text-xs bg-slate-100 text-slate-800 px-3 py-1.5 rounded-full font-black border border-slate-300 flex items-center gap-1.5 shadow-xs">
                         <span>👑 المدير العام</span>
                     </span>
-                    <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسكير وقفل النظام بالكامل لتسليمه للموظف">
+                    <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسكير وقفل النظام بالكامل لتسليمه للموظف">
                         <i class="fa-solid fa-power-off text-rose-600"></i>
-                        <span>تسجيل خروج / تسكير 🔒</span>
+                        <span>تسكير للموظف 🔒</span>
                     </a>
                     {% else %}
+                    <span class="text-xs bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full font-black border border-blue-200 flex items-center gap-1.5 shadow-xs">
                         <span>🎧 وضع الموظف (استقبال)</span>
                     </span>
                     <button type="button" onclick="openModal('adminUnlockModal')" class="text-xs bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-xs">
@@ -322,7 +272,7 @@
                         <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
                         <input type="text" id="globalLiveSearch" placeholder="بحث شامل سريع (أوردر، زبون، هاتف، متجر، سائق)..." 
                                autocomplete="off"
-                               class="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-xl pr-9 pl-8 py-2 text-xs font-medium focus:ring-2 focus:ring-[#00B5FF] transition shadow-xs">
+                               class="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-xl pr-9 pl-8 py-2 text-xs font-medium focus:ring-2 focus:ring-red-500 transition shadow-xs">
                         <button id="clearGlobalSearchBtn" class="hidden absolute left-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs">
                             <i class="fa-solid fa-circle-xmark"></i>
                         </button>
@@ -335,19 +285,19 @@
 
                 <!-- User Profile & Action Controls -->
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] border border-[#00B5FF]/30 text-xs font-black px-3 py-2 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
-                        <i class="fa-brands fa-telegram text-[#00B5FF] text-sm"></i>
+                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-bold px-3 py-2 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
+                        <i class="fa-brands fa-telegram text-sky-500 text-sm"></i>
                         <span class="hidden sm:inline">تقرير للمدير 📲</span>
                     </button>
 
-                    <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-md shadow-[#FF7A00]/25 transition">
+                    <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-xs shadow-red-600/20 transition">
                         <i class="fa-solid fa-plus"></i>
                         <span>أوردر جديد</span>
                     </a>
 
                     {% if logged_in %}
                     <div class="flex items-center gap-2 pr-2 border-r border-slate-200">
-                    <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-black">
+                        <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-black">
                             <i class="fa-solid fa-user"></i>
                         </div>
                         <div class="text-right hidden xl:block">
@@ -368,19 +318,19 @@
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <div class="mb-4 p-4 rounded-2xl text-sm font-bold flex items-center justify-between shadow-lg transition-all duration-300
-                                {% if category == 'success' %} bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-emerald-600/20 border border-emerald-500/30
-                                {% elif category == 'danger' %} bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-rose-600/20 border border-rose-500/30
-                                {% elif category == 'info' %} bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-sky-600/20 border border-sky-500/30
-                                {% else %} bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-amber-500/20 border border-amber-500/30 {% endif %}">
-                                <div class="flex items-center gap-3">
-                                    {% if category == 'success' %}<i class="fa-solid fa-circle-check text-xl"></i>
-                                    {% elif category == 'danger' %}<i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                                    {% else %}<i class="fa-solid fa-circle-info text-xl"></i>{% endif %}
-                                    <span class="text-base font-black tracking-wide">{{ message }}</span>
+                            <div class="mb-4 p-4 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm transition
+                                {% if category == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200
+                                {% elif category == 'danger' %} bg-rose-50 text-rose-800 border border-rose-200
+                                {% elif category == 'info' %} bg-sky-50 text-sky-800 border border-sky-200
+                                {% else %} bg-amber-50 text-amber-800 border border-amber-200 {% endif %}">
+                                <div class="flex items-center gap-2">
+                                    {% if category == 'success' %}<i class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
+                                    {% elif category == 'danger' %}<i class="fa-solid fa-triangle-exclamation text-rose-500 text-base"></i>
+                                    {% else %}<i class="fa-solid fa-circle-info text-sky-500 text-base"></i>{% endif %}
+                                    <span>{{ message }}</span>
                                 </div>
-                                <button type="button" onclick="this.parentElement.remove()" class="text-white/80 hover:text-white p-1">
-                                    <i class="fa-solid fa-xmark text-lg"></i>
+                                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1">
+                                    <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         {% endfor %}
@@ -441,21 +391,17 @@
         const sidebar = document.getElementById('sidebar');
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-        const mobileOverlay = document.getElementById('mobileOverlay');
 
-        function openSidebar() {
-            if (sidebar) sidebar.classList.remove('translate-x-full');
-            if (mobileOverlay) mobileOverlay.classList.remove('hidden');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('translate-x-full');
+            });
         }
-
-        function closeSidebar() {
-            if (sidebar) sidebar.classList.add('translate-x-full');
-            if (mobileOverlay) mobileOverlay.classList.add('hidden');
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.add('translate-x-full');
+            });
         }
-
-        if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openSidebar);
-        if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
-        if (mobileOverlay) mobileOverlay.addEventListener('click', closeSidebar);
 
         // Global Live Search Handler
         const globalSearchInput = document.getElementById('globalLiveSearch');
@@ -523,25 +469,37 @@
             });
         }
 
-        // Auto Security Screen Lock & Session Protection (10 Minutes Inactivity)
-        (function() {
-            let inactivityTimer;
-            const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 Minutes auto-lock
-
-            function resetInactivityTimer() {
-                clearTimeout(inactivityTimer);
-                inactivityTimer = setTimeout(() => {
-                    if (document.visibilityState === 'visible') {
-                        location.href = '/logout';
-                    }
-                }, INACTIVITY_LIMIT);
+        // Global Telegram Report Trigger Helper
+        async function triggerTelegramDailyReport(btn) {
+            if (!confirm('هل تريد إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام الآن؟ 📲')) {
+                return;
+            }
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sky-500 text-xs"></i> <span>جاري الإرسال...</span>';
             }
 
-            ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
-                document.addEventListener(evt, resetInactivityTimer, { passive: true });
-            });
-            resetInactivityTimer();
-        })();
+            try {
+                const res = await fetch('/api/telegram/send-report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            } catch (err) {
+                alert('❌ خطأ في الاتصال بالخادم: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>

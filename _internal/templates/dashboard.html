@@ -60,26 +60,26 @@
             </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-2 bg-[#00B5FF] hover:bg-[#0092D0] text-white text-sm font-black px-4 py-2.5 rounded-xl shadow-md shadow-[#00B5FF]/20 transition cursor-pointer" title="إرسال تقرير تنفيذي شامل ومفصل لحساب تيليجرام المدير">
+            <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-sky-500/20 transition cursor-pointer" title="إرسال تقرير تنفيذي شامل ومفصل لحساب تيليجرام المدير">
                 <i class="fa-brands fa-telegram text-base"></i>
                 <span>إرسال تقرير للمدير 📲</span>
             </button>
-            <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] hover:to-[#C55F00] text-white text-sm font-black px-4 py-2.5 rounded-xl shadow-md shadow-[#FF7A00]/25 transition">
+            <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-red-600/20 transition">
                 <i class="fa-solid fa-plus"></i>
-                <span>تسجيل أوردر جديد 📦</span>
+                <span>تسجيل أوردر جديد</span>
             </a>
             {% if is_admin %}
-            <a href="{{ url_for('couriers_list') }}" class="inline-flex items-center gap-2 bg-[#1E1B54] hover:bg-[#151240] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
-                <i class="fa-solid fa-motorcycle text-[#FF7A00]"></i>
+            <a href="{{ url_for('couriers_list') }}" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
+                <i class="fa-solid fa-motorcycle text-yellow-400"></i>
                 <span>تسكير حساب دليفري</span>
             </a>
-            <a href="{{ url_for('merchants_list') }}" class="inline-flex items-center gap-2 bg-[#00D26A] hover:bg-[#00B359] text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition">
+            <a href="{{ url_for('merchants_list') }}" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-emerald-600/20 transition">
                 <i class="fa-solid fa-hand-holding-dollar"></i>
                 <span>دفع مصاري المحلات</span>
             </a>
             {% else %}
-            <a href="{{ url_for('orders_list') }}" class="inline-flex items-center gap-2 bg-[#1E1B54] hover:bg-[#151240] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
-                <i class="fa-solid fa-box-open text-[#00B5FF]"></i>
+            <a href="{{ url_for('orders_list') }}" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
+                <i class="fa-solid fa-box-open text-red-400"></i>
                 <span>كل الأوردرات</span>
             </a>
             {% endif %}
@@ -386,7 +386,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    {% for order in (recent_orders or stats.recent_orders) %}
+                    {% for order in stats.recent_orders %}
                     <tr class="hover:bg-slate-50/80 transition">
                         <td class="py-3.5 px-6 font-mono font-bold text-blue-600">{{ order.tracking_number }}</td>
                         <td class="py-3.5 px-6 font-medium text-slate-800">

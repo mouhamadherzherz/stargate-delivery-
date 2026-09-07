@@ -95,14 +95,12 @@ if os.path.dirname(DB_PATH):
 
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.secret_key = 'stargate_delivery_secret_key_2026_prod_v2_secure'
-app.config['SESSION_PERMANENT'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 @app.after_request
 def set_secure_headers(response):
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
@@ -182,37 +180,11 @@ ADMIN_REQUIRED_MAP = {
     'reports_view': 'reports_view',
     'export_excel': 'export_excel',
     'orders_export': 'export_excel',
-    'delete_order': 'orders_delete',
-    'add_vault': 'treasury_view',
-    'edit_vault': 'treasury_view',
-    'delete_vault': 'treasury_view',
-    'add_employee': 'admin_only',
-    'edit_employee': 'admin_only',
-    'delete_employee': 'admin_only',
-    'save_settings': 'admin_only',
-    'reset_database': 'admin_only'
+    'delete_order': 'orders_delete'
 }
 
-def permission_required(perm):
-    """Require explicit RBAC permission or Admin role."""
-    def decorator(f):
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            if not session.get('logged_in'):
-                flash("يرجى تسجيل الدخول أولاً", "warning")
-                return redirect(url_for('login_page'))
-            if session.get('user_role') in ('admin', 'super_admin'):
-                return f(*args, **kwargs)
-            custom_perms = session.get('custom_permissions', '')
-            if custom_perms and perm in [p.strip() for p in custom_perms.split(',')]:
-                return f(*args, **kwargs)
-            flash("عذراً، هذا الإجراء يتطلب صلاحيات مخصصة غير متوفرة لحسابك!", "danger")
-            return redirect(url_for('orders_list'))
-        return decorated
-    return decorator
-
 def admin_required(f):
-    """Strict Admin-only routes (or mapped custom permissions)."""
+    """Admin-only routes (with RBAC custom permissions support)."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get('logged_in'):
@@ -221,13 +193,14 @@ def admin_required(f):
         if session.get('user_role') in ('admin', 'super_admin'):
             return f(*args, **kwargs)
             
+        # Check if route is in the mapped custom permissions
         perm = ADMIN_REQUIRED_MAP.get(f.__name__)
-        if perm and perm != 'admin_only':
+        if perm:
             custom_perms = session.get('custom_permissions', '')
             if custom_perms and perm in [p.strip() for p in custom_perms.split(',')]:
                 return f(*args, **kwargs)
                 
-        flash("هذا الإجراء يتطلب حساب المدير العام بنشاط تام!", "danger")
+        flash("هذا الإجراء يتطلب صلاحيات إضافية غير متوفرة لديك!", "danger")
         return redirect(url_for('orders_list'))
     return decorated
 
@@ -772,14 +745,6 @@ def get_common_stats(cursor):
     active_in_transit_count = cursor.fetchone()['c']
     cursor.execute("SELECT COUNT(*) as c FROM orders WHERE status IN ('returned', 'partial_returned') AND (DATE(created_at) = DATE(?) OR DATE(created_at, '+3 hours') = DATE(?) OR DATE(delivered_at) = DATE(?))", (today, today, today))
     today_returned_count = cursor.fetchone()['c']
-    cursor.execute("""
-        SELECT o.*, m.name as merchant_name, m.store_name, c.name as courier_name
-        FROM orders o
-        LEFT JOIN merchants m ON o.merchant_id = m.id
-        LEFT JOIN couriers c ON o.courier_id = c.id
-        ORDER BY o.id DESC LIMIT 10
-    """)
-    recent_orders = [dict(r) for r in cursor.fetchall()]
 
     return {
         'total_orders': total_orders,
@@ -817,8 +782,7 @@ def get_common_stats(cursor):
         'company_net_profit': company_profit - total_expenses,
         'total_delivered_count': delivered_orders,
         'total_returned_count': returned_orders,
-        'total_expenses': total_expenses,
-        'recent_orders': recent_orders
+        'total_expenses': total_expenses
     }
 
 # ===================== SMART AI ENGINE =====================
@@ -1603,6 +1567,7 @@ smart_ai_engine = SmartAIEngine()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
+    """صفحة تسجيل دخول الموظفين."""
     if session.get('logged_in'):
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
@@ -1610,36 +1575,49 @@ def login_page():
         if login_type == 'pin':
             pin = request.form.get('pin', '').strip()
             if not pin:
-                flash("يرجى إدخال رمز PIN للدخول", "warning")
+                flash("يرجى إدخال رمز PIN", "warning")
                 return render_template('login.html')
-            
-            conn = get_db()
-            cur = conn.cursor()
-            # First check if PIN matches any employee or admin in employees table directly
-            cur.execute("SELECT * FROM employees WHERE (pin = ? OR pin = ?) AND is_active = 1 LIMIT 1", (str(pin).strip(), pin))
-            emp = cur.fetchone()
-            
-            if not emp and verify_admin_pin(pin):
-                # Fallback to master admin PIN if set
+            if verify_admin_pin(pin):
+                conn = get_db()
+                cur = conn.cursor()
                 cur.execute("SELECT * FROM employees WHERE role IN ('admin', 'super_admin') AND is_active = 1 LIMIT 1")
                 emp = cur.fetchone()
-
-            if emp:
-                session.clear()
-                session['logged_in'] = True
-                session['user_id'] = emp['id']
-                session['username'] = emp['username']
-                session['display_name'] = emp['display_name']
-                session['user_role'] = emp['role']
-                session['custom_permissions'] = dict(emp).get('custom_permissions', '')
-                cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
-                conn.commit()
-                conn.close()
-                flash(f"أهلاً وسهلاً بك {emp['display_name']}! 👋 تم تسجيل الدخول بنجاح عبر رمز PIN", "success")
-                return redirect(url_for('dashboard'))
+                if emp:
+                    session.clear()
+                    session['logged_in'] = True
+                    session['user_id'] = emp['id']
+                    session['username'] = emp['username']
+                    session['display_name'] = emp['display_name']
+                    session['user_role'] = 'admin'
+                    cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
+                    conn.commit()
+                    conn.close()
+                    flash(f"مرحباً {emp['display_name']}! (دخول سريع برمز PIN) 👋", "success")
+                    return redirect(url_for('dashboard'))
+                else:
+                    conn.close()
+                    flash("لا يوجد حساب مدير نشط", "danger")
             else:
-                conn.close()
-                flash("رمز PIN غير صحيح أو أن الحساب غير نشط!", "danger")
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("SELECT * FROM employees WHERE pin = ? AND is_active = 1 LIMIT 1", (pin,))
+                emp = cur.fetchone()
+                if emp:
+                    session.clear()
+                    session['logged_in'] = True
+                    session['user_id'] = emp['id']
+                    session['username'] = emp['username']
+                    session['display_name'] = emp['display_name']
+                    session['user_role'] = emp['role']
+                    session['custom_permissions'] = emp.get('custom_permissions', '')
+                    cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
+                    conn.commit()
+                    conn.close()
+                    flash(f"مرحباً {emp['display_name']}! (دخول برمز PIN) 👋", "success")
+                    return redirect(url_for('dashboard'))
+                else:
+                    conn.close()
+                    flash("رمز PIN غير صحيح!", "danger")
             return render_template('login.html')
         else:
             username = request.form.get('username', '').strip()
@@ -1649,20 +1627,20 @@ def login_page():
                 return render_template('login.html')
             conn = get_db()
             cur = conn.cursor()
-            cur.execute("SELECT * FROM employees WHERE username = ? AND is_active = 1 LIMIT 1", (username,))
+            cur.execute("SELECT * FROM employees WHERE username = ? AND is_active = 1", (username,))
             emp = cur.fetchone()
-            if emp and verify_password(password, emp['password_hash']):
+            if emp and emp['password_hash'] == hash_password(password):
                 session.clear()
                 session['logged_in'] = True
                 session['user_id'] = emp['id']
                 session['username'] = emp['username']
                 session['display_name'] = emp['display_name']
                 session['user_role'] = emp['role']
-                session['custom_permissions'] = dict(emp).get('custom_permissions', '')
+                session['custom_permissions'] = emp.get('custom_permissions', '')
                 cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
                 conn.commit()
                 conn.close()
-                flash(f"أهلاً وسهلاً بك {emp['display_name']}! 👋 تم تسجيل الدخول بنجاح", "success")
+                flash(f"مرحباً {emp['display_name']}! 👋", "success")
                 return redirect(url_for('dashboard'))
             else:
                 conn.close()
@@ -1749,10 +1727,6 @@ def add_employee():
     display_name = request.form.get('display_name', '').strip()
     role = request.form.get('role', 'employee').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام (أو اتركه فارغاً)', 'warning')
-        return redirect(url_for('employees_list'))
     job_title = request.form.get('job_title', '').strip()
     job_type = request.form.get('job_type', '').strip()
     currency = request.form.get('currency', 'ل.ل').strip() or 'ل.ل'
@@ -1770,9 +1744,9 @@ def add_employee():
     cur = conn.cursor()
     try:
         cur.execute("""
-        INSERT INTO employees (username, password_hash, display_name, role, phone, is_active, pin, job_title, job_type, currency, custom_permissions)
-        VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
-        """, (username, hash_password(password), display_name, role, phone, pin, job_title, job_type, currency, custom_permissions))
+        INSERT INTO employees (username, password_hash, display_name, role, phone, is_active, job_title, job_type, currency, custom_permissions)
+        VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+        """, (username, hash_password(password), display_name, role, phone, job_title, job_type, currency, custom_permissions))
         log_audit(cur, 'create', 'employee', cur.lastrowid, f'username={username}, role={role}')
         conn.commit()
         flash(f"تمت إضافة الموظف [{display_name}] بنجاح 🧑‍💼", "success")
@@ -1788,10 +1762,6 @@ def edit_employee(emp_id):
     display_name = request.form.get('display_name', '').strip()
     role = request.form.get('role', 'employee').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
     is_active = 1 if request.form.get('is_active') else 0
     new_password = request.form.get('new_password', '').strip()
     new_username = request.form.get('new_username', '').strip()
@@ -1834,15 +1804,15 @@ def edit_employee(emp_id):
             return redirect(url_for('employees_list'))
         cur.execute("""
         UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?, password_hash=?,
-            job_title=?, job_type=?, currency=?, custom_permissions=?, pin=? WHERE id=?
+            job_title=?, job_type=?, currency=?, custom_permissions=? WHERE id=?
         """, (effective_username, display_name, role, phone, is_active, hash_password(new_password),
-               job_title, job_type, currency, custom_permissions, pin or None, emp_id))
+               job_title, job_type, currency, custom_permissions, emp_id))
     else:
         cur.execute("""
         UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?,
-            job_title=?, job_type=?, currency=?, custom_permissions=?, pin=? WHERE id=?
+            job_title=?, job_type=?, currency=?, custom_permissions=? WHERE id=?
         """, (effective_username, display_name, role, phone, is_active,
-               job_title, job_type, currency, custom_permissions, pin or None, emp_id))
+               job_title, job_type, currency, custom_permissions, emp_id))
     log_audit(cur, 'edit', 'employee', emp_id, f'name={display_name}, role={role}')
     conn.commit()
     conn.close()
@@ -2035,7 +2005,7 @@ def orders_list():
 
 
 @app.route('/orders/create', methods=['POST'], endpoint='add_order')
-@permission_required('orders_create')
+@login_required
 def order_create():
     conn = get_db()
     cursor = conn.cursor()
@@ -2102,7 +2072,7 @@ def order_create():
 
 @app.route('/orders/<int:order_id>/status', methods=['POST'])
 @app.route('/orders/<int:order_id>/update-status', methods=['POST'])
-@permission_required('orders_edit')
+@login_required
 def update_order_status(order_id):
     new_status = request.form.get('status', '').strip()
     courier_arrived_at_hub = request.form.get('courier_arrived_at_hub')
@@ -2322,30 +2292,11 @@ def delete_order(order_id):
 #                         MERCHANTS
 # =======================================================================
 
-DEFAULT_MERCHANT_CATEGORIES = [
-    'مطعم وسناك', 'سوبرماركت وبقالة', 'حلويات وموالح', 'محل ثياب وأزياء',
-    'إلكترونيات وهواتف', 'عطور وتجميل', 'ملحمة', 'فرن ومخبز',
-    'خضار وفواكه', 'كافيه ومشروبات', 'هدايا واكسسوارات', 'صيدلية ومستحضرات', 'عام'
+MERCHANT_CATEGORIES = [
+    'ملحمة', 'فرن ومخبز', 'محل ثياب وأزياء', 'مطعم وسناك', 'صيدلية ومستحضرات',
+    'سوبرماركت وبقالة', 'حلويات وموالح', 'إلكترونيات وهواتف', 'خضار وفواكه',
+    'عطور وتجميل', 'كافيه ومشروبات', 'هدايا واكسسوارات', 'أخرى'
 ]
-
-def get_merchant_categories(conn):
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS merchant_categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL
-    )
-    """)
-    conn.commit()
-    cursor.execute("SELECT id, name FROM merchant_categories ORDER BY id ASC")
-    rows = cursor.fetchall()
-    if not rows:
-        for cat in DEFAULT_MERCHANT_CATEGORIES:
-            cursor.execute("INSERT OR IGNORE INTO merchant_categories (name) VALUES (?)", (cat,))
-        conn.commit()
-        cursor.execute("SELECT id, name FROM merchant_categories ORDER BY id ASC")
-        rows = cursor.fetchall()
-    return [dict(r) for r in rows]
 
 @app.route('/merchants')
 @login_required
@@ -2374,70 +2325,15 @@ def merchants_list():
     query += " ORDER BY CASE WHEN m.store_name IS NOT NULL AND m.store_name != '' THEN m.store_name ELSE m.name END ASC"
     cursor.execute(query, params)
     merchants = [dict(r) for r in cursor.fetchall()]
-
-    merchant_cats = get_merchant_categories(conn)
     cursor.execute("SELECT DISTINCT category FROM merchants WHERE category IS NOT NULL AND category != '' ORDER BY category ASC")
     existing_cats = [r['category'] for r in cursor.fetchall()]
-    
-    # Merge DB categories + any unique existing ones
-    cat_names = [c['name'] for c in merchant_cats]
-    all_categories = list(dict.fromkeys(cat_names + existing_cats))
-    
+    all_categories = list(dict.fromkeys(MERCHANT_CATEGORIES + existing_cats))
     cursor.execute("SELECT * FROM treasuries ORDER BY id ASC")
     treasuries = [dict(r) for r in cursor.fetchall()]
     conn.close()
     return render_template('merchants.html', merchants=merchants, treasuries=treasuries,
-                           categories=all_categories, categories_list=merchant_cats, selected_category=category_filter,
+                           categories=all_categories, selected_category=category_filter,
                            search_q=search_q, active_page='merchants')
-
-@app.route('/merchants/categories/add', methods=['POST'])
-@admin_required
-def add_merchant_category():
-    cat_name = request.form.get('name', '').strip()
-    if cat_name:
-        conn = get_db()
-        cursor = conn.cursor()
-        get_merchant_categories(conn)
-        try:
-            cursor.execute("INSERT INTO merchant_categories (name) VALUES (?)", (cat_name,))
-            conn.commit()
-            flash(f"تمت إضافة تصنيف المتاجر [{cat_name}] بنجاح 🏷️", "success")
-        except sqlite3.IntegrityError:
-            flash(f"التصنيف [{cat_name}] موجود مسبقاً!", "warning")
-        except Exception as e:
-            flash(f"خطأ أثناء الإضافة: {e}", "danger")
-        finally:
-            conn.close()
-    return redirect(url_for('merchants_list'))
-
-@app.route('/merchants/categories/<int:cat_id>/edit', methods=['POST'])
-@admin_required
-def edit_merchant_category(cat_id):
-    new_name = request.form.get('name', '').strip()
-    if new_name:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM merchant_categories WHERE id = ?", (cat_id,))
-        row = cursor.fetchone()
-        if row:
-            old_name = row['name']
-            cursor.execute("UPDATE merchant_categories SET name = ? WHERE id = ?", (new_name, cat_id))
-            cursor.execute("UPDATE merchants SET category = ? WHERE category = ?", (new_name, old_name))
-            conn.commit()
-            flash(f"تم تعديل اسم التصنيف إلى [{new_name}] وتحديث المتاجر المرتبطة به بنجاح ✏️", "success")
-        conn.close()
-    return redirect(url_for('merchants_list'))
-
-@app.route('/merchants/categories/<int:cat_id>/delete', methods=['POST'])
-@admin_required
-def delete_merchant_category(cat_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM merchant_categories WHERE id = ?", (cat_id,))
-    conn.commit()
-    conn.close()
-    flash("تم حذف تصنيف التاجر بنجاح 🗑️", "info")
-    return redirect(url_for('merchants_list'))
 
 @app.route('/merchants/add', methods=['POST'])
 @admin_required
@@ -2453,10 +2349,6 @@ def add_merchant():
     elif not store and name:
         store = name
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
     address = request.form.get('address', '').strip()
     fee = parse_safe_float(request.form.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
     payment_type = request.form.get('payment_type', 'postpaid').strip()
@@ -2486,10 +2378,6 @@ def edit_merchant(merchant_id):
     elif not store and name:
         store = name
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
     address = request.form.get('address', '').strip()
     fee = parse_safe_float(request.form.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
     payment_type = request.form.get('payment_type', 'postpaid').strip()
@@ -2696,10 +2584,6 @@ def courier_unsettled_api(courier_id):
 def add_courier():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
     vtype = request.form.get('vehicle_type', 'motorcycle')
     comm = parse_safe_float(request.form.get('commission_value', ''), DEFAULT_COMMISSION)
     conn = get_db()
@@ -2719,10 +2603,6 @@ def add_courier():
 def edit_courier(courier_id):
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
     vtype = request.form.get('vehicle_type', 'motorcycle')
     comm = parse_safe_float(request.form.get('commission_value', ''), DEFAULT_COMMISSION)
     status = request.form.get('status', 'active')
@@ -2876,10 +2756,6 @@ def customers_list():
 def add_customer_route():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) < 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
-        return redirect(url_for('employees_list'))
     city = request.form.get('city', 'بيروت').strip()
     address = request.form.get('address', '').strip()
     conn = get_db()
@@ -2900,10 +2776,6 @@ def add_customer_route():
 def edit_customer_route(customer_id):
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) < 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
-        return redirect(url_for('employees_list'))
     city = request.form.get('city', 'بيروت').strip()
     address = request.form.get('address', '').strip()
     notes = request.form.get('notes', '').strip()
@@ -2975,10 +2847,6 @@ def agents_view():
 def add_agent_route():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) < 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
-        return redirect(url_for('employees_list'))
     if not name:
         flash("يرجى كتابة اسم الموظف", "warning")
         return redirect(url_for('agents_view'))
@@ -3027,7 +2895,6 @@ def treasury_view():
     transactions = [dict(r) for r in cursor.fetchall()]
     cursor.execute("SELECT id, name FROM expense_categories ORDER BY id ASC")
     cat_rows = cursor.fetchall()
-    categories_list = [dict(r) for r in cat_rows]
     categories = [r['name'] for r in cat_rows]
     if not categories:
         default_cats = ['وقود ومحروقات', 'صيانة دراجات وسيارات', 'رواتب وأجور',
@@ -3039,13 +2906,10 @@ def treasury_view():
             except Exception:
                 pass
         conn.commit()
-        cursor.execute("SELECT id, name FROM expense_categories ORDER BY id ASC")
-        cat_rows = cursor.fetchall()
-        categories_list = [dict(r) for r in cat_rows]
         categories = default_cats
     conn.close()
     return render_template('treasury.html', treasuries=treasuries, transactions=transactions,
-                           categories=categories, categories_list=categories_list, active_page='treasury')
+                           categories=categories, active_page='treasury')
 
 @app.route('/treasury/add-txn', methods=['POST'])
 @admin_required
@@ -3167,23 +3031,9 @@ def add_vault():
     flash(f"تمت إضافة الخزينة [{name}] بنجاح 🏦", "success")
     return redirect(url_for('treasury_view'))
 
-@app.route('/treasury/<int:vault_id>/edit', methods=['GET', 'POST'])
+@app.route('/treasury/<int:vault_id>/edit', methods=['POST'])
 @admin_required
 def edit_vault(vault_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM treasuries WHERE id = ?", (vault_id,))
-    vault = cursor.fetchone()
-    
-    if not vault:
-        conn.close()
-        flash("الخزينة غير موجودة", "danger")
-        return redirect(url_for('treasury_view'))
-
-    if request.method == 'GET':
-        conn.close()
-        return render_template('edit_treasury.html', vault=vault, active_page='treasury')
-
     name = request.form.get('name', '').strip()
     vault_type = request.form.get('type', 'cash').strip()
     notes = request.form.get('notes', '').strip()
@@ -3191,8 +3041,16 @@ def edit_vault(vault_id):
     new_balance = parse_safe_float(request.form.get('balance'), 0.0)
     
     if not name:
+        flash("يرجى إدخال اسم الخزينة", "danger")
+        return redirect(url_for('treasury_view'))
+        
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM treasuries WHERE id = ?", (vault_id,))
+    vault = cursor.fetchone()
+    if not vault:
         conn.close()
-        flash("اسم الخزينة مطلوب", "danger")
+        flash("الخزينة غير موجودة", "danger")
         return redirect(url_for('treasury_view'))
         
     if adjust_balance:
@@ -3205,7 +3063,7 @@ def edit_vault(vault_id):
     log_audit(cursor, 'edit', 'treasury', vault_id, f'name={name}, type={vault_type}')
     conn.commit()
     conn.close()
-    flash(f"تم تعديل بيانات الخزينة [{name}] بنجاح", "success")
+    flash(f"تم تعديل بيانات الخزينة [{name}] بنجاح ✏️", "success")
     return redirect(url_for('treasury_view'))
 
 @app.route('/treasury/<int:vault_id>/delete', methods=['POST'])
@@ -3253,24 +3111,6 @@ def add_expense_category():
         conn.close()
     return redirect(url_for('treasury_view'))
 
-@app.route('/treasury/categories/<int:cat_id>/edit', methods=['POST'])
-@admin_required
-def edit_expense_category(cat_id):
-    new_name = request.form.get('name', '').strip()
-    if new_name:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM expense_categories WHERE id = ?", (cat_id,))
-        row = cursor.fetchone()
-        if row:
-            old_name = row['name']
-            cursor.execute("UPDATE expense_categories SET name = ? WHERE id = ?", (new_name, cat_id))
-            cursor.execute("UPDATE treasury_transactions SET category = ? WHERE category = ?", (new_name, old_name))
-            conn.commit()
-            flash(f"تم تعديل اسم التصنيف إلى [{new_name}] وتحديث الحركات المرتبطة به بنجاح ✏️", "success")
-        conn.close()
-    return redirect(url_for('treasury_view'))
-
 @app.route('/treasury/categories/<int:cat_id>/delete', methods=['POST'])
 @admin_required
 def delete_expense_category(cat_id):
@@ -3279,7 +3119,7 @@ def delete_expense_category(cat_id):
     cursor.execute("DELETE FROM expense_categories WHERE id = ?", (cat_id,))
     conn.commit()
     conn.close()
-    flash("تم حذف التصنيف بنجاح 🗑️", "info")
+    flash("تم حذف التصنيف بنجاح", "info")
     return redirect(url_for('treasury_view'))
 
 # =======================================================================
@@ -3633,10 +3473,6 @@ def settings_view():
 def save_settings():
     company_name = request.form.get('company_name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
     address = request.form.get('address', '').strip()
     exchange_rate = parse_safe_float(request.form.get('exchange_rate'), DEFAULT_EXCHANGE_RATE)
     default_delivery_fee = parse_safe_float(request.form.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
@@ -3841,8 +3677,6 @@ def restore_db():
                 pass
         flash(f"فشل أثناء استعادة البيانات: {str(e)}", "danger")
     return redirect(url_for('settings_view'))
-
-
 
 @app.route('/reset/data', methods=['POST'])
 @admin_required
@@ -4296,67 +4130,6 @@ def api_ai_chat():
     conn.close()
     return jsonify({'reply': reply})
 
-@app.route('/api/ai/chat_stream', methods=['POST'])
-@login_required
-def api_ai_chat_stream():
-    data = request.get_json() or {}
-    prompt = data.get('prompt', '').strip()
-    if not prompt:
-        return Response('data: {"chunk": "يرجى كتابة سؤالك للبدء في التحليل."}\n\n', mimetype='text/event-stream')
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT gemini_api_key FROM settings WHERE id = 1")
-    row = cursor.fetchone()
-    api_key = row['gemini_api_key'] if row and row['gemini_api_key'] else None
-
-    if not api_key:
-        reply = smart_ai_engine._local_ai_answer(prompt, conn)
-        conn.close()
-        return Response(f'data: {json.dumps({"chunk": reply})}\n\n', mimetype='text/event-stream')
-    
-    context = smart_ai_engine._get_system_context(conn)
-    tool_instructions = """
-    ==== تعليمات أوامر النظام (System Commands) ====
-    أنت لست مجرد مساعد، بل يمكنك تعديل قاعدة البيانات. إذا طلب منك المستخدم إضافة طلبية جديدة، يجب عليك صياغة الأمر التالي ضمن ردك لكي ينفذه النظام تلقائياً:
-    [CMD:ADD_ORDER:{"name": "اسم الزبون", "price": 100000, "city": "المنطقة"}]
-    
-    مثال للرد: "تم إضافة الطلبية بنجاح [CMD:ADD_ORDER:{"name": "سارة", "price": 50000, "city": "بيروت"}]"
-    """
-    full_context = context + '\n' + tool_instructions
-
-    def generate():
-        import json
-        import re
-        from gemini_client import ask_gemini_stream
-        from datetime import datetime
-        full_reply = ''
-        for chunk in ask_gemini_stream(api_key, prompt, full_context):
-            full_reply += chunk
-            yield f'data: {json.dumps({"chunk": chunk})}\n\n'
-        
-        cmds = re.findall(r'\[CMD:([A-Z_]+):(.*?)\]', full_reply)
-        if cmds:
-            for cmd_type, cmd_args in cmds:
-                try:
-                    args = json.loads(cmd_args)
-                    if cmd_type == 'ADD_ORDER':
-                        name = args.get('name', 'غير محدد')
-                        price = float(args.get('price', 0))
-                        city = args.get('city', 'غير محدد')
-                        trk = f'AI-{datetime.now().strftime("%y%m%d%H%M%S")}'
-                        cursor.execute('''INSERT INTO orders 
-                            (tracking_number, recipient_name, recipient_city, order_price, delivery_fee, status)
-                            VALUES (?, ?, ?, ?, ?, ?)''', 
-                            (trk, name, city, price, 268500, 'pending'))
-                        conn.commit()
-                        yield f'data: {json.dumps({"chunk": "\\n\\n✅ **تم تنفيذ الأمر بنجاح:** تمت إضافة الطلب في قاعدة البيانات!"})}\n\n'
-                except Exception as e:
-                    yield f'data: {json.dumps({"chunk": "\\n\\n❌ **فشل تنفيذ الأمر:** " + str(e)})}\n\n'
-        conn.close()
-
-    return Response(generate(), mimetype='text/event-stream')
-
 @app.route('/api/ai/parse-order', methods=['POST'])
 @login_required
 def api_ai_parse_order():
@@ -4742,29 +4515,3 @@ def run_offline_server():
 
 if __name__ == '__main__':
     run_offline_server()
-
-
-@app.route('/system/backup/download', methods=['GET'])
-@admin_required
-def download_backup():
-    from datetime import datetime
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    return send_file(DB_PATH, as_attachment=True, download_name=f"stargate_backup_{timestamp}.db")
-
-@app.route('/system/backup/restore', methods=['POST'])
-@admin_required
-def restore_backup():
-    if 'backup_file' not in request.files:
-        flash("لم يتم اختيار ملف نسخ احتياطي!", "danger")
-        return redirect(url_for('settings_view'))
-    file = request.files['backup_file']
-    if file.filename == '':
-        flash("اسم الملف غير صحيح!", "danger")
-        return redirect(url_for('settings_view'))
-    if file and file.filename.endswith('.db'):
-        file.save(DB_PATH)
-        flash("تم استعادة قاعدة البيانات بنجاح! 🚀 يرجى تحديث الصفحة.", "success")
-        return redirect(url_for('dashboard'))
-    else:
-        flash("يرجى اختيار ملف صيغة .db فقط!", "warning")
-        return redirect(url_for('settings_view'))

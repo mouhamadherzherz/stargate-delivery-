@@ -152,13 +152,13 @@
 
     <div class="waybill-card">
         <!-- Header -->
-        <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px dashed #000; padding-bottom: 12px; margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Logo" style="height: 48px; width: auto; object-fit: contain;">
-                <div>
-                    <div class="company-name" style="font-size: 16px; font-weight: 900; color: #000;">STARGATE EXPERTS</div>
-                    <div style="font-size: 10px; color: #475569;">هاتف: {{ settings.phone }} | {{ settings.address }}</div>
+        <div class="header">
+            <div>
+                <div class="company-name flex items-center gap-1.5">
+                    <span>{{ company_name }}</span>
+                    <span>🇱🇧</span>
                 </div>
+                <div style="font-size: 11px; color: #475569;">هاتف: {{ settings.phone }} | {{ settings.address }}</div>
             </div>
             <div style="text-align: left; font-size: 11px;" dir="ltr">
                 <div style="font-weight: bold;">{{ now.strftime('%Y-%m-%d') }}</div>
