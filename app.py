@@ -1748,11 +1748,19 @@ def add_employee():
     password = request.form.get('password', '').strip()
     display_name = request.form.get('display_name', '').strip()
     role = request.form.get('role', 'employee').strip()
-    phone = request.form.get('phone', '').strip()
+    phone = request.form.get('phone', '').strip() or None
     pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام (أو اتركه فارغاً)', 'warning')
-        return redirect(url_for('employees_list'))
+    confirm_pin = request.form.get('confirm_pin', '').strip()
+
+    if pin:
+        if len(pin) < 4 or len(pin) > 10:
+            flash('رمز PIN يجب أن يكون بين 4 إلى 10 أرقام (أو اتركه فارغاً)', 'warning')
+            return redirect(url_for('employees_list'))
+        if confirm_pin and pin != confirm_pin:
+            flash('❌ رمزا PIN غير متطابقين! يرجى التأكد من كتابة نفس الرمز.', 'danger')
+            return redirect(url_for('employees_list'))
+
+    pin_val = pin if pin else None
     job_title = request.form.get('job_title', '').strip()
     job_type = request.form.get('job_type', '').strip()
     currency = request.form.get('currency', 'ل.ل').strip() or 'ل.ل'
@@ -1760,24 +1768,35 @@ def add_employee():
     custom_permissions = ','.join([p.strip() for p in permissions_list if p.strip()])
     if not custom_permissions and request.form.get('custom_permissions'):
         custom_permissions = request.form.get('custom_permissions', '').strip()
+
     if not username or not password or not display_name:
         flash("يرجى ملء جميع الحقول المطلوبة", "warning")
         return redirect(url_for('employees_list'))
+
     if len(password) < 6:
         flash("كلمة المرور يجب أن تكون 6 أحرف على الأقل", "warning")
         return redirect(url_for('employees_list'))
+
     conn = get_db()
     cur = conn.cursor()
     try:
         cur.execute("""
         INSERT INTO employees (username, password_hash, display_name, role, phone, is_active, pin, job_title, job_type, currency, custom_permissions)
         VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
-        """, (username, hash_password(password), display_name, role, phone, pin, job_title, job_type, currency, custom_permissions))
+        """, (username, hash_password(password), display_name, role, phone, pin_val, job_title, job_type, currency, custom_permissions))
         log_audit(cur, 'create', 'employee', cur.lastrowid, f'username={username}, role={role}')
         conn.commit()
         flash(f"تمت إضافة الموظف [{display_name}] بنجاح 🧑‍💼", "success")
-    except sqlite3.IntegrityError:
-        flash(f"اسم المستخدم [{username}] مستخدم مسبقاً!", "warning")
+    except sqlite3.IntegrityError as e:
+        err_msg = str(e).lower()
+        if 'username' in err_msg:
+            flash(f"❌ اسم المستخدم [{username}] مستخدم مسبقاً! يرجى اختيار اسم آخر.", "warning")
+        elif 'pin' in err_msg:
+            flash("❌ رمز PIN مستخدم مسبقاً لموظف آخر! يرجى اختيار رمز مختلف.", "warning")
+        else:
+            flash(f"❌ تعارض في البيانات أثناء إضافة الموظف: {e}", "danger")
+    except Exception as e:
+        flash(f"❌ حدث خطأ غير متوقع أثناء الإضافة: {e}", "danger")
     finally:
         conn.close()
     return redirect(url_for('employees_list'))
@@ -1787,11 +1806,19 @@ def add_employee():
 def edit_employee(emp_id):
     display_name = request.form.get('display_name', '').strip()
     role = request.form.get('role', 'employee').strip()
-    phone = request.form.get('phone', '').strip()
+    phone = request.form.get('phone', '').strip() or None
     pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
+    confirm_pin = request.form.get('confirm_pin', '').strip()
+    update_pin = False
+    if pin:
+        if len(pin) < 4 or len(pin) > 10:
+            flash('رمز PIN يجب أن يكون بين 4 و 10 أرقام (أو اتركه فارغاً)', 'warning')
+            return redirect(url_for('employees_list'))
+        if confirm_pin and pin != confirm_pin:
+            flash('❌ رمزا PIN الجديدان غير متطابقين!', 'danger')
+            return redirect(url_for('employees_list'))
+        update_pin = True
+
     is_active = 1 if request.form.get('is_active') else 0
     new_password = request.form.get('new_password', '').strip()
     new_username = request.form.get('new_username', '').strip()
@@ -1802,51 +1829,67 @@ def edit_employee(emp_id):
     custom_permissions = ','.join([p.strip() for p in permissions_list if p.strip()])
     if not custom_permissions and request.form.get('custom_permissions'):
         custom_permissions = request.form.get('custom_permissions', '').strip()
+
     conn = get_db()
     cur = conn.cursor()
-    # Protect admin username from being changed unless by same admin
-    cur.execute("SELECT username FROM employees WHERE id = ?", (emp_id,))
-    emp_row = cur.fetchone()
-    old_username = emp_row['username'] if emp_row else ''
-    # Only allow username change if new_username provided and not 'admin' being renamed
-    effective_username = old_username
-    if new_username and new_username != old_username:
-        if old_username in ('stargate', 'admin') and session.get('username') not in ('stargate', 'admin'):
-            flash("لا يمكن تغيير اسم مستخدم المدير الرئيسي!", "danger")
-            conn.close()
-            return redirect(url_for('employees_list'))
-        # Check uniqueness
-        cur.execute("SELECT id FROM employees WHERE username = ? AND id != ?", (new_username, emp_id))
-        if cur.fetchone():
-            flash(f"اسم المستخدم [{new_username}] مستخدم مسبقاً!", "warning")
-            conn.close()
-            return redirect(url_for('employees_list'))
-        effective_username = new_username
-    confirm_password = request.form.get('confirm_password', '').strip()
-    if new_password:
-        if confirm_password and new_password != confirm_password:
-            flash("❌ كلمتا المرور غير متطابقتين! يرجى إدخال كلمة المرور وتأكيدها مرتين.", "danger")
-            conn.close()
-            return redirect(url_for('employees_list'))
-        if len(new_password) < 6:
-            flash("❌ كلمة المرور يجب أن تكون 6 أحرف/أرقام على الأقل!", "warning")
-            conn.close()
-            return redirect(url_for('employees_list'))
-        cur.execute("""
-        UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?, password_hash=?,
-            job_title=?, job_type=?, currency=?, custom_permissions=?, pin=? WHERE id=?
-        """, (effective_username, display_name, role, phone, is_active, hash_password(new_password),
-               job_title, job_type, currency, custom_permissions, pin or None, emp_id))
-    else:
-        cur.execute("""
-        UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?,
-            job_title=?, job_type=?, currency=?, custom_permissions=?, pin=? WHERE id=?
-        """, (effective_username, display_name, role, phone, is_active,
-               job_title, job_type, currency, custom_permissions, pin or None, emp_id))
-    log_audit(cur, 'edit', 'employee', emp_id, f'name={display_name}, role={role}')
-    conn.commit()
-    conn.close()
-    flash(f"تم تعديل بيانات الموظف [{display_name}] بنجاح ✏️", "success")
+    try:
+        cur.execute("SELECT username FROM employees WHERE id = ?", (emp_id,))
+        emp_row = cur.fetchone()
+        old_username = emp_row['username'] if emp_row else ''
+        effective_username = old_username
+        if new_username and new_username != old_username:
+            if old_username in ('stargate', 'admin') and session.get('username') not in ('stargate', 'admin'):
+                flash("لا يمكن تغيير اسم مستخدم المدير الرئيسي!", "danger")
+                return redirect(url_for('employees_list'))
+            cur.execute("SELECT id FROM employees WHERE username = ? AND id != ?", (new_username, emp_id))
+            if cur.fetchone():
+                flash(f"اسم المستخدم [{new_username}] مستخدم مسبقاً!", "warning")
+                return redirect(url_for('employees_list'))
+            effective_username = new_username
+
+        confirm_password = request.form.get('confirm_password', '').strip()
+        if new_password:
+            if confirm_password and new_password != confirm_password:
+                flash("❌ كلمتا المرور غير متطابقتين! يرجى إدخال كلمة المرور وتأكيدها مرتين.", "danger")
+                return redirect(url_for('employees_list'))
+            if len(new_password) < 6:
+                flash("❌ كلمة المرور يجب أن تكون 6 أحرف/أرقام على الأقل!", "warning")
+                return redirect(url_for('employees_list'))
+            if update_pin:
+                cur.execute("""
+                UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?, password_hash=?,
+                    job_title=?, job_type=?, currency=?, custom_permissions=?, pin=? WHERE id=?
+                """, (effective_username, display_name, role, phone, is_active, hash_password(new_password),
+                       job_title, job_type, currency, custom_permissions, pin, emp_id))
+            else:
+                cur.execute("""
+                UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?, password_hash=?,
+                    job_title=?, job_type=?, currency=?, custom_permissions=? WHERE id=?
+                """, (effective_username, display_name, role, phone, is_active, hash_password(new_password),
+                       job_title, job_type, currency, custom_permissions, emp_id))
+        else:
+            if update_pin:
+                cur.execute("""
+                UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?,
+                    job_title=?, job_type=?, currency=?, custom_permissions=?, pin=? WHERE id=?
+                """, (effective_username, display_name, role, phone, is_active,
+                       job_title, job_type, currency, custom_permissions, pin, emp_id))
+            else:
+                cur.execute("""
+                UPDATE employees SET username=?, display_name=?, role=?, phone=?, is_active=?,
+                    job_title=?, job_type=?, currency=?, custom_permissions=? WHERE id=?
+                """, (effective_username, display_name, role, phone, is_active,
+                       job_title, job_type, currency, custom_permissions, emp_id))
+
+        log_audit(cur, 'edit', 'employee', emp_id, f'name={display_name}, role={role}')
+        conn.commit()
+        flash(f"تم تعديل بيانات الموظف [{display_name}] بنجاح ✏️", "success")
+    except sqlite3.IntegrityError as e:
+        flash(f"❌ تعارض في البيانات أثناء تعديل الموظف: {e}", "danger")
+    except Exception as e:
+        flash(f"❌ حدث خطأ غير متوقع: {e}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('employees_list'))
 
 @app.route('/employees/<int:emp_id>/delete', methods=['POST'])
@@ -2453,10 +2496,7 @@ def add_merchant():
     elif not store and name:
         store = name
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
+
     address = request.form.get('address', '').strip()
     fee = parse_safe_float(request.form.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
     payment_type = request.form.get('payment_type', 'postpaid').strip()
@@ -2486,10 +2526,7 @@ def edit_merchant(merchant_id):
     elif not store and name:
         store = name
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
+
     address = request.form.get('address', '').strip()
     fee = parse_safe_float(request.form.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
     payment_type = request.form.get('payment_type', 'postpaid').strip()
@@ -2696,10 +2733,7 @@ def courier_unsettled_api(courier_id):
 def add_courier():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
+
     vtype = request.form.get('vehicle_type', 'motorcycle')
     comm = parse_safe_float(request.form.get('commission_value', ''), DEFAULT_COMMISSION)
     conn = get_db()
@@ -2719,10 +2753,7 @@ def add_courier():
 def edit_courier(courier_id):
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
+
     vtype = request.form.get('vehicle_type', 'motorcycle')
     comm = parse_safe_float(request.form.get('commission_value', ''), DEFAULT_COMMISSION)
     status = request.form.get('status', 'active')
@@ -2876,10 +2907,7 @@ def customers_list():
 def add_customer_route():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) < 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
-        return redirect(url_for('employees_list'))
+
     city = request.form.get('city', 'بيروت').strip()
     address = request.form.get('address', '').strip()
     conn = get_db()
@@ -2900,10 +2928,7 @@ def add_customer_route():
 def edit_customer_route(customer_id):
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) < 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
-        return redirect(url_for('employees_list'))
+
     city = request.form.get('city', 'بيروت').strip()
     address = request.form.get('address', '').strip()
     notes = request.form.get('notes', '').strip()
@@ -2975,10 +3000,7 @@ def agents_view():
 def add_agent_route():
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) < 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام على الأقل', 'warning')
-        return redirect(url_for('employees_list'))
+
     if not name:
         flash("يرجى كتابة اسم الموظف", "warning")
         return redirect(url_for('agents_view'))
@@ -3633,10 +3655,7 @@ def settings_view():
 def save_settings():
     company_name = request.form.get('company_name', '').strip()
     phone = request.form.get('phone', '').strip()
-    pin = request.form.get('pin', '').strip()
-    if pin and len(pin) != 4:
-        flash('رمز PIN يجب أن يكون 4 أرقام', 'warning')
-        return redirect(url_for('employees_list'))
+
     address = request.form.get('address', '').strip()
     exchange_rate = parse_safe_float(request.form.get('exchange_rate'), DEFAULT_EXCHANGE_RATE)
     default_delivery_fee = parse_safe_float(request.form.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
