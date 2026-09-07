@@ -497,7 +497,7 @@
         document.querySelectorAll('.cat-pill').forEach(btn => {
             const btnCat = (btn.getAttribute('data-cat') || '').trim().toLowerCase();
             if (btnCat === selectedCategoryFilter) {
-                btn.className = 'cat-pill active-cat px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-red-600 text-white shadow-xs';
+                btn.className = 'cat-pill active-cat px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-purple-600 text-white shadow-xs';
             } else {
                 btn.className = 'cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200';
             }
