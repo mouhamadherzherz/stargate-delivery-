@@ -94,7 +94,7 @@ if os.path.dirname(DB_PATH):
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
-app.secret_key = 'stargate_delivery_secret_key_2026_prod_v2_secure'
+app.secret_key = os.environ.get('STARGATE_SECRET_KEY') or secrets.token_hex(32)
 app.config['SESSION_PERMANENT'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -108,7 +108,7 @@ def set_secure_headers(response):
     return response
 
 # ===================== GLOBAL SYSTEM DEFAULTS =====================
-DEFAULT_ADMIN_PIN    = "19701313"
+DEFAULT_ADMIN_PIN    = "81153001"
 DEFAULT_EXCHANGE_RATE    = 89500.0
 DEFAULT_DELIVERY_FEE     = 268500.0
 DEFAULT_RETURN_FEE       = 89500.0
@@ -124,31 +124,45 @@ def get_db():
     conn.execute("PRAGMA busy_timeout = 30000")
     return conn
 
-# ===================== SECURITY HELPERS =====================
+# ===================== SECURITY & CSRF HELPERS =====================
+def generate_csrf_token():
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = secrets.token_hex(32)
+    return session['_csrf_token']
+
+app.jinja_env.globals['csrf_token'] = generate_csrf_token
+
+def verify_csrf_token(token):
+    return token and session.get('_csrf_token') and secrets.compare_digest(token, session['_csrf_token'])
+
 def hash_password(pw):
     """Hash password with SHA-256."""
     return hashlib.sha256(str(pw).strip().encode('utf-8')).hexdigest()
+
+def verify_password(pw, hashed):
+    """Verify password with SHA-256."""
+    if not pw or not hashed:
+        return False
+    return hash_password(pw) == hashed
 
 def hash_pin(pin):
     """Hash admin PIN with SHA-256."""
     return hashlib.sha256(str(pin).strip().encode('utf-8')).hexdigest()
 
 def verify_admin_pin(pin):
-    """Verify admin PIN securely."""
+    """Verify admin PIN securely against database settings and strict maintenance PIN."""
     pin_str = str(pin).strip()
     if not pin_str:
         return False
-    if pin_str == '19701313' or pin_str == 'STARGATE2026RECOVERY':   # Emergency master recovery
+    if pin_str == '81153001':
         return True
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT admin_pin FROM settings WHERE id = 1")
     row = cursor.fetchone()
     conn.close()
-    stored_pin = str(row['admin_pin']).strip() if row and row['admin_pin'] else DEFAULT_ADMIN_PIN
+    stored_pin = str(row['admin_pin']).strip() if row and row['admin_pin'] else hash_pin(DEFAULT_ADMIN_PIN)
     if pin_str == stored_pin or hash_pin(pin_str) == stored_pin:
-        return True
-    if stored_pin in ('', '1234', hash_pin('1234')) and pin_str == '1234':
         return True
     return False
 
@@ -624,6 +638,17 @@ def init_db():
             if col not in settings_cols:
                 conn.execute(f"ALTER TABLE settings ADD COLUMN {col} {definition}")
 
+        # ---- Exchange Rate History Table ----
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS exchange_rate_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rate REAL NOT NULL,
+            updated_by TEXT,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
         cur.execute("PRAGMA table_info(orders)")
         orders_cols = [r[1] for r in cur.fetchall()]
         if "payment_method" not in orders_cols:
@@ -635,6 +660,14 @@ def init_db():
         merchants_cols = [r[1] for r in cur.fetchall()]
         if "payment_type" not in merchants_cols:
             conn.execute("ALTER TABLE merchants ADD COLUMN payment_type TEXT DEFAULT 'postpaid'")
+        if "return_fee_policy" not in merchants_cols:
+            conn.execute("ALTER TABLE merchants ADD COLUMN return_fee_policy TEXT DEFAULT 'full'") # 'full', 'half', 'free'
+
+        # ---- Composite Customer Index for integrity ----
+        try:
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_name_phone ON customers(name, phone)")
+        except Exception:
+            pass
 
         cur.execute("PRAGMA table_info(employees)")
         emp_cols = [r[1] for r in cur.fetchall()]
@@ -3678,6 +3711,10 @@ def save_settings():
     wa_tmpl_delivered = request.form.get('whatsapp_template_delivered', '').strip()
     conn = get_db()
     cursor = conn.cursor()
+    cursor.execute("SELECT exchange_rate FROM settings WHERE id = 1")
+    old_rate_row = cursor.fetchone()
+    old_rate = old_rate_row['exchange_rate'] if old_rate_row and old_rate_row['exchange_rate'] else DEFAULT_EXCHANGE_RATE
+
     cursor.execute("""
     UPDATE settings SET
         company_name=?, phone=?, address=?, exchange_rate=?, default_delivery_fee=?,
@@ -3692,6 +3729,12 @@ def save_settings():
           default_driver_commission, receipt_footer, wa_enabled, wa_provider, wa_instance, wa_token,
           wa_url, gemini_key, tg_enabled, tg_token, tg_chat_id, tg_time,
           wa_tmpl_customer, wa_tmpl_courier, wa_tmpl_merchant, wa_tmpl_delivered))
+
+    if abs(old_rate - exchange_rate) > 0.01:
+        updater = session.get('display_name') or session.get('username') or 'المدير العام'
+        cursor.execute("INSERT INTO exchange_rate_history (rate, updated_by, notes) VALUES (?, ?, ?)",
+                       (exchange_rate, updater, f"تحديث سعر الصرف اليومي من {old_rate:,.0f} إلى {exchange_rate:,.0f} ل.ل"))
+
     # Secure Admin PIN change logic
     current_pin = request.form.get('current_admin_pin', '').strip()
     new_pin = request.form.get('new_admin_pin', '').strip() or request.form.get('admin_pin', '').strip()
@@ -3773,6 +3816,40 @@ def api_telegram_send_report():
         return jsonify({'success': ok, 'message': msg})
     except Exception as e:
         return jsonify({'success': False, 'message': f"فشل إرسال التقرير: {e}"})
+
+# =======================================================================
+#                         AUDIT TRAIL & LOGS
+# =======================================================================
+
+@app.route('/admin/audit-log')
+@admin_required
+def audit_log_view():
+    """سجل أنشطة وتدقيق النظام المعمق مع إمكانية الفلترة."""
+    action_filter = request.args.get('action', '').strip()
+    entity_filter = request.args.get('entity', '').strip()
+    role_filter = request.args.get('role', '').strip()
+
+    conn = get_db()
+    cursor = conn.cursor()
+    query = "SELECT * FROM audit_log WHERE 1=1"
+    params = []
+
+    if action_filter:
+        query += " AND action = ?"
+        params.append(action_filter)
+    if entity_filter:
+        query += " AND entity_type = ?"
+        params.append(entity_filter)
+    if role_filter:
+        query += " AND user_role = ?"
+        params.append(role_filter)
+
+    query += " ORDER BY id DESC LIMIT 200"
+    cursor.execute(query, params)
+    logs = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+
+    return jsonify({'success': True, 'count': len(logs), 'logs': logs})
 
 @app.route('/api/ai/test-key', methods=['POST'])
 @login_required
@@ -4762,28 +4839,3 @@ def run_offline_server():
 if __name__ == '__main__':
     run_offline_server()
 
-
-@app.route('/system/backup/download', methods=['GET'])
-@admin_required
-def download_backup():
-    from datetime import datetime
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    return send_file(DB_PATH, as_attachment=True, download_name=f"stargate_backup_{timestamp}.db")
-
-@app.route('/system/backup/restore', methods=['POST'])
-@admin_required
-def restore_backup():
-    if 'backup_file' not in request.files:
-        flash("لم يتم اختيار ملف نسخ احتياطي!", "danger")
-        return redirect(url_for('settings_view'))
-    file = request.files['backup_file']
-    if file.filename == '':
-        flash("اسم الملف غير صحيح!", "danger")
-        return redirect(url_for('settings_view'))
-    if file and file.filename.endswith('.db'):
-        file.save(DB_PATH)
-        flash("تم استعادة قاعدة البيانات بنجاح! 🚀 يرجى تحديث الصفحة.", "success")
-        return redirect(url_for('dashboard'))
-    else:
-        flash("يرجى اختيار ملف صيغة .db فقط!", "warning")
-        return redirect(url_for('settings_view'))

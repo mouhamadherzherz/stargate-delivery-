@@ -87,7 +87,9 @@
                 <option value="">جميع الصلاحيات</option>
                 <option value="admin">المدير العام</option>
                 <option value="employee">موظف عمليات</option>
-                <option value="call_center">كول سنتر</option>
+                <option value="accountant">محاسب ومالية</option>
+<option value="supervisor">مشرف ميداني</option>
+<option value="call_center">كول سنتر</option>
             </select>
         </div>
     </div>
@@ -254,7 +256,9 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1">الدور والصلاحية:</label>
                     <select name="role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-red-500">
                         <option value="employee">موظف عمليات (افتراضي)</option>
-                        <option value="call_center">كول سنتر واستقبال</option>
+                        <option value="accountant">محاسب ومالية</option>
+<option value="supervisor">مشرف ميداني</option>
+<option value="call_center">كول سنتر واستقبال</option>
                         <option value="admin">مدير عام (كامل الصلاحيات)</option>
                     </select>
                 </div>
@@ -282,7 +286,8 @@
             </div>
 
             <div>
-                <div class="flex items-center justify-between mb-2">
+                <div class="mt-3"><label class="block text-xs font-bold text-slate-700 mb-1"><span>📝 توصيف الوظيفة والصلاحيات التفصيلية (كتابياً):</span></label><textarea name="notes" rows="3" placeholder="اكتب الشرح التفصيلي لمهام الموظف وصلاحياته..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-blue-500"></textarea></div>
+<div class="flex items-center justify-between mb-2">
                     <label class="block text-xs font-black text-slate-800 flex items-center gap-1.5">
                         <i class="fa-solid fa-shield-halved text-amber-600"></i>
                         <span>⚡ صلاحيات الموظف (ضع إشارة صح بجانب ما يحق له):</span>
@@ -381,7 +386,9 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1">الدور والصلاحية:</label>
                     <select id="edit_role" name="role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
                         <option value="employee">موظف عمليات</option>
-                        <option value="call_center">كول سنتر</option>
+                        <option value="accountant">محاسب ومالية</option>
+<option value="supervisor">مشرف ميداني</option>
+<option value="call_center">كول سنتر</option>
                         <option value="admin">مدير عام</option>
                     </select>
                 </div>
@@ -490,6 +497,7 @@
                     </label>
                 </div>
                 <input type="hidden" id="edit_custom_permissions" name="custom_permissions">
+<div class="mt-3"><label class="block text-xs font-bold text-slate-700 mb-1"><span>📝 توصيف الوظيفة والصلاحيات التفصيلية (كتابياً):</span></label><textarea id="edit_notes" name="notes" rows="3" placeholder="اكتب الشرح التفصيلي لمهام الموظف وصلاحياته..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-blue-500"></textarea></div>
             </div>
 
             <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
@@ -550,12 +558,13 @@
         document.querySelectorAll('#editEmployeeModal input[name="permissions"]').forEach(cb => cb.checked = status);
     }
 
-    function openEditEmployeeModal(id, name, username, role, phone, isActive, jobTitle, jobType, currency, customPermissions) {
+    function openEditEmployeeModal(id, name, username, role, phone, isActive, jobTitle, jobType, currency, customPermissions, notes) {
         document.getElementById('editEmployeeForm').action = `/employees/${id}/edit`;
         document.getElementById('edit_display_name').value = name;
         document.getElementById('edit_username_display').textContent = username;
         document.getElementById('edit_new_username').value = '';
         document.getElementById('edit_role').value = role;
+        if (document.getElementById('edit_notes')) document.getElementById('edit_notes').value = notes || '';
         document.getElementById('edit_phone').value = phone;
         document.getElementById('edit_is_active').checked = Boolean(isActive);
         if (document.getElementById('edit_job_title')) {
