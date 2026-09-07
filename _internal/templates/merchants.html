@@ -12,10 +12,16 @@
             </h2>
             <p class="text-sm text-slate-500 mt-1">متابعة حسابات المحلات والصفحات الأونلاين، ودفع مصاري الأوردرات الواصلة وإصدار كشوفات الحساب.</p>
         </div>
-        <button onclick="openModal('newMerchantModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#00D26A] to-[#00B359] hover:from-[#00B359] hover:to-[#008F47] text-white font-black px-5 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition">
-            <i class="fa-solid fa-store"></i>
-            <span>إضافة محل / بيج جديد</span>
-        </button>
+        <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="openModal('merchantCategoriesModal')" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-md shadow-purple-600/20 text-xs transition" title="تعديل وزيادة تصنيفات المتاجر والمحلات">
+                <i class="fa-solid fa-tags"></i>
+                <span>إدارة التصنيفات 🏷️</span>
+            </button>
+            <button onclick="openModal('newMerchantModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#00D26A] to-[#00B359] hover:from-[#00B359] hover:to-[#008F47] text-white font-black px-5 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition">
+                <i class="fa-solid fa-store"></i>
+                <span>إضافة محل / بيج جديد</span>
+            </button>
+        </div>
     </div>
 
     <!-- Quick Search & Category Filter Bar -->
@@ -39,42 +45,11 @@
             <button type="button" onclick="selectCategoryFilter('')" class="cat-pill active-cat px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-[#00B5FF] text-white shadow-xs" data-cat="">
                 🏪 الكل
             </button>
-            <button type="button" onclick="selectCategoryFilter('مطعم وسناك')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="مطعم وسناك">
-                🍔 مطاعم وسناك
+            {% for cat in categories %}
+            <button type="button" onclick="selectCategoryFilter('{{ cat }}')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="{{ cat }}">
+                🏷️ {{ cat }}
             </button>
-            <button type="button" onclick="selectCategoryFilter('سوبرماركت وبقالة')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="سوبرماركت وبقالة">
-                🛒 بقالة وماركت
-            </button>
-            <button type="button" onclick="selectCategoryFilter('حلويات وموالح')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="حلويات وموالح">
-                🍰 حلويات
-            </button>
-            <button type="button" onclick="selectCategoryFilter('محل ثياب وأزياء')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="محل ثياب وأزياء">
-                👗 ثياب وأزياء
-            </button>
-            <button type="button" onclick="selectCategoryFilter('إلكترونيات وهواتف')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="إلكترونيات وهواتف">
-                📱 هواتف وإلكترونيات
-            </button>
-            <button type="button" onclick="selectCategoryFilter('عطور وتجميل')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="عطور وتجميل">
-                💄 عطور وتجميل
-            </button>
-            <button type="button" onclick="selectCategoryFilter('ملحمة')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="ملحمة">
-                🥩 ملحمة
-            </button>
-            <button type="button" onclick="selectCategoryFilter('فرن ومخبز')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="فرن ومخبز">
-                🥖 فرن ومخبز
-            </button>
-            <button type="button" onclick="selectCategoryFilter('خضار وفواكه')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="خضار وفواكه">
-                🍎 خضار وفواكه
-            </button>
-            <button type="button" onclick="selectCategoryFilter('كافيه ومشروبات')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="كافيه ومشروبات">
-                ☕ كافيه
-            </button>
-            <button type="button" onclick="selectCategoryFilter('هدايا واكسسوارات')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="هدايا واكسسوارات">
-                🎁 هدايا
-            </button>
-            <button type="button" onclick="selectCategoryFilter('عام')" class="cat-pill px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="عام">
-                📦 عام / أخرى
-            </button>
+            {% endfor %}
         </div>
     </div>
 
@@ -218,19 +193,9 @@
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">تصنيف ونوع المتجر <span class="text-rose-500">*</span></label>
                 <select name="category" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500">
-                    <option value="مطعم وسناك">🍔 مطعم وسناك</option>
-                    <option value="سوبرماركت وبقالة">🛒 سوبرماركت وبقالة</option>
-                    <option value="حلويات وموالح">🍰 حلويات وموالح</option>
-                    <option value="محل ثياب وأزياء">👗 محل ثياب وأزياء</option>
-                    <option value="إلكترونيات وهواتف">📱 إلكترونيات وهواتف</option>
-                    <option value="عطور وتجميل">💄 عطور وتجميل</option>
-                    <option value="ملحمة">🥩 ملحمة</option>
-                    <option value="فرن ومخبز">🥖 فرن ومخبز</option>
-                    <option value="خضار وفواكه">🍎 خضار وفواكه</option>
-                    <option value="كافيه ومشروبات">☕ كافيه ومشروبات</option>
-                    <option value="هدايا واكسسوارات">🎁 هدايا واكسسوارات</option>
-                    <option value="عام" selected>📦 عام / متجر متنوع</option>
-                    <option value="أخرى">✨ أخرى</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {{ 'selected' if cat == 'عام' }}>🏷️ {{ cat }}</option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -367,6 +332,59 @@
                 </button>
             </div>
         </form>
+    </div>
+<!-- MODAL: MANAGE MERCHANT CATEGORIES -->
+<div id="merchantCategoriesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-tags text-purple-600"></i>
+                <span>إدارة وتعديل تصنيفات المتاجر والبيجات</span>
+            </h3>
+            <button onclick="closeModal('merchantCategoriesModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Add Merchant Category Form -->
+        <form method="POST" action="{{ url_for('add_merchant_category') }}" class="mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 space-y-3">
+            <label class="block text-xs font-black text-purple-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-plus-circle text-purple-600"></i>
+                <span>إضافة تصنيف متاجر جديد:</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <input type="text" name="name" required placeholder="مثال: ألعاب وأطفال، أدوات منزلية..." class="flex-1 bg-white border border-purple-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-purple-500">
+                <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-purple-600/20 transition whitespace-nowrap">إضافة ➕</button>
+            </div>
+        </form>
+
+        <!-- Categories List with Edit and Delete -->
+        <div class="mt-4 space-y-2">
+            <label class="block text-xs font-bold text-slate-700 mb-2">التصنيفات الحالية (يمكنك التعديل والحذف):</label>
+            <div class="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
+                {% for cat in categories_list %}
+                <div class="p-3 bg-white flex items-center justify-between gap-3 hover:bg-slate-50 transition">
+                    <form method="POST" action="{{ url_for('edit_merchant_category', cat_id=cat.id) }}" class="flex items-center gap-2 flex-1">
+                        <input type="text" name="name" value="{{ cat.name }}" required class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-purple-500 focus:bg-white">
+                        <button type="submit" class="bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-700 font-bold px-3 py-1.5 rounded-xl text-[11px] transition whitespace-nowrap" title="حفظ وتحديث المتاجر المرتبطة">
+                            <i class="fa-solid fa-check"></i> حفظ
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('delete_merchant_category', cat_id=cat.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا التصنيف؟');">
+                        <button type="submit" class="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded-lg transition" title="حذف التصنيف">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-xs text-slate-400">لا توجد تصنيفات مسجلة</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 flex items-center justify-end border-t border-slate-100">
+            <button type="button" onclick="closeModal('merchantCategoriesModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2 rounded-xl text-xs transition">إغلاق</button>
+        </div>
     </div>
 </div>
 

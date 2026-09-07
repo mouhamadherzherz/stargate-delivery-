@@ -2322,11 +2322,30 @@ def delete_order(order_id):
 #                         MERCHANTS
 # =======================================================================
 
-MERCHANT_CATEGORIES = [
-    'ملحمة', 'فرن ومخبز', 'محل ثياب وأزياء', 'مطعم وسناك', 'صيدلية ومستحضرات',
-    'سوبرماركت وبقالة', 'حلويات وموالح', 'إلكترونيات وهواتف', 'خضار وفواكه',
-    'عطور وتجميل', 'كافيه ومشروبات', 'هدايا واكسسوارات', 'أخرى'
+DEFAULT_MERCHANT_CATEGORIES = [
+    'مطعم وسناك', 'سوبرماركت وبقالة', 'حلويات وموالح', 'محل ثياب وأزياء',
+    'إلكترونيات وهواتف', 'عطور وتجميل', 'ملحمة', 'فرن ومخبز',
+    'خضار وفواكه', 'كافيه ومشروبات', 'هدايا واكسسوارات', 'صيدلية ومستحضرات', 'عام'
 ]
+
+def get_merchant_categories(conn):
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS merchant_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+    )
+    """)
+    conn.commit()
+    cursor.execute("SELECT id, name FROM merchant_categories ORDER BY id ASC")
+    rows = cursor.fetchall()
+    if not rows:
+        for cat in DEFAULT_MERCHANT_CATEGORIES:
+            cursor.execute("INSERT OR IGNORE INTO merchant_categories (name) VALUES (?)", (cat,))
+        conn.commit()
+        cursor.execute("SELECT id, name FROM merchant_categories ORDER BY id ASC")
+        rows = cursor.fetchall()
+    return [dict(r) for r in rows]
 
 @app.route('/merchants')
 @login_required
@@ -2355,15 +2374,70 @@ def merchants_list():
     query += " ORDER BY CASE WHEN m.store_name IS NOT NULL AND m.store_name != '' THEN m.store_name ELSE m.name END ASC"
     cursor.execute(query, params)
     merchants = [dict(r) for r in cursor.fetchall()]
+
+    merchant_cats = get_merchant_categories(conn)
     cursor.execute("SELECT DISTINCT category FROM merchants WHERE category IS NOT NULL AND category != '' ORDER BY category ASC")
     existing_cats = [r['category'] for r in cursor.fetchall()]
-    all_categories = list(dict.fromkeys(MERCHANT_CATEGORIES + existing_cats))
+    
+    # Merge DB categories + any unique existing ones
+    cat_names = [c['name'] for c in merchant_cats]
+    all_categories = list(dict.fromkeys(cat_names + existing_cats))
+    
     cursor.execute("SELECT * FROM treasuries ORDER BY id ASC")
     treasuries = [dict(r) for r in cursor.fetchall()]
     conn.close()
     return render_template('merchants.html', merchants=merchants, treasuries=treasuries,
-                           categories=all_categories, selected_category=category_filter,
+                           categories=all_categories, categories_list=merchant_cats, selected_category=category_filter,
                            search_q=search_q, active_page='merchants')
+
+@app.route('/merchants/categories/add', methods=['POST'])
+@admin_required
+def add_merchant_category():
+    cat_name = request.form.get('name', '').strip()
+    if cat_name:
+        conn = get_db()
+        cursor = conn.cursor()
+        get_merchant_categories(conn)
+        try:
+            cursor.execute("INSERT INTO merchant_categories (name) VALUES (?)", (cat_name,))
+            conn.commit()
+            flash(f"تمت إضافة تصنيف المتاجر [{cat_name}] بنجاح 🏷️", "success")
+        except sqlite3.IntegrityError:
+            flash(f"التصنيف [{cat_name}] موجود مسبقاً!", "warning")
+        except Exception as e:
+            flash(f"خطأ أثناء الإضافة: {e}", "danger")
+        finally:
+            conn.close()
+    return redirect(url_for('merchants_list'))
+
+@app.route('/merchants/categories/<int:cat_id>/edit', methods=['POST'])
+@admin_required
+def edit_merchant_category(cat_id):
+    new_name = request.form.get('name', '').strip()
+    if new_name:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM merchant_categories WHERE id = ?", (cat_id,))
+        row = cursor.fetchone()
+        if row:
+            old_name = row['name']
+            cursor.execute("UPDATE merchant_categories SET name = ? WHERE id = ?", (new_name, cat_id))
+            cursor.execute("UPDATE merchants SET category = ? WHERE category = ?", (new_name, old_name))
+            conn.commit()
+            flash(f"تم تعديل اسم التصنيف إلى [{new_name}] وتحديث المتاجر المرتبطة به بنجاح ✏️", "success")
+        conn.close()
+    return redirect(url_for('merchants_list'))
+
+@app.route('/merchants/categories/<int:cat_id>/delete', methods=['POST'])
+@admin_required
+def delete_merchant_category(cat_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM merchant_categories WHERE id = ?", (cat_id,))
+    conn.commit()
+    conn.close()
+    flash("تم حذف تصنيف التاجر بنجاح 🗑️", "info")
+    return redirect(url_for('merchants_list'))
 
 @app.route('/merchants/add', methods=['POST'])
 @admin_required
