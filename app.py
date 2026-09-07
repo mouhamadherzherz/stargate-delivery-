@@ -655,6 +655,12 @@ def init_db():
             conn.execute("ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'cash'")
         if "is_paid_to_merchant" not in orders_cols:
             conn.execute("ALTER TABLE orders ADD COLUMN is_paid_to_merchant INTEGER DEFAULT 0")
+        if "scheduled_date" not in orders_cols:
+            conn.execute("ALTER TABLE orders ADD COLUMN scheduled_date TEXT")
+        if "is_scheduled" not in orders_cols:
+            conn.execute("ALTER TABLE orders ADD COLUMN is_scheduled INTEGER DEFAULT 0")
+        if "pickup_status" not in orders_cols:
+            conn.execute("ALTER TABLE orders ADD COLUMN pickup_status TEXT DEFAULT 'pending'") # pending, picked_up, in_hub
 
         cur.execute("PRAGMA table_info(merchants)")
         merchants_cols = [r[1] for r in cur.fetchall()]
@@ -1997,6 +2003,8 @@ def orders_list():
     search_query = request.args.get('q')
     merchant_filter = request.args.get('merchant_id')
     payment_filter = request.args.get('payment_method')
+    date_filter = request.args.get('scheduled_date')
+    city_filter = request.args.get('city')
     page = max(1, parse_safe_int(request.args.get('page'), 1))
     per_page = 30
     conn = get_db()
@@ -2012,9 +2020,15 @@ def orders_list():
     if payment_filter:
         base_where += " AND o.payment_method = ?"
         params.append(payment_filter)
+    if date_filter:
+        base_where += " AND (o.scheduled_date = ? OR DATE(o.created_at) = ?)"
+        params.extend([date_filter, date_filter])
+    if city_filter:
+        base_where += " AND o.recipient_city = ?"
+        params.append(city_filter)
     if search_query:
-        base_where += " AND (o.tracking_number LIKE ? OR o.recipient_name LIKE ? OR o.recipient_phone LIKE ? OR m.name LIKE ? OR m.store_name LIKE ?)"
-        params.extend([f"%{search_query}%"] * 5)
+        base_where += " AND (o.tracking_number LIKE ? OR o.recipient_name LIKE ? OR o.recipient_phone LIKE ? OR m.name LIKE ? OR m.store_name LIKE ? OR o.recipient_city LIKE ?)"
+        params.extend([f"%{search_query}%"] * 6)
 
     cursor.execute(f"SELECT COUNT(*) as total FROM orders o LEFT JOIN merchants m ON o.merchant_id = m.id LEFT JOIN couriers c ON o.courier_id = c.id {base_where}", params)
     count_row = cursor.fetchone()
@@ -2143,16 +2157,21 @@ def order_create():
     notes = request.form.get('notes', '')
     payment_method = request.form.get('payment_method', 'cash')
     is_paid_to_merchant = 1 if request.form.get('is_paid_to_merchant') in ('1', 'true', 'on') else 0
-    initial_status = 'assigned' if courier_id else 'pending'
+    scheduled_date = request.form.get('scheduled_date', '').strip() or None
+    is_scheduled = 1 if scheduled_date else 0
+    initial_status = 'postponed' if scheduled_date else ('assigned' if courier_id else 'pending')
+
     cursor.execute("""
     INSERT INTO orders (
         tracking_number, merchant_id, courier_id, agent_name, recipient_name, recipient_phone,
         recipient_city, recipient_address, order_price, delivery_fee, courier_commission,
-        items_detail, item_description, notes, status, payment_method, is_paid_to_merchant
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        items_detail, item_description, notes, status, payment_method, is_paid_to_merchant,
+        scheduled_date, is_scheduled
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (tracking_number, merchant_id, courier_id, agent_name, recipient_name, recipient_phone,
           recipient_city, recipient_address, order_price, delivery_fee, courier_commission,
-          items_detail, items_detail, notes, initial_status, payment_method, is_paid_to_merchant))
+          items_detail, items_detail, notes, initial_status, payment_method, is_paid_to_merchant,
+          scheduled_date, is_scheduled))
     order_id = cursor.lastrowid
     log_audit(cursor, 'create', 'order', order_id, f'tracking={tracking_number}')
     if recipient_phone or recipient_name:
@@ -2172,6 +2191,10 @@ def order_create():
     submit_act = request.form.get('submit_action', 'save')
     if submit_act == 'save_and_whatsapp':
         return redirect(url_for('orders_list', open_whatsapp=order_id, direct_app=1))
+    elif submit_act == 'save_and_merchant_whatsapp':
+        return redirect(url_for('orders_list', open_merchant_whatsapp=order_id, direct_app=1))
+    elif submit_act == 'save_and_customer_confirmation':
+        return redirect(url_for('orders_list', open_customer_confirmation=order_id, direct_app=1))
     elif submit_act == 'save_and_print':
         return redirect(url_for('print_waybill', order_id=order_id))
     return redirect(url_for('orders_list'))
@@ -2336,6 +2359,12 @@ def edit_order(order_id):
     if items_detail:
         fields.append("items_detail = ?"); params.append(items_detail)
         fields.append("item_description = ?"); params.append(items_detail)
+    if 'scheduled_date' in request.form:
+        sched_date = request.form.get('scheduled_date', '').strip() or None
+        fields.append("scheduled_date = ?"); params.append(sched_date)
+        fields.append("is_scheduled = ?"); params.append(1 if sched_date else 0)
+        if sched_date and old_status in ('pending', 'assigned'):
+            fields.append("status = ?"); params.append('postponed')
     if fields:
         params.append(order_id)
         cursor.execute(f"UPDATE orders SET {', '.join(fields)} WHERE id = ?", params)
@@ -2393,6 +2422,80 @@ def delete_order(order_id):
     conn.close()
     flash("تم حذف الأوردر وتسوية أرصدة السائق بنجاح 🗑️", "info")
     return redirect(url_for('orders_list'))
+
+@app.route('/orders/bulk-dispatch', methods=['POST'])
+@permission_required('orders_edit')
+def bulk_dispatch_orders():
+    """تعين مجموعة أوردرات لسائق واحد دفعة واحدة حسب المنطقة والتاريخ."""
+    order_ids = request.form.getlist('order_ids')
+    courier_id = parse_safe_int(request.form.get('courier_id'), 0)
+    new_status = request.form.get('status', 'assigned').strip()
+
+    if not order_ids or not courier_id:
+        flash("يرجى تحديد الطلبات واختيار السائق!", "warning")
+        return redirect(url_for('orders_list'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    placeholders = ','.join('?' * len(order_ids))
+    params = [courier_id, new_status] + [int(i) for i in order_ids if str(i).isdigit()]
+    cursor.execute(f"""
+        UPDATE orders
+        SET courier_id = ?, status = ?
+        WHERE id IN ({placeholders})
+    """, params)
+    count = cursor.rowcount
+    conn.commit()
+    conn.close()
+
+    flash(f"تم تعيين {count} أوردر للسائق المحدد بنجاح 🛵💨", "success")
+    return redirect(url_for('orders_list'))
+
+@app.route('/orders/<int:order_id>/quick-reschedule', methods=['POST'])
+@permission_required('orders_edit')
+def quick_reschedule_order(order_id):
+    """تأجيل الأوردر بتاريخ سريع بضغطة زر واحدة."""
+    new_date = request.form.get('scheduled_date', '').strip()
+    notes = request.form.get('notes', '').strip()
+    if not new_date:
+        flash("يرجى تحديد تاريخ التأجيل!", "warning")
+        return redirect(url_for('orders_list'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE orders
+        SET scheduled_date = ?, is_scheduled = 1, status = 'postponed',
+            notes = CASE WHEN notes IS NULL OR notes = '' THEN ? ELSE notes || ' | ' || ? END
+        WHERE id = ?
+    """, (new_date, f"مؤجل إلى {new_date}: {notes}", f"مؤجل إلى {new_date}: {notes}", order_id))
+    conn.commit()
+    conn.close()
+
+    flash(f"تم تأجيل الأوردر رقم #{order_id} إلى تاريخ {new_date} 🗓️", "info")
+    return redirect(url_for('orders_list'))
+
+@app.route('/api/orders/pickup-manifest')
+@login_required
+def api_pickup_manifest():
+    """تقرير بيك آب المتاجر المجمع للاستلام اليومي."""
+    target_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT m.id as merchant_id, m.name as merchant_name, m.store_name, m.phone as merchant_phone,
+               COUNT(o.id) as total_orders,
+               SUM(o.order_price) as total_value,
+               SUM(CASE WHEN o.pickup_status = 'picked_up' THEN 1 ELSE 0 END) as picked_up_count
+        FROM orders o
+        JOIN merchants m ON o.merchant_id = m.id
+        WHERE DATE(o.created_at) = DATE(?) OR o.scheduled_date = ?
+        GROUP BY m.id
+        ORDER BY total_orders DESC
+    """, (target_date, target_date))
+    manifest = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return jsonify({'success': True, 'date': target_date, 'manifest': manifest})
 
 # =======================================================================
 #                         MERCHANTS
