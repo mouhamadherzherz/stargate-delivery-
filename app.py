@@ -88,8 +88,29 @@ def parse_safe_int(val, default=0):
     except (ValueError, TypeError):
         return int(default)
 
-# ===================== DATABASE PATH =====================
-DB_PATH = os.environ.get('STARGATE_DB_PATH', os.path.join(APP_DATA_DIR, 'delivery.db'))
+# ===================== DEDICATED PERSISTENT DATABASE PATH =====================
+# Dedicated persistent data directory - completely isolated from git repository
+def resolve_database_path():
+    env_path = os.environ.get('STARGATE_DB_PATH')
+    if env_path:
+        return os.path.abspath(env_path)
+    
+    # Priority persistent data directory outside git repo
+    persistent_candidates = [
+        os.path.join(r"C:\StargateDelivery", "data", "stargate_production.db"),
+        os.path.join(r"D:\STARGATE", "data", "stargate_production.db"),
+        os.path.join(APP_DATA_DIR, "data", "stargate_production.db")
+    ]
+    for p in persistent_candidates:
+        parent = os.path.dirname(p)
+        if os.path.exists(parent):
+            return os.path.abspath(p)
+            
+    default_path = os.path.join(APP_DATA_DIR, "data", "stargate_production.db")
+    os.makedirs(os.path.dirname(default_path), exist_ok=True)
+    return os.path.abspath(default_path)
+
+DB_PATH = resolve_database_path()
 if os.path.dirname(DB_PATH):
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
@@ -4029,8 +4050,11 @@ def restore_db():
         with target_conn:
             source_conn.backup(target_conn)
         source_conn.close()
-        target_conn.close()
         os.remove(temp_path)
+        try:
+            init_db()
+        except Exception:
+            pass
         flash("تمت استعادة النسخة الاحتياطية بنجاح! 💾", "success")
     except Exception as e:
         if os.path.exists(temp_path):
