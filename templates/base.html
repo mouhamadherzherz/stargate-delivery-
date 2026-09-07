@@ -473,37 +473,37 @@
             });
         }
 
-        // Global Telegram Report Trigger Helper
-        async function triggerTelegramDailyReport(btn) {
-            if (!confirm('هل تريد إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام الآن؟ 📲')) {
-                return;
-            }
-            const originalHtml = btn ? btn.innerHTML : '';
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sky-500 text-xs"></i> <span>جاري الإرسال...</span>';
+        // Auto Security Screen Lock & Session Protection
+        (function() {
+            let inactivityTimer;
+            const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 Minutes auto-lock
+
+            function resetInactivityTimer() {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = setTimeout(() => {
+                    if (document.visibilityState === 'visible') {
+                        location.href = '/logout';
+                    }
+                }, INACTIVITY_LIMIT);
             }
 
-            try {
-                const res = await fetch('/api/telegram/send-report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert('✅ ' + data.message);
-                } else {
-                    alert('❌ ' + data.message);
-                }
-            } catch (err) {
-                alert('❌ خطأ في الاتصال بالخادم: ' + err.message);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = originalHtml;
-                }
+            ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+                document.addEventListener(evt, resetInactivityTimer, { passive: true });
+            });
+            resetInactivityTimer();
+
+            // Lock or logout on tab/page close or hide if configured
+            window.addEventListener('pagehide', function() {
+                sessionStorage.setItem('stargate_was_closed', 'true');
+            });
+
+            if (sessionStorage.getItem('stargate_was_closed') === 'true') {
+                sessionStorage.removeItem('stargate_was_closed');
+                fetch('/logout', { method: 'GET', keepalive: true }).then(() => {
+                    location.href = '/login';
+                }).catch(() => {});
             }
-        }
+        })();
     </script>
     {% block scripts %}{% endblock %}
 </body>

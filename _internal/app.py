@@ -95,12 +95,14 @@ if os.path.dirname(DB_PATH):
 
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.secret_key = 'stargate_delivery_secret_key_2026_prod_v2_secure'
+app.config['SESSION_PERMANENT'] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 
 @app.after_request
 def set_secure_headers(response):
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
