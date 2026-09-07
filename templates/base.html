@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="application-name" content="stargate experts">
+    <title>{{ title or company_name }} - نظام محاسبة وإدارة الدلفري</title>
+    <!-- Local Offline Tailwind CSS Engine -->
+    <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Cairo', 'Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Local Offline Font Awesome Icons -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <!-- Local Offline Chart.js -->
+    <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+    <!-- Local Offline JsBarcode -->
+    <script src="{{ url_for('static', filename='js/JsBarcode.all.min.js') }}"></script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Mobile Navigation Bar -->
+    <header class="bg-slate-900 text-white shadow-md lg:hidden flex items-center justify-between p-4 sticky top-0 z-50 border-b border-slate-800">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <button id="mobileMenuBtn" class="p-2 rounded-lg hover:bg-slate-800 text-white focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🇱🇧</span>
+                <span class="font-bold text-lg tracking-wide">{{ company_name }}</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-xl flex items-center gap-1 shadow-xs transition" title="تسكير النظام وتسجيل الخروج">
+                <i class="fa-solid fa-power-off text-xs"></i>
+                <span>تسكير 🔒</span>
+            </a>
+            <div class="text-xs bg-emerald-950 text-emerald-300 px-3 py-1.5 rounded-full border border-emerald-800 font-bold font-mono">
+                1$ = {{ exchange_rate|format_currency }} ل.ل
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 relative overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-slate-900 text-slate-200 flex flex-col shrink-0 fixed inset-y-0 right-0 z-40 transform translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out">
+            <!-- Sidebar Header -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 via-white to-green-700 flex items-center justify-center text-slate-900 shadow-lg shadow-red-500/20 font-black text-lg border border-red-500">
+                        🇱🇧
+                    </div>
+                    <div>
+                        <h1 class="font-black text-white text-base tracking-wide">{{ company_name }}</h1>
+                        <span class="text-xs text-red-400 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-tree text-emerald-400"></i> نظام الدليفري والمحاسبة
+                        </span>
+                    </div>
+                </div>
+                <button id="closeSidebarBtn" class="lg:hidden text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links (Lebanese dialect with Role Protection) -->
+            <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
+                <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'dashboard' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-chart-pie text-lg w-6 text-center"></i>
+                    <span>لوحة المتابعة العامة</span>
+                </a>
+
+                <a href="{{ url_for('ai_assistant_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold' if active_page == 'ai_assistant' else 'text-indigo-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg w-6 text-center text-amber-300"></i>
+                    <span class="flex-1">المساعد الذكي (AI)</span>
+                    <span class="text-[10px] bg-indigo-500/40 text-indigo-200 px-2 py-0.5 rounded-full font-bold">جديد</span>
+                </a>
+
+                <a href="{{ url_for('orders_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'orders' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-box-open text-lg w-6 text-center"></i>
+                    <span>الأوردرات والطلبيات</span>
+                </a>
+
+                <a href="{{ url_for('customers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'customers' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-address-book text-lg w-6 text-center"></i>
+                    <span>دليل الزبائن والعناوين</span>
+                </a>
+
+                <a href="{{ url_for('couriers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'couriers' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-motorcycle text-lg w-6 text-center"></i>
+                    <span>شباب الدليفري والكاش</span>
+                </a>
+
+                <a href="{{ url_for('merchants_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'merchants' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-store text-lg w-6 text-center"></i>
+                    <span>المحلات والتجار (البيجات)</span>
+                </a>
+
+                {% if is_admin %}
+                <div class="pt-2 pb-1 px-4">
+                    <span class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">إدارة النظام 👑</span>
+                </div>
+
+                <a href="{{ url_for('admin_panel') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-amber-500 text-slate-900 shadow-md shadow-amber-500/30 font-black' if active_page == 'admin' else 'text-amber-300 hover:bg-slate-800 hover:text-white font-bold' }}">
+                    <i class="fa-solid fa-crown text-lg w-6 text-center text-amber-400"></i>
+                    <span>لوحة تحكم المدير العام</span>
+                </a>
+
+                <a href="{{ url_for('employees_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'employees' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-users-gear text-lg w-6 text-center"></i>
+                    <span>إدارة الموظفين والحسابات</span>
+                </a>
+
+                <a href="{{ url_for('settings_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'settings' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-gears text-lg w-6 text-center"></i>
+                    <span>الإعدادات وتصفير الداتا</span>
+                </a>
+                {% endif %}
+
+                {% if has_permission('reports_view') or has_permission('treasury_view') %}
+                <div class="pt-2 pb-1 px-4">
+                    <span class="text-[10px] uppercase tracking-wider text-red-400 font-bold">المالية والتقارير 📊</span>
+                </div>
+                {% endif %}
+
+                {% if has_permission('reports_view') %}
+                <a href="{{ url_for('settlements_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'settlements' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-file-invoice-dollar text-lg w-6 text-center"></i>
+                    <span>سندات التسكير والدفع</span>
+                </a>
+                {% endif %}
+
+                {% if has_permission('treasury_view') %}
+                <a href="{{ url_for('treasury_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'treasury' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-vault text-lg w-6 text-center"></i>
+                    <span>الصندوق والمصاريف</span>
+                </a>
+                {% endif %}
+
+                {% if has_permission('reports_view') %}
+                <a href="{{ url_for('reports_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition {{ 'bg-red-600 text-white shadow-md shadow-red-600/20 font-bold' if active_page == 'reports' else 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
+                    <span>تقارير الأرباح والمحاسبة</span>
+                </a>
+                {% endif %}
+
+                {% if not is_admin and not has_permission('reports_view') and not has_permission('treasury_view') %}
+                <div class="p-3 my-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400 space-y-1 text-center">
+                    <i class="fa-solid fa-lock text-amber-400 text-base"></i>
+                    <p class="font-bold text-slate-300">وضع الموظف (مقفل)</p>
+                    <p class="text-[11px] text-slate-500">بعض الصلاحيات الإدارية مقفلة لحماية البيانات.</p>
+                </div>
+                {% endif %}
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-400 bg-slate-950/50 space-y-2.5">
+                <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليم الوردية للموظف؟');" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-md shadow-rose-600/30">
+                    <i class="fa-solid fa-power-off text-sm"></i>
+                    <span>تسكير النظام وتسليم الموظف 🔒</span>
+                </a>
+                <div class="flex items-center justify-between pt-1">
+                    <span>السيستم:</span>
+                    <span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> شغّال محلياً 🇱🇧
+                    </span>
+                </div>
+                <div class="text-slate-500">سعر الصرف: 1$ = {{ exchange_rate|format_currency }} ل.ل</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto bg-slate-50">
+            <!-- Top Header Desktop -->
+            <header class="bg-white border-b border-slate-200 hidden lg:flex items-center justify-between px-6 py-3 shadow-xs gap-4">
+                <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+                    <span class="text-xs bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-full font-bold border border-emerald-200 flex items-center gap-1.5 shadow-xs" title="سعر الصرف المعتمد">
+                        <i class="fa-solid fa-money-bill-transfer text-emerald-600"></i> 1$ = {{ exchange_rate|format_currency }} ل.ل
+                    </span>
+
+                    {% if is_admin %}
+                    <!-- Quick Street Cash Badge -->
+                    <a href="{{ url_for('couriers_list') }}" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 px-3 py-1.5 rounded-full font-black border border-amber-300 flex items-center gap-1.5 shadow-xs transition" title="كاش مقبوض بالشارع مع السائقين">
+                        <i class="fa-solid fa-motorcycle text-amber-600"></i>
+                        <span>كاش الشارع:</span>
+                        <span class="font-mono text-amber-700">{{ street_cash|to_usd(exchange_rate) }}</span>
+                    </a>
+
+                    <!-- Quick Whish Badge -->
+                    <a href="{{ url_for('treasury_view') }}" class="text-xs bg-purple-50 hover:bg-purple-100 text-purple-900 px-3 py-1.5 rounded-full font-black border border-purple-300 flex items-center gap-1.5 shadow-xs transition" title="رصيد بطاقة Whish الإلكترونية المنفصلة">
+                        <i class="fa-solid fa-credit-card text-purple-600"></i>
+                        <span>ويش:</span>
+                        <span class="font-mono text-purple-700">{{ whish_balance|to_usd(exchange_rate) }}</span>
+                    </a>
+
+                    <!-- Active Role Badge & Switcher -->
+                    <span class="text-xs bg-slate-100 text-slate-800 px-3 py-1.5 rounded-full font-black border border-slate-300 flex items-center gap-1.5 shadow-xs">
+                        <span>👑 المدير العام</span>
+                    </span>
+                    <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسكير وقفل النظام بالكامل لتسليمه للموظف">
+                        <i class="fa-solid fa-power-off text-rose-600"></i>
+                        <span>تسكير للموظف 🔒</span>
+                    </a>
+                    {% else %}
+                    <span class="text-xs bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full font-black border border-blue-200 flex items-center gap-1.5 shadow-xs">
+                        <span>🎧 وضع الموظف (استقبال)</span>
+                    </span>
+                    <button type="button" onclick="openModal('adminUnlockModal')" class="text-xs bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-xs">
+                        <i class="fa-solid fa-key"></i>
+                        <span>دخول المدير</span>
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Global Live Search Bar -->
+                <div class="relative flex-1 max-w-md mx-2">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="globalLiveSearch" placeholder="بحث شامل سريع (أوردر، زبون، هاتف، متجر، سائق)..." 
+                               autocomplete="off"
+                               class="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-xl pr-9 pl-8 py-2 text-xs font-medium focus:ring-2 focus:ring-red-500 transition shadow-xs">
+                        <button id="clearGlobalSearchBtn" class="hidden absolute left-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Dropdown Results -->
+                    <div id="globalSearchResults" class="hidden absolute top-full mt-1.5 right-0 left-0 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden max-h-80 overflow-y-auto">
+                    </div>
+                </div>
+
+                <!-- User Profile & Action Controls -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-bold px-3 py-2 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
+                        <i class="fa-brands fa-telegram text-sky-500 text-sm"></i>
+                        <span class="hidden sm:inline">تقرير للمدير 📲</span>
+                    </button>
+
+                    <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-xs shadow-red-600/20 transition">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>أوردر جديد</span>
+                    </a>
+
+                    {% if logged_in %}
+                    <div class="flex items-center gap-2 pr-2 border-r border-slate-200">
+                        <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-black">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="text-right hidden xl:block">
+                            <div class="text-xs font-bold text-slate-800 leading-tight">{{ user_display_name or username }}</div>
+                            <div class="text-[10px] text-slate-400">{{ 'مدير عام' if is_admin else 'موظف' }}</div>
+                        </div>
+                        <a href="{{ url_for('logout') }}" onclick="return confirm('هل أنت متأكد من تسكير النظام وتسجيل الخروج؟');" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-xs shadow-rose-600/20 cursor-pointer" title="تسكير النظام وتسجيل الخروج">
+                            <i class="fa-solid fa-power-off text-xs"></i>
+                            <span class="hidden sm:inline">تسكير النظام 🔒</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Flash Messages Notification Container -->
+            <div class="px-6 lg:px-8 pt-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="mb-4 p-4 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm transition
+                                {% if category == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200
+                                {% elif category == 'danger' %} bg-rose-50 text-rose-800 border border-rose-200
+                                {% elif category == 'info' %} bg-sky-50 text-sky-800 border border-sky-200
+                                {% else %} bg-amber-50 text-amber-800 border border-amber-200 {% endif %}">
+                                <div class="flex items-center gap-2">
+                                    {% if category == 'success' %}<i class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
+                                    {% elif category == 'danger' %}<i class="fa-solid fa-triangle-exclamation text-rose-500 text-base"></i>
+                                    {% else %}<i class="fa-solid fa-circle-info text-sky-500 text-base"></i>{% endif %}
+                                    <span>{{ message }}</span>
+                                </div>
+                                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+    <!-- Page Content Body -->
+            <div class="p-6 lg:p-8 flex-1">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- ADMIN UNLOCK PIN MODAL -->
+    <div id="adminUnlockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-red-600"></i>
+                    <span>تسجيل دخول المدير العام 👑</span>
+                </h3>
+                <button onclick="closeModal('adminUnlockModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ url_for('unlock_admin') }}" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">أدخل كلمة سر المدير:</label>
+                    <input type="password" name="pin" required placeholder="••••••••" autofocus class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-black tracking-widest text-center focus:ring-2 focus:ring-red-500 font-mono">
+                    <span class="text-[11px] text-slate-400 mt-1 block text-center">أدخل الرمز السري الخاص بالمدير للمتابعة</span>
+                </div>
+
+                <div class="pt-2 flex items-center justify-between gap-3 border-t border-slate-100">
+                    <a href="/auth/recover-admin" class="text-[11px] text-slate-400 hover:text-red-600 transition">نسيت كلمة المرور؟</a>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeModal('adminUnlockModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-red-600/20 transition">تأكيد الدخول</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Scripts -->
+    <script>
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        }
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
+
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('translate-x-full');
+            });
+        }
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.add('translate-x-full');
+            });
+        }
+
+        // Global Live Search Handler
+        const globalSearchInput = document.getElementById('globalLiveSearch');
+        const globalSearchResults = document.getElementById('globalSearchResults');
+        const clearGlobalSearchBtn = document.getElementById('clearGlobalSearchBtn');
+        let searchDebounceTimer = null;
+
+        if (globalSearchInput) {
+            globalSearchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                if (clearGlobalSearchBtn) {
+                    clearGlobalSearchBtn.classList.toggle('hidden', !query);
+                }
+                clearTimeout(searchDebounceTimer);
+                if (query.length < 2) {
+                    globalSearchResults.classList.add('hidden');
+                    globalSearchResults.innerHTML = '';
+                    return;
+                }
+                searchDebounceTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                        const data = await res.json();
+                        const results = data.results || [];
+                        if (results.length === 0) {
+                            globalSearchResults.innerHTML = `
+                                <div class="p-4 text-center text-slate-400 text-xs">
+                                    لا توجد نتائج مطابقة لـ "${query}"
+                                </div>
+                            `;
+                        } else {
+                            globalSearchResults.innerHTML = results.map(r => `
+                                <a href="${r.url}" class="flex items-center gap-3 p-3 hover:bg-slate-50 transition border-b border-slate-100 last:border-0">
+                                    <span class="text-base w-7 text-center">${r.icon || '🔍'}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <div class="text-xs font-bold text-slate-800 truncate">${r.title}</div>
+                                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold">${r.type}</span>
+                                        </div>
+                                        ${r.subtitle ? `<div class="text-[11px] text-slate-400 truncate">${r.subtitle}</div>` : ''}
+                                    </div>
+                                </a>
+                            `).join('');
+                        }
+                        globalSearchResults.classList.remove('hidden');
+                    } catch (e) {
+                        console.error('Search error', e);
+                    }
+                }, 250);
+            });
+
+            if (clearGlobalSearchBtn) {
+                clearGlobalSearchBtn.addEventListener('click', function() {
+                    globalSearchInput.value = '';
+                    globalSearchResults.classList.add('hidden');
+                    clearGlobalSearchBtn.classList.add('hidden');
+                    globalSearchInput.focus();
+                });
+            }
+
+            document.addEventListener('click', function(e) {
+                if (!globalSearchInput.contains(e.target) && !globalSearchResults.contains(e.target)) {
+                    globalSearchResults.classList.add('hidden');
+                }
+            });
+        }
+
+        // Global Telegram Report Trigger Helper
+        async function triggerTelegramDailyReport(btn) {
+            if (!confirm('هل تريد إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام الآن؟ 📲')) {
+                return;
+            }
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sky-500 text-xs"></i> <span>جاري الإرسال...</span>';
+            }
+
+            try {
+                const res = await fetch('/api/telegram/send-report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            } catch (err) {
+                alert('❌ خطأ في الاتصال بالخادم: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

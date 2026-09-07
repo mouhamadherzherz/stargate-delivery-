@@ -1,0 +1,821 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-2xl font-black text-slate-800">إعدادات النظام والشركة ⚙️</h2>
+        <p class="text-sm text-slate-500 mt-1">تخصيص بيانات الشركة، سعر صرف الدولار، قوالب الواتساب، ربط التيليجرام والذكاء الاصطناعي، والنسخ الاحتياطي.</p>
+    </div>
+
+    <!-- Main Settings Form -->
+    <form method="POST" action="{{ url_for('save_settings') }}" class="space-y-6">
+
+        <!-- Company Info & Dual Currency Card -->
+        <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fa-solid fa-building text-blue-600"></i> بيانات الشركة والعملة وسعر الصرف
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم الشركة / المكتب <span class="text-rose-500">*</span></label>
+                    <input type="text" name="company_name" value="{{ settings.company_name or 'stargate experts' }}" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">سعر صرف الدولار مقابل الليرة اللبنانية (LBP Rate) <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <input type="number" step="any" name="exchange_rate" value="{{ settings.exchange_rate or 89500 }}" required class="w-full bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5 text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-500 font-mono">
+                        <span class="absolute left-3 top-2.5 text-xs text-emerald-600 font-bold">1$ = ليرة</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">العملة الأساسية للنظام</label>
+                    <input type="text" name="currency" value="{{ settings.currency or 'ل.ل' }}" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">العملة الثانوية (المعادلة)</label>
+                    <input type="text" name="secondary_currency" value="{{ settings.secondary_currency or '$' }}" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف / واتساب</label>
+                    <input type="text" name="phone" value="{{ settings.phone or '+961 70 000 000' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 text-left font-mono" dir="ltr">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">العنوان والمقر</label>
+                    <input type="text" name="address" value="{{ settings.address or 'لبنان - بيروت' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">نص أسفل بوليصة الشحن (الفاتورة)</label>
+                <input type="text" name="receipt_footer_text" value="{{ settings.receipt_footer_text or 'شكراً لاختياركم stargate experts - يرجى فحص الطلب عند الاستلام' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <!-- Admin PIN & Security Card -->
+        <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-red-600"></i>
+                    <span>حماية رمز مرور المدير السري (Admin PIN) مع التأكيد المزدوج</span>
+                </h3>
+                <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <i class="fa-solid fa-lock text-[10px]"></i> محمي ومشفر
+                </span>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                لحماية أمان النظام والقرارات المالية، عند رغبتك في تغيير رمز PIN الخاص بالمدير، يرجى كتابة الرمز القديم ثم الرمز الجديد وتأكيده مرتين لضمان عدم حدوث أي خطأ في الكتابة. (إذا لم ترغب في تغييره اتركه فارغاً).
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز PIN الحالي (القديم)</label>
+                    <div class="relative">
+                        <input type="password" id="currentAdminPin" name="current_admin_pin" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-black tracking-wider focus:ring-2 focus:ring-red-500 font-mono text-center pr-10">
+                        <button type="button" onclick="togglePinVisibility('currentAdminPin', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز PIN الجديد</label>
+                    <div class="relative">
+                        <input type="password" id="newAdminPin" name="new_admin_pin" oninput="checkPinMatch()" placeholder="الرمز الجديد..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-black tracking-wider focus:ring-2 focus:ring-red-500 font-mono text-center pr-10">
+                        <button type="button" onclick="togglePinVisibility('newAdminPin', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">تأكيد رمز PIN الجديد</label>
+                    <div class="relative">
+                        <input type="password" id="confirmAdminPin" name="confirm_admin_pin" oninput="checkPinMatch()" placeholder="أعد كتابة الرمز الجديد..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-black tracking-wider focus:ring-2 focus:ring-red-500 font-mono text-center pr-10">
+                        <button type="button" onclick="togglePinVisibility('confirmAdminPin', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                    <span id="pinMatchStatus" class="text-[11px] mt-1 block font-bold"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing & Commissions Card -->
+        <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fa-solid fa-tags text-emerald-600"></i> أسعار التوصيل وعمولات المناديب الافتراضية
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">أجرة التوصيل الافتراضية (ل.ل)</label>
+                    <div class="relative">
+                        <input type="number" step="any" name="default_delivery_fee" value="{{ settings.default_delivery_fee or 268500 }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 font-mono">
+                        <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">ل.ل (~$3)</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">عمولة المندوب الافتراضية للطلب (ل.ل)</label>
+                    <div class="relative">
+                        <input type="number" step="any" name="default_driver_commission" value="{{ settings.default_driver_commission or 30000 }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-amber-600 focus:ring-2 focus:ring-blue-500 font-mono">
+                        <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">30,000 ل.ل</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رسوم الإرجاع الافتراضية (ل.ل)</label>
+                    <div class="relative">
+                        <input type="number" step="any" name="default_return_fee" value="{{ settings.default_return_fee or 89500 }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-rose-600 focus:ring-2 focus:ring-blue-500 font-mono">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Templates Customization Card (واتساب ويب المجاني المباشر) -->
+        <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-brands fa-whatsapp text-emerald-600 text-2xl"></i>
+                        <span>إعدادات وقوالب رسائل الواتساب (WhatsApp Desktop) 💻📱</span>
+                    </h3>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-black px-3 py-1 rounded-full border border-emerald-300">
+                        ⚡ إرسال فوري عبر تطبيق الكمبيوتر المكتبي
+                    </span>
+                </div>
+                <div class="mt-3 p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed">
+                    <div class="flex items-center gap-2 font-bold mb-1">
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                        <span>الواتساب مفعل ومجهز للفتح والإرسال الفوري عبر تطبيق WhatsApp المكتبي على الكمبيوتر:</span>
+                    </div>
+                    <span>لا حاجة لفتح المتصفح أو واتساب ويب! عند الضغط على أيقونة الواتساب في أي أوردر، يفتح تطبيق الواتساب المثبت على الكمبيوتر فوراً مع الزبون أو السائق أو المحل مع تجهيز نص الفاتورة بدقة بنقرة واحدة فائقة السرعة.</span>
+                </div>
+            </div>
+
+            <!-- Interactive Variable Chips Legend -->
+            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <span class="text-[11px] font-black text-slate-700 block">
+                    <i class="fa-solid fa-tags text-blue-600 mr-1"></i> اضغط على أي متغير لإدراجه في خانة الرسالة النشطة:
+                </span>
+                <div class="flex flex-wrap gap-1.5" id="waChipsContainer">
+                    <button type="button" onclick="insertWaTag('{customer_name}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-blue-700 transition shadow-xs">
+                        {customer_name} <span class="font-sans text-[10px] text-slate-400">(اسم الزبون)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{customer_phone}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-blue-700 transition shadow-xs">
+                        {customer_phone} <span class="font-sans text-[10px] text-slate-400">(هاتف الزبون)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{tracking_number}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-blue-700 transition shadow-xs">
+                        {tracking_number} <span class="font-sans text-[10px] text-slate-400">(رقم التتبع)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{total}')" class="px-2.5 py-1 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-xs font-mono font-black text-emerald-700 transition shadow-xs">
+                        {total} <span class="font-sans text-[10px] text-slate-400">(المبلغ الكلي)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{order_price}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-slate-700 transition shadow-xs">
+                        {order_price} <span class="font-sans text-[10px] text-slate-400">(ثمن البضاعة)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{delivery_fee}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-slate-700 transition shadow-xs">
+                        {delivery_fee} <span class="font-sans text-[10px] text-slate-400">(أجرة الدليفري)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{driver_commission}')" class="px-2.5 py-1 bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-lg text-xs font-mono font-bold text-amber-700 transition shadow-xs">
+                        {driver_commission} <span class="font-sans text-[10px] text-slate-400">(عمولة السائق)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{items_detail}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-slate-700 transition shadow-xs">
+                        {items_detail} <span class="font-sans text-[10px] text-slate-400">(تفاصيل الأصناف)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{store_name}')" class="px-2.5 py-1 bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-lg text-xs font-mono font-bold text-purple-700 transition shadow-xs">
+                        {store_name} <span class="font-sans text-[10px] text-slate-400">(اسم المتجر/المحل)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{courier_name}')" class="px-2.5 py-1 bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-lg text-xs font-mono font-bold text-amber-700 transition shadow-xs">
+                        {courier_name} <span class="font-sans text-[10px] text-slate-400">(اسم السائق)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{city}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-slate-700 transition shadow-xs">
+                        {city} <span class="font-sans text-[10px] text-slate-400">(المدينة/المنطقة)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{address}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-slate-700 transition shadow-xs">
+                        {address} <span class="font-sans text-[10px] text-slate-400">(العنوان بالتفصيل)</span>
+                    </button>
+                    <button type="button" onclick="insertWaTag('{company_name}')" class="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-mono font-bold text-slate-700 transition shadow-xs">
+                        {company_name} <span class="font-sans text-[10px] text-slate-400">(اسم شركتكم)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4 Templates Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- 1. Customer Dispatch Template -->
+                <div class="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-black text-emerald-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-invoice-dollar text-emerald-600"></i>
+                            <span>1️⃣ قالب فاتورة وإشعار الزبون (Customer Invoice):</span>
+                        </label>
+                        <button type="button" onclick="resetWaTemplate('customer')" class="text-[10px] text-emerald-700 hover:underline font-bold">
+                            استعادة الافتراضي ↺
+                        </button>
+                    </div>
+                    <textarea id="tmplCustomer" name="whatsapp_template_customer" rows="6" onfocus="setActiveWaTextarea(this)" class="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-mono leading-relaxed text-slate-800 focus:ring-2 focus:ring-emerald-500">{{ settings.whatsapp_template_customer or "مرحباً {customer_name} 👋\nلديك شحنة من *{store_name}* 📦\n📌 رقم التتبع: {tracking_number}\n💰 المبلغ المطلوب عند الاستلام: {total} ل.ل\n🛵 السائق المكلف: {courier_name}\n📍 العنوان: {city} - {address}\nشكراً لاختياركم *{company_name}* 🙏" }}</textarea>
+                    <span class="text-[10px] text-slate-500 block">يُرسل للزبون لتأكيد الشحنة والمبلغ قبل أو عند انطلاق السائق.</span>
+                </div>
+
+                <!-- 2. Courier Task Template -->
+                <div class="p-4 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-black text-amber-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-motorcycle text-amber-600"></i>
+                            <span>2️⃣ قالب تفاصيل المهمة للسائق (Courier Task):</span>
+                        </label>
+                        <button type="button" onclick="resetWaTemplate('courier')" class="text-[10px] text-amber-700 hover:underline font-bold">
+                            استعادة الافتراضي ↺
+                        </button>
+                    </div>
+                    <textarea id="tmplCourier" name="whatsapp_template_courier" rows="6" onfocus="setActiveWaTextarea(this)" class="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-mono leading-relaxed text-slate-800 focus:ring-2 focus:ring-amber-500">{{ settings.whatsapp_template_courier or "🛵 *مهمة توصيل جديدة* 📦\n📌 رقم الطلب: {tracking_number}\n🏪 المتجر: {store_name}\n👤 المستلم: {customer_name}\n📞 الهاتف: {customer_phone}\n📍 العنوان: {city} - {address}\n📦 المحتويات: {items_detail}\n💰 المبلغ للتحصيل: {total} ل.ل\n💵 عمولتك: {driver_commission} ل.ل" }}</textarea>
+                    <span class="text-[10px] text-slate-500 block">يُرسل للسائق عند إسناد الطلب ليعرف كل التفاصيل والعمولة والعنوان.</span>
+                </div>
+
+                <!-- 3. Merchant Prep Template -->
+                <div class="p-4 rounded-2xl bg-purple-50/50 border border-purple-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-black text-purple-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-store text-purple-600"></i>
+                            <span>3️⃣ قالب طلب تجهيز البضاعة للمحل (Merchant Prep):</span>
+                        </label>
+                        <button type="button" onclick="resetWaTemplate('merchant')" class="text-[10px] text-purple-700 hover:underline font-bold">
+                            استعادة الافتراضي ↺
+                        </button>
+                    </div>
+                    <textarea id="tmplMerchant" name="whatsapp_template_merchant" rows="6" onfocus="setActiveWaTextarea(this)" class="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-mono leading-relaxed text-slate-800 focus:ring-2 focus:ring-purple-500">{{ settings.whatsapp_template_merchant or "مرحباً {store_name} 🏪\nتم تسجيل طلبية جديدة للتوصيل عبر *{company_name}* 📦\n📌 رقم التتبع: {tracking_number}\n👤 اسم الزبون: {customer_name} ({customer_phone})\n📍 الوجهة: {city} - {address}\n📦 تفاصيل الطلب:\n{items_detail}\n💵 قيمة البضاعة للمحل: {order_price} ل.ل\nيرجى تجهيز الطلب لاستلام المندوب 🛵" }}</textarea>
+                    <span class="text-[10px] text-slate-500 block">يُرسل للمحل فوراً لتجهيز البضاعة والأصناف قبل وصول السائق.</span>
+                </div>
+
+                <!-- 4. Delivered Receipt Template -->
+                <div class="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-black text-blue-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check text-blue-600"></i>
+                            <span>4️⃣ قالب إشعار تسليم الطلب (Delivery Success):</span>
+                        </label>
+                        <button type="button" onclick="resetWaTemplate('delivered')" class="text-[10px] text-blue-700 hover:underline font-bold">
+                            استعادة الافتراضي ↺
+                        </button>
+                    </div>
+                    <textarea id="tmplDelivered" name="whatsapp_template_delivered" rows="6" onfocus="setActiveWaTextarea(this)" class="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-mono leading-relaxed text-slate-800 focus:ring-2 focus:ring-blue-500">{{ settings.whatsapp_template_delivered or "✅ *تم تسليم طلبكم بنجاح!* 🎉\nمرحباً {customer_name} 👋\nتم تسليم شحنتكم رقم *{tracking_number}* من متجر *{store_name}* بنجاح.\n💰 المبلغ المدفوع: {total} ل.ل\nنتمنى أن تنال خدمتنا إعجابكم. شكراً لاختياركم *{company_name}* ⭐" }}</textarea>
+                    <span class="text-[10px] text-slate-500 block">إشعار شكر وفاتورة نهائية يُرسل للزبون بعد استلام الطرد بنجاح.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Telegram Bot Integration Card (ربط وإعدادات تيليجرام لإرسال التقارير اليومية للمدير) -->
+        <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-brands fa-telegram text-sky-500 text-2xl"></i>
+                        <span>ربط تيليجرام لإرسال التقارير اليومية للمدير (Telegram Bot) 📲</span>
+                    </h3>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="telegram_enabled" value="1" {{ 'checked' if settings.telegram_enabled }} class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                        <span class="mr-3 text-xs font-bold text-slate-700">تفعيل إرسال التقارير ⚡</span>
+                    </label>
+                </div>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                    يتيح لك هذا الربط استلام تقرير مالي وتشغيلي يومي شامل ومفصل (كاش الخزينة، محفظة ويش، الكاش بالشارع، مستحقات المحلات، أرباح اليوم، وأفضل سائق) مباشرة على هاتفك عبر التيليجرام بضغطة زر واحدة من موظف الكول سنتر أو تلقائياً بالوقت المحدد.
+                </p>
+            </div>
+
+            <!-- Telegram Inputs Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز توثيق البوت السري (Bot Token) <span class="text-rose-500">*</span></label>
+                    <input type="text" id="telegramBotToken" name="telegram_bot_token" value="{{ settings.telegram_bot_token or '' }}" placeholder="مثال: 7123456789:AAHk123456789..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold focus:ring-2 focus:ring-sky-500 text-left" dir="ltr">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">معرف المحادثة الخاص بك (Chat ID) <span class="text-rose-500">*</span></label>
+                    <input type="text" id="telegramChatId" name="telegram_chat_id" value="{{ settings.telegram_chat_id or '' }}" placeholder="مثال: 987654321" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold focus:ring-2 focus:ring-sky-500 text-left" dir="ltr">
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-sky-50/60 rounded-2xl border border-sky-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-lg shrink-0">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-sky-950">وقت التقرير التلقائي اليومي:</label>
+                        <span class="text-[11px] text-sky-800">سيقوم النظام بإرسال التقرير الشامل يومياً في هذا التوقيت</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="time" name="telegram_daily_time" value="{{ settings.telegram_daily_time or '22:00' }}" class="bg-white border border-sky-300 rounded-xl px-3 py-1.5 text-sm font-black text-sky-900 font-mono focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+
+            <!-- Test Connection & Send Report Buttons -->
+            <div class="flex flex-wrap items-center gap-3 pt-1">
+                <button type="button" onclick="testTelegramConnection()" class="bg-sky-500 hover:bg-sky-600 text-white font-black px-4 py-2.5 rounded-xl text-xs shadow-md shadow-sky-500/20 transition flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>اختبار إرسال رسالة تجريبية للبوت ⚡</span>
+                </button>
+
+                <button type="button" onclick="sendTelegramReportManual()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-chart-pie text-sky-400"></i>
+                    <span>إرسال تقرير اليوم المالي الشامل للمدير الآن 📊</span>
+                </button>
+            </div>
+            <div id="tgStatusMsg" class="hidden p-3 rounded-xl text-xs font-bold transition"></div>
+
+            <!-- Step-by-Step Arabic Guide for Telegram -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <h4 class="text-xs font-black text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question text-sky-600"></i>
+                    <span>دليل وخطوات ربط تيليجرام خطوة بخطوة (سهل ومجاني 100%):</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
+                    <div class="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                        <div class="font-black text-slate-800 flex items-center gap-1.5 text-sky-700">
+                            <span class="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center text-[11px] font-bold">1</span>
+                            <span>الحصول على Bot Token:</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed">
+                            افتح تيليجرام وابحث عن الحساب الرسمي <b>@BotFather</b>، أرسل له أمر <code>/newbot</code>، ثم اختر اسماً للبوت واسم مستخدم ينتهي بـ <code>bot</code>. سيعطيك مباشرة رمز الـ <b>Token</b> (انسخه وضعه في خانة Bot Token أعلاه).
+                        </p>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                        <div class="font-black text-slate-800 flex items-center gap-1.5 text-sky-700">
+                            <span class="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center text-[11px] font-bold">2</span>
+                            <span>الحصول على الـ Chat ID الخاص بك:</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed">
+                            ابحث في تيليجرام عن بوت <b>@userinfobot</b> أو <b>@raw_data_bot</b> واضغط <b>Start</b>، سيعطيك رقم الـ <b>Id</b> الخاص بحسابك (مثال: <code>123456789</code>). انسخ الرقم وضعه في خانة Chat ID.
+                        </p>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-xl border border-slate-200 space-y-1 md:col-span-2">
+                        <div class="font-black text-slate-800 flex items-center gap-1.5 text-sky-700">
+                            <span class="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center text-[11px] font-bold">3</span>
+                            <span>تفعيل المحادثة والاختبار:</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed">
+                            افتح البوت الذي أنشأته في تيليجرام واضغط <b>Start / ابدأ</b> لكي يتمكن من مراسلتك، ثم اضغط زر <b>"اختبار إرسال رسالة تجريبية"</b> أعلاه وستصلك رسالة فورية بنجاح الاتصال!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Google Gemini AI Cloud Integration Card (ربط وتفعيل الذكاء الاصطناعي) -->
+        <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-brain text-purple-600 text-2xl"></i>
+                        <span>ربط وتفعيل الذكاء الاصطناعي (Google Gemini AI Cloud) 🤖</span>
+                    </h3>
+                    <span class="text-xs bg-purple-50 text-purple-700 font-black px-3 py-1 rounded-full border border-purple-200">
+                        ⚡ مدعوم بمحرك Google Gemini 1.5 Flash
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                    مساعد الذكاء الاصطناعي في النظام يقدم لك تحليلات مالية دقيقة، وتقييم أداء السائقين والموظفين، وكشف المخاطر المالية والتأخيرات. يمكنك ربطه بمفتاح Google Gemini السحابي المجاني أو تركه ليعمل بالمحرك المحلي الداخلي السريع.
+                </p>
+            </div>
+
+            <!-- Gemini API Key Input -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-700">مفتاح API الخاص بـ Google Gemini (API Key) <span class="text-purple-600 font-normal">(مجاني من Google)</span>:</label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="geminiApiKeyInput" name="gemini_api_key" value="{{ settings.gemini_api_key or '' }}" placeholder="AIzaSy..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold focus:ring-2 focus:ring-purple-500 text-left" dir="ltr">
+                    <button type="button" onclick="testGeminiApiKey()" class="bg-purple-600 hover:bg-purple-700 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md shadow-purple-600/20 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>فحص واختبار المفتاح ⚡</span>
+                    </button>
+                </div>
+                <div id="aiKeyStatusMsg" class="hidden p-3 rounded-xl text-xs font-bold transition mt-2"></div>
+            </div>
+
+            <!-- Step-by-Step Arabic Guide for Gemini AI -->
+            <div class="p-4 bg-purple-50/60 rounded-2xl border border-purple-200 space-y-3">
+                <h4 class="text-xs font-black text-purple-950 flex items-center gap-2">
+                    <i class="fa-solid fa-key text-purple-600"></i>
+                    <span>كيفية الحصول على مفتاح Google Gemini مجاناً 100% (في أقل من دقيقة):</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-700">
+                    <div class="p-3 bg-white rounded-xl border border-purple-100 space-y-1">
+                        <div class="font-black text-purple-900 flex items-center gap-1.5">
+                            <span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[11px] font-bold">1</span>
+                            <span>زيارة Google AI Studio:</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-slate-600">
+                            ادخل على موقع جوجل الرسمي للذكاء الاصطناعي: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-purple-600 hover:underline font-bold font-mono">aistudio.google.com/app/apikey</a>
+                        </p>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-xl border border-purple-100 space-y-1">
+                        <div class="font-black text-purple-900 flex items-center gap-1.5">
+                            <span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[11px] font-bold">2</span>
+                            <span>إنشاء المفتاح (Create API Key):</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-slate-600">
+                            سجل دخول بحسابك في Google، ثم اضغط على زر <b>"Create API Key"</b>، وسيقوم بتوليد مفتاح يبدأ بـ <code>AIzaSy...</code>
+                        </p>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-xl border border-purple-100 space-y-1">
+                        <div class="font-black text-purple-900 flex items-center gap-1.5">
+                            <span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[11px] font-bold">3</span>
+                            <span>اللصق والتفعيل:</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-slate-600">
+                            انسخ المفتاح وضعه في الخانة أعلاه واضغط <b>فحص واختبار المفتاح</b> ثم احفظ الصفحة! (إذا تركته فارغاً سيعمل النظام بالمحرك المحلي الداخلي).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-2xl text-sm shadow-lg shadow-blue-600/20 transition flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>حفظ كافة التعديلات والإعدادات 💾</span>
+            </button>
+        </div>
+    </form>
+
+    <!-- Database Backup & Restore Card -->
+    <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div>
+            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fa-solid fa-database text-emerald-600"></i> النسخ الاحتياطي واستعادة البيانات (Backup & Restore)
+            </h3>
+            <p class="text-xs text-slate-500 leading-relaxed mt-2">
+                بياناتك محفوظة محلياً 100% داخل ملف قاعدة البيانات. يمكنك تنزيل نسخة احتياطية بأي وقت، أو استعادة نسخة سابقة عند الترقية أو نقل النظام لكمبيوتر آخر.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            <!-- 1. Download Backup -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
+                <div>
+                    <h4 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-down text-emerald-600"></i>
+                        <span>1. تصدير وحفظ نسخة احتياطية</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-500 mt-1">تنزيل ملف قاعدة البيانات الحالي بالكامل (delivery_backup.db) لحفظه في مكان آمن أو نقله.</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('backup_db') }}" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-emerald-600/20 transition">
+                        <i class="fa-solid fa-download"></i>
+                        <span>تحميل نسخة احتياطية الآن 💾</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. Restore Backup -->
+            <div class="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 flex flex-col justify-between space-y-3">
+                <div>
+                    <h4 class="font-bold text-xs text-blue-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i>
+                        <span>2. استعادة أو جلب بيانات سابقة</span>
+                    </h4>
+                    <p class="text-[11px] text-blue-700 mt-1">رفع ملف نسخة سابقة (.db) لاسترجاع الشحنات والحسابات في هذا البرنامج فوراً.</p>
+                </div>
+                <form method="POST" action="{{ url_for('restore_db') }}" enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
+                    <input type="file" name="backup_file" accept=".db" required class="text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                    <button type="submit" onclick="return confirm('هل أنت متأكد من استعادة هذه النسخة؟ سيتم استبدال البيانات الحالية بالنسخة المرفوعة.')" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-3.5 py-1.5 rounded-xl text-xs transition shadow-sm">
+                        استعادة 📥
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- DANGER ZONE: CLEAR / WIPE ALL DATA CARD -->
+    <div class="bg-rose-50/60 p-6 lg:p-8 rounded-3xl border-2 border-rose-200 shadow-sm space-y-4">
+        <div class="flex items-center gap-3 text-rose-800">
+            <div class="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 text-xl font-black">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="font-black text-base">منطقة الخطر: مسح وتصفير كافة البيانات (Factory Reset)</h3>
+                <p class="text-xs text-rose-600 mt-0.5">يمكنك تصفير النظام وبدء العمل من جديد بنقرة واحدة.</p>
+            </div>
+        </div>
+
+        <p class="text-xs text-slate-600 leading-relaxed">
+            عند تنفيذ المسح، سيتم حذف جميع الشحنات، سجل التسويات والسندات، عهد المناديب، وتصفير أرصدة الخزائن تماماً لتبدأ العمل على نظافة.
+        </p>
+
+        <div class="pt-2 flex items-center gap-3 flex-wrap">
+            <button type="button" onclick="openWipeModal('operational')" class="bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-broom"></i>
+                <span>مسح الشحنات والحركات المالية فقط (مع الإبقاء على التجار والمناديب)</span>
+            </button>
+
+            <button type="button" onclick="openWipeModal('all')" class="bg-rose-600 hover:bg-rose-700 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md shadow-rose-600/20 transition flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>مسح شامل وكامل 100% (تصفير كل شيء)</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- WIPE CONFIRMATION MODAL -->
+<div id="wipeConfirmModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 lg:p-8 shadow-2xl text-center space-y-4">
+        <div class="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-3xl mx-auto">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+        <h3 class="text-xl font-black text-slate-900">هل أنت متأكد تماماً من مسح البيانات؟</h3>
+        <p class="text-xs text-slate-500 leading-relaxed" id="wipeModalDesc">
+            هذا الإجراء سيقوم بحذف كافة السجلات المالية والعمليات ولن تتمكن من التراجع عنه.
+        </p>
+
+        <form id="wipeFormElement" method="POST" action="{{ url_for('reset_data') }}" onsubmit="submitWipeForm(event)" class="pt-2 space-y-3">
+            <input type="hidden" name="wipe_mode" id="wipeModeInput" value="all">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">أدخل رمز مرور المدير (PIN) للتأكيد:</label>
+                <input type="password" name="admin_pin" id="wipeAdminPin" placeholder="أدخل رمز سر المدير للتأكيد..." value="" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-center text-sm font-mono font-bold focus:ring-2 focus:ring-rose-500">
+            </div>
+
+            <div class="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeWipeModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2.5 rounded-xl text-sm transition">
+                    إلغاء
+                </button>
+                <button type="submit" id="wipeSubmitBtn" class="bg-rose-600 hover:bg-rose-700 text-white font-black px-6 py-2.5 rounded-xl text-sm shadow-lg shadow-rose-600/30 transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-trash-can text-sm"></i>
+                    <span>نعم، امسح وتصفير البيانات</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openWipeModal(mode) {
+        document.getElementById('wipeModeInput').value = mode;
+        const desc = document.getElementById('wipeModalDesc');
+        if (mode === 'operational') {
+            desc.textContent = 'سيتم حذف جميع الشحنات والطلبات وحركات الخزينة والتسويات، مع الحفاظ على أسماء التجار والمناديب وإعدادات الشركة.';
+        } else {
+            desc.textContent = 'تحذير: سيتم مسح كافة البيانات 100% (الشحنات، التجار، المناديب، الخزائن، السندات) وإرجاع النظام لحالة الصفر التام!';
+        }
+        document.getElementById('wipeConfirmModal').classList.remove('hidden');
+    }
+
+    function closeWipeModal() {
+        document.getElementById('wipeConfirmModal').classList.add('hidden');
+    }
+
+    async function submitWipeForm(e) {
+        e.preventDefault();
+        const form = e.target;
+        const btn = document.getElementById('wipeSubmitBtn');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري المسح والتصفير...</span>';
+
+        const formData = new FormData(form);
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                btn.className = "bg-emerald-600 text-white font-black px-6 py-2.5 rounded-xl text-sm transition flex items-center gap-1.5";
+                btn.innerHTML = '<i class="fa-solid fa-circle-check text-sm"></i> <span>تم المسح والتصفير بنجاح!</span>';
+                setTimeout(() => {
+                    window.location.href = '/settings';
+                }, 700);
+            } else {
+                alert(data.message || 'فشل مسح البيانات، تأكد من رمز المرور.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        } catch (err) {
+            console.error('Wipe form error:', err);
+            form.submit();
+        }
+    }
+
+    // WhatsApp Templates Helper Functions
+    let activeWaTextarea = document.getElementById('tmplCustomer');
+
+    function setActiveWaTextarea(el) {
+        activeWaTextarea = el;
+    }
+
+    function insertWaTag(tag) {
+        if (!activeWaTextarea) {
+            activeWaTextarea = document.getElementById('tmplCustomer');
+        }
+        const el = activeWaTextarea;
+        el.focus();
+        if (typeof el.selectionStart === "number" && typeof el.selectionEnd === "number") {
+            const startPos = el.selectionStart;
+            const endPos = el.selectionEnd;
+            const text = el.value;
+            el.value = text.substring(0, startPos) + tag + text.substring(endPos, text.length);
+            el.selectionStart = el.selectionEnd = startPos + tag.length;
+        } else {
+            el.value += tag;
+        }
+    }
+
+    function resetWaTemplate(type) {
+        const defaults = {
+            'customer': "مرحباً {customer_name} 👋\nلديك شحنة من *{store_name}* 📦\n📌 رقم التتبع: {tracking_number}\n💰 المبلغ المطلوب عند الاستلام: {total} ل.ل\n🛵 السائق المكلف: {courier_name}\n📍 العنوان: {city} - {address}\nشكراً لاختياركم *{company_name}* 🙏",
+            'courier': "🛵 *مهمة توصيل جديدة* 📦\n📌 رقم الطلب: {tracking_number}\n🏪 المتجر: {store_name}\n👤 المستلم: {customer_name}\n📞 الهاتف: {customer_phone}\n📍 العنوان: {city} - {address}\n📦 المحتويات: {items_detail}\n💰 المبلغ للتحصيل: {total} ل.ل\n💵 عمولتك: {driver_commission} ل.ل",
+            'merchant': "مرحباً {store_name} 🏪\nتم تسجيل طلبية جديدة للتوصيل عبر *{company_name}* 📦\n📌 رقم التتبع: {tracking_number}\n👤 اسم الزبون: {customer_name} ({customer_phone})\n📍 الوجهة: {city} - {address}\n📦 تفاصيل الطلب:\n{items_detail}\n💵 قيمة البضاعة للمحل: {order_price} ل.ل\nيرجى تجهيز الطلب لاستلام المندوب 🛵",
+            'delivered': "✅ *تم تسليم طلبكم بنجاح!* 🎉\nمرحباً {customer_name} 👋\nتم تسليم شحنتكم رقم *{tracking_number}* من متجر *{store_name}* بنجاح.\n💰 المبلغ المدفوع: {total} ل.ل\nنتمنى أن تنال خدمتنا إعجابكم. شكراً لاختياركم *{company_name}* ⭐"
+        };
+        const targets = {
+            'customer': 'tmplCustomer',
+            'courier': 'tmplCourier',
+            'merchant': 'tmplMerchant',
+            'delivered': 'tmplDelivered'
+        };
+        const el = document.getElementById(targets[type]);
+        if (el && defaults[type]) {
+            el.value = defaults[type];
+        }
+    }
+
+    function togglePinVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    function checkPinMatch() {
+        const newPin = document.getElementById('newAdminPin').value;
+        const confirmPin = document.getElementById('confirmAdminPin').value;
+        const status = document.getElementById('pinMatchStatus');
+
+        if (!newPin && !confirmPin) {
+            status.textContent = '';
+            return;
+        }
+
+        if (newPin === confirmPin) {
+            status.textContent = '✅ الرمزان متطابقان تماماً';
+            status.className = 'text-[11px] mt-1 block font-bold text-emerald-600';
+        } else {
+            status.textContent = '❌ الرمزان غير متطابقين';
+            status.className = 'text-[11px] mt-1 block font-bold text-rose-600';
+        }
+    }
+
+    // Telegram Connection Tester
+    async function testTelegramConnection() {
+        const tokenInput = document.getElementById('telegramBotToken');
+        const chatInput = document.getElementById('telegramChatId');
+        const token = tokenInput ? tokenInput.value.trim() : '';
+        const chatId = chatInput ? chatInput.value.trim() : '';
+
+        const statusDiv = document.getElementById('tgStatusMsg');
+        statusDiv.classList.remove('hidden');
+
+        // Reset borders
+        if (tokenInput) tokenInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-200');
+        if (chatInput) chatInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-200');
+
+        if (!token && !chatId) {
+            if (tokenInput) tokenInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
+            if (chatInput) chatInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
+            statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+            statusDiv.innerHTML = '⚠️ الخانتان فارغتان! يرجى وضع رمز البوت (Bot Token) ومعرف حسابك (Chat ID) أولاً.';
+            return;
+        }
+
+        if (!token) {
+            if (tokenInput) tokenInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
+            statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+            statusDiv.innerHTML = '⚠️ خانة (Bot Token) فارغة! يرجى وضع رمز البوت الذي حصلت عليه من BotFather@.';
+            return;
+        }
+
+        if (!chatId) {
+            if (chatInput) chatInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
+            statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+            statusDiv.innerHTML = '⚠️ خانة (Chat ID) فارغة! يرجى وضع رقم الـ Id الخاص بك (تحصل عليه بإرسال Start لبوت userinfobot@).';
+            return;
+        }
+
+        statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 block';
+        statusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> جاري الاتصال بالبوت وإرسال الرسالة التجريبية...';
+
+        try {
+            const res = await fetch('/api/telegram/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_token: token, chat_id: chatId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                statusDiv.innerHTML = '✅ ' + data.message;
+            } else {
+                statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+                statusDiv.innerHTML = '❌ ' + data.message;
+            }
+        } catch (e) {
+            statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+            statusDiv.innerHTML = '❌ خطأ في الاتصال بالخادم: ' + e.message;
+        }
+    }
+
+    // Send Full Report Manual
+    async function sendTelegramReportManual() {
+        if (!confirm('هل تريد إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام الآن؟')) return;
+        const tokenInput = document.getElementById('telegramBotToken');
+        const chatInput = document.getElementById('telegramChatId');
+        const token = tokenInput ? tokenInput.value.trim() : '';
+        const chatId = chatInput ? chatInput.value.trim() : '';
+
+        const statusDiv = document.getElementById('tgStatusMsg');
+        statusDiv.classList.remove('hidden');
+        statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 block';
+        statusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> جاري توليد التقرير الشامل وإرساله للمدير...';
+
+        try {
+            const res = await fetch('/api/telegram/send-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_token: token, chat_id: chatId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                statusDiv.innerHTML = '✅ ' + data.message;
+            } else {
+                statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+                statusDiv.innerHTML = '❌ ' + data.message;
+            }
+        } catch (e) {
+            statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+            statusDiv.innerHTML = '❌ خطأ في الاتصال بالخادم: ' + e.message;
+        }
+    }
+
+    // Gemini API Key Tester
+    async function testGeminiApiKey() {
+        const key = document.getElementById('geminiApiKeyInput').value.trim();
+        const statusDiv = document.getElementById('aiKeyStatusMsg');
+        statusDiv.classList.remove('hidden');
+        statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200 block';
+        statusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> جاري اختبار وتوثيق المفتاح مع خوادم Google AI...';
+
+        try {
+            const res = await fetch('/api/ai/test-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: key })
+            });
+            const data = await res.json();
+            if (data.success) {
+                statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                statusDiv.innerHTML = '✅ ' + data.message + ' (النموذج: ' + (data.model || 'Gemini 1.5 Flash') + ')';
+            } else {
+                statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+                statusDiv.innerHTML = '❌ ' + data.message;
+            }
+        } catch (e) {
+            statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
+            statusDiv.innerHTML = '❌ خطأ في الاتصال بالخادم: ' + e.message;
+        }
+    }
+</script>
+{% endblock %}

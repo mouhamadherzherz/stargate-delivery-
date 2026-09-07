@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+
+{% block title %}لوحة تحكم المدير العام 👑 | {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
+
+    <!-- Executive Header Banner -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 lg:p-8 text-white shadow-xl border border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div class="relative z-10 space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold">
+                <span>👑 لوحة الإدارة والتحكم الكامل للمدير العام</span>
+                <span>🇱🇧</span>
+            </div>
+            <h1 class="text-2xl lg:text-3xl font-black text-white">مركز القيادة والتحكم المالي والإداري</h1>
+            <p class="text-xs lg:text-sm text-slate-300 max-w-2xl">
+                من هذه الصفحة يمكنك التحكم الكامل بكل مفاصل الشركة: إدارة المتاجر والسائقين، الكاش في الشارع، الخزينة، وتغيير سعر الصرف ورمز المرور السري.
+            </p>
+        </div>
+
+        <div class="relative z-10 flex flex-wrap items-center gap-3">
+            <form method="POST" action="{{ url_for('lock_employee') }}" class="inline">
+                <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold px-4 py-2.5 rounded-2xl text-xs transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-lock text-amber-400"></i>
+                    <span>قفل الشاشة وتسليم الكمبيوتر للموظف</span>
+                </button>
+            </form>
+            <a href="{{ url_for('settings_view') }}" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-2xl text-xs shadow-md shadow-red-600/30 transition flex items-center gap-2">
+                <i class="fa-solid fa-gears"></i>
+                <span>الإعدادات الكاملة</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Executive Financial KPIs (Dual Currency) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Cash in Street -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-500">الكاش المعلق بالشارع (مع السائقين)</span>
+                    <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-motorcycle"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-xl font-black text-amber-600 font-mono">{{ stats.total_custody_street|format_currency }} {{ currency }}</h3>
+                    <p class="text-xs text-amber-700 font-bold font-mono mt-0.5">≈ {{ stats.total_custody_street|to_usd(exchange_rate) }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('couriers_list') }}" class="mt-4 text-[11px] text-amber-700 hover:text-amber-800 font-bold flex items-center gap-1 border-t border-slate-100 pt-3">
+                <span>تصفية كاش السائقين</span> <i class="fa-solid fa-arrow-left text-[9px]"></i>
+            </a>
+        </div>
+
+        <!-- Treasury Balance -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-500">رصيد الخزينة والصناديق الحالية</span>
+                    <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-xl font-black text-blue-600 font-mono">{{ stats.total_treasury_balance|format_currency }} {{ currency }}</h3>
+                    <p class="text-xs text-blue-700 font-bold font-mono mt-0.5">≈ {{ stats.total_treasury_balance|to_usd(exchange_rate) }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('treasury_view') }}" class="mt-4 text-[11px] text-blue-700 hover:text-blue-800 font-bold flex items-center gap-1 border-t border-slate-100 pt-3">
+                <span>حركات وسندات الصندوق</span> <i class="fa-solid fa-arrow-left text-[9px]"></i>
+            </a>
+        </div>
+
+        <!-- Merchant Payables -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-500">مستحقات المتاجر الجاهزة للدفع</span>
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-xl font-black text-slate-800 font-mono">{{ stats.total_merchant_debt|format_currency }} {{ currency }}</h3>
+                    <p class="text-xs text-emerald-700 font-bold font-mono mt-0.5">≈ {{ stats.total_merchant_debt|to_usd(exchange_rate) }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('merchants_list') }}" class="mt-4 text-[11px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 border-t border-slate-100 pt-3">
+                <span>صرف مستحقات المتاجر</span> <i class="fa-solid fa-arrow-left text-[9px]"></i>
+            </a>
+        </div>
+
+        <!-- Net Month Profit -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-500">صافي أرباح الدليفري (هذا الشهر)</span>
+                    <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-xl font-black text-emerald-600 font-mono">{{ stats.month_net_profit|format_currency }} {{ currency }}</h3>
+                    <p class="text-xs text-emerald-700 font-bold font-mono mt-0.5">≈ {{ stats.month_net_profit|to_usd(exchange_rate) }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('reports_view') }}" class="mt-4 text-[11px] text-red-600 hover:text-red-700 font-bold flex items-center gap-1 border-t border-slate-100 pt-3">
+                <span>التقرير المحاسبي الكامل</span> <i class="fa-solid fa-arrow-left text-[9px]"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Fast Manager Controls (Exchange Rate & PIN Updater) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Quick Exchange Rate Updater -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-money-bill-transfer text-emerald-600"></i>
+                    <span>تعديل سعر الصرف اللحظي (USD / LBP)</span>
+                </h3>
+                <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded-full font-mono">
+                    الحالي: 1$ = {{ exchange_rate|format_currency }} ل.ل
+                </span>
+            </div>
+            <form method="POST" action="{{ url_for('save_settings') }}" class="flex items-center gap-3">
+                <input type="hidden" name="company_name" value="{{ settings.company_name }}">
+                <input type="hidden" name="currency" value="{{ settings.currency }}">
+                <input type="hidden" name="secondary_currency" value="{{ settings.secondary_currency }}">
+                <input type="hidden" name="phone" value="{{ settings.phone }}">
+                <input type="hidden" name="address" value="{{ settings.address }}">
+                <input type="hidden" name="default_delivery_fee" value="{{ settings.default_delivery_fee }}">
+                <input type="hidden" name="default_driver_commission" value="{{ settings.default_driver_commission }}">
+                <input type="hidden" name="default_return_fee" value="{{ settings.default_return_fee }}">
+                <input type="hidden" name="admin_pin" value="{{ settings.admin_pin }}">
+
+                <div class="flex-1 relative">
+                    <input type="number" step="any" name="exchange_rate" value="{{ settings.exchange_rate or 89500 }}" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-black text-slate-800 font-mono focus:ring-2 focus:ring-emerald-500">
+                    <span class="absolute left-3 top-2 text-xs text-slate-400 font-bold">ل.ل</span>
+                </div>
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-sm">
+                    تحديث السعر
+                </button>
+            </form>
+        </div>
+
+        <!-- Quick Admin PIN Updater (مع التأكيد المزدوج) -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-red-600"></i>
+                    <span>تغيير رمز مرور المدير السري (Admin PIN)</span>
+                </h3>
+                <span class="text-xs bg-red-50 text-red-700 font-bold px-2.5 py-1 rounded-full font-mono flex items-center gap-1">
+                    <i class="fa-solid fa-lock text-[9px]"></i> محمي
+                </span>
+            </div>
+            <form method="POST" action="{{ url_for('save_settings') }}" class="space-y-3" onsubmit="return validateAdminPinForm(this)">
+                <input type="hidden" name="company_name" value="{{ settings.company_name }}">
+                <input type="hidden" name="currency" value="{{ settings.currency }}">
+                <input type="hidden" name="secondary_currency" value="{{ settings.secondary_currency }}">
+                <input type="hidden" name="phone" value="{{ settings.phone }}">
+                <input type="hidden" name="address" value="{{ settings.address }}">
+                <input type="hidden" name="exchange_rate" value="{{ settings.exchange_rate }}">
+                <input type="hidden" name="default_delivery_fee" value="{{ settings.default_delivery_fee }}">
+                <input type="hidden" name="default_driver_commission" value="{{ settings.default_driver_commission }}">
+                <input type="hidden" name="default_return_fee" value="{{ settings.default_return_fee }}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input type="password" name="current_admin_pin" placeholder="الرمز القديم..." required class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-center font-mono focus:ring-2 focus:ring-red-500">
+                    <input type="password" id="adminNewPin" name="new_admin_pin" placeholder="الرمز الجديد..." required class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-center font-mono focus:ring-2 focus:ring-red-500">
+                    <input type="password" id="adminConfirmPin" name="confirm_admin_pin" placeholder="تأكيد الرمز الجديد..." required class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-center font-mono focus:ring-2 focus:ring-red-500">
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <span id="adminPinError" class="text-[11px] font-bold text-rose-600"></span>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-sm">
+                        تأكيد وحفظ الرمز
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Drivers Control Table (تحكم كامل بالسائقين والعهد) -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                <i class="fa-solid fa-motorcycle text-amber-500"></i>
+                <span>إدارة السائقين والكاش المعلق بالشارع</span>
+            </h3>
+            <button onclick="openModal('newCourierModal')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>إضافة سائق جديد</span>
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-slate-50 text-slate-600 text-xs font-bold border-b border-slate-100">
+                    <tr>
+                        <th class="py-3 px-6">السائق</th>
+                        <th class="py-3 px-6">الكاش المعلق بالشارع</th>
+                        <th class="py-3 px-6">أوردرات معلقة</th>
+                        <th class="py-3 px-6">عمولات مستحقة</th>
+                        <th class="py-3 px-6 text-center">إجراءات المدير</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for c in couriers %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3.5 px-6 font-bold text-slate-800">
+                            <div>{{ c.name }}</div>
+                            <span class="text-xs text-slate-400 font-mono">{{ c.phone }}</span>
+                        </td>
+                        <td class="py-3.5 px-6 font-mono font-bold text-amber-600">
+                            <div>{{ c.current_cash_custody|format_currency }} {{ currency }}</div>
+                            <div class="text-[11px] text-slate-400 font-mono">≈ {{ c.current_cash_custody|to_usd(exchange_rate) }}</div>
+                        </td>
+                        <td class="py-3.5 px-6 font-semibold text-slate-700">{{ c.unsettled_delivered_count }} أوردر</td>
+                        <td class="py-3.5 px-6 font-mono font-bold text-emerald-600">{{ c.pending_driver_commissions|format_currency }} {{ currency }}</td>
+                        <td class="py-3.5 px-6 text-center space-x-1.5 rtl:space-x-reverse">
+                            <button onclick="openSettlementModal('{{ c.id }}', '{{ c.name }}')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition">
+                                <i class="fa-solid fa-receipt"></i> استلام الكاش
+                            </button>
+                            <form method="POST" action="{{ url_for('delete_courier', courier_id=c.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا السائق؟');" class="inline">
+                                <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition border border-rose-200 text-xs font-bold" title="حذف السائق">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Merchants Control Table (تحكم كامل بالتجار والحسابات) -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                <i class="fa-solid fa-store text-blue-600"></i>
+                <span>إدارة المحلات والتجار وصرف المستحقات</span>
+            </h3>
+            <button onclick="openModal('newMerchantModal')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                <i class="fa-solid fa-store"></i>
+                <span>إضافة محل / بيج جديد</span>
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-slate-50 text-slate-600 text-xs font-bold border-b border-slate-100">
+                    <tr>
+                        <th class="py-3 px-6">المحل / البيج</th>
+                        <th class="py-3 px-6">صافي المصاري الجاهزة للصرف</th>
+                        <th class="py-3 px-6">أوردرات واصلة</th>
+                        <th class="py-3 px-6 text-center">إجراءات المدير</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for m in merchants %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3.5 px-6 font-bold text-slate-800">
+                            <div>{{ m.name }}</div>
+                            <span class="text-xs text-red-600 font-bold block">{{ m.store_name }}</span>
+                            <span class="text-xs text-slate-400 font-mono">{{ m.phone }}</span>
+                        </td>
+                        <td class="py-3.5 px-6 font-mono font-black text-emerald-600">
+                            <div>{{ m.net_balance|format_currency }} {{ currency }}</div>
+                            <div class="text-[11px] text-slate-400 font-mono">≈ {{ m.net_balance|to_usd(exchange_rate) }}</div>
+                        </td>
+                        <td class="py-3.5 px-6 font-semibold text-slate-700">{{ m.unsettled_delivered_count }} أوردر</td>
+                        <td class="py-3.5 px-6 text-center space-x-1.5 rtl:space-x-reverse">
+                            <button onclick="openMerchantPayoutModal('{{ m.id }}', '{{ m.name }}', '{{ m.store_name }}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition">
+                                <i class="fa-solid fa-hand-holding-dollar"></i> صرف المستحقات
+                            </button>
+                            <a href="{{ url_for('merchant_statement', merchant_id=m.id) }}" class="inline-block p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-xs font-bold transition">
+                                <i class="fa-solid fa-file-lines"></i> كشف حساب
+                            </a>
+                            <form method="POST" action="{{ url_for('delete_merchant', merchant_id=m.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا التاجر؟');" class="inline">
+                                <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition border border-rose-200 text-xs font-bold" title="حذف المتجر">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODALS -->
+<!-- MODAL: ADD NEW COURIER -->
+<div id="newCourierModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-motorcycle text-red-600"></i> إضافة شب دليفري جديد
+            </h3>
+            <button onclick="closeModal('newCourierModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('add_courier') }}" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">اسم شب الدليفري <span class="text-rose-500">*</span></label>
+                <input type="text" name="name" required placeholder="مثال: شربل خليل" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-red-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف (واتساب) <span class="text-rose-500">*</span></label>
+                <input type="text" name="phone" required placeholder="03xxxxxx أو 70xxxxxx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-red-500 text-left font-mono" dir="ltr">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نوع الآلية</label>
+                    <select name="vehicle_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-red-500">
+                        <option value="motorcycle">دراجة نارية (موتوسيكل)</option>
+                        <option value="car">سيارة</option>
+                        <option value="van">فان بضائع</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">عمولة التوصيل الافتراضية</label>
+                    <input type="number" step="any" name="commission_value" value="{{ settings.default_driver_commission or 30000 }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-amber-600 focus:ring-2 focus:ring-red-500 font-mono">
+                </div>
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('newCourierModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition">إلغاء</button>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-sm transition shadow-md shadow-red-600/20">حفظ المندوب</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: ADD NEW MERCHANT -->
+<div id="newMerchantModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-store text-blue-600"></i> تسجيل تاجر / متجر جديد
+            </h3>
+            <button onclick="closeModal('newMerchantModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('add_merchant') }}" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">اسم صاحب المتجر / العميل <span class="text-rose-500">*</span></label>
+                <input type="text" name="name" required placeholder="مثال: رامي حداد" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">اسم المتجر / الصفحة / البراند</label>
+                <input type="text" name="store_name" placeholder="مثال: بيروت فاشن، لافندر..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف <span class="text-rose-500">*</span></label>
+                <input type="text" name="phone" required placeholder="03xxxxxx أو 70xxxxxx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 text-left font-mono" dir="ltr">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">العنوان / المنطقة</label>
+                <input type="text" name="address" placeholder="بيروت - الحمرا" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('newMerchantModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition">إلغاء</button>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-sm transition shadow-md shadow-red-600/20">حفظ التاجر</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    function validateAdminPinForm(form) {
+        const newPin = document.getElementById('adminNewPin').value.trim();
+        const confirmPin = document.getElementById('adminConfirmPin').value.trim();
+        const errSpan = document.getElementById('adminPinError');
+
+        if (newPin !== confirmPin) {
+            errSpan.textContent = '❌ الرمزان غير متطابقين!';
+            return false;
+        }
+        if (newPin.length < 4) {
+            errSpan.textContent = '❌ يجب أن يتكون الرمز من 4 خانات على الأقل!';
+            return false;
+        }
+        errSpan.textContent = '';
+        return confirm('هل أنت متأكد من رغبتك في تغيير رمز مرور المدير السري (Admin PIN)؟');
+    }
+</script>
+{% endblock %}

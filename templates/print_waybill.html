@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>بوليصة شحن - {{ order.tracking_number }}</title>
+    <!-- Local Font Awesome Icons -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <!-- Local JsBarcode -->
+    <script src="{{ url_for('static', filename='js/JsBarcode.all.min.js') }}"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            padding: 20px;
+        }
+        .controls {
+            max-width: 480px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-secondary {
+            background-color: #64748b;
+        }
+        .waybill-card {
+            background: white;
+            max-width: 450px;
+            margin: 0 auto;
+            border: 2px solid #000;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: 900;
+        }
+        .section {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 0;
+        }
+        .section-title {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .info-val {
+            font-weight: bold;
+        }
+        .total-box {
+            background-color: #f8fafc;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .total-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #475569;
+        }
+        .total-amount {
+            font-size: 26px;
+            font-weight: 900;
+            color: #000;
+            font-family: monospace;
+        }
+        .barcode-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .controls {
+                display: none !important;
+            }
+            .waybill-card {
+                border: 2px solid #000;
+                box-shadow: none;
+                max-width: 100%;
+                width: 100%;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <a href="whatsapp://send?phone={{ order.recipient_phone|clean_phone_for_whatsapp }}" class="btn btn-whatsapp" style="background-color: #16a34a;">
+            <i class="fa-brands fa-whatsapp text-lg"></i> إرسال واتساب بزنس 📱
+        </a>
+        <a href="{{ url_for('order_whatsapp', order_id=order.id) }}" target="_blank" class="btn btn-whatsapp" style="background-color: #0d9488;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> رابط واتساب ويب
+        </a>
+        <button onclick="window.print()" class="btn">
+            <i class="fa-solid fa-print"></i> طباعة البوليصة
+        </button>
+        <button onclick="window.close()" class="btn btn-secondary">
+            إغلاق
+        </button>
+    </div>
+
+    <div class="waybill-card">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <div class="company-name flex items-center gap-1.5">
+                    <span>{{ company_name }}</span>
+                    <span>🇱🇧</span>
+                </div>
+                <div style="font-size: 11px; color: #475569;">هاتف: {{ settings.phone }} | {{ settings.address }}</div>
+            </div>
+            <div style="text-align: left; font-size: 11px;" dir="ltr">
+                <div style="font-weight: bold;">{{ now.strftime('%Y-%m-%d') }}</div>
+                <div>{{ now.strftime('%I:%M %p') }}</div>
+            </div>
+        </div>
+
+        <!-- Barcode -->
+        <div class="barcode-container">
+            <svg id="barcode"></svg>
+            <div style="font-family: monospace; font-weight: bold; font-size: 14px; margin-top: -5px;">
+                {{ order.tracking_number }}
+            </div>
+        </div>
+
+        <!-- Call Center & Sender Info -->
+        <div class="section">
+            <div class="section-title">بيانات الأوردر وموظف الاتصال:</div>
+            <div class="info-row">
+                <span>المحل / البيج:</span>
+                <span class="info-val">{{ order.merchant_name }} ({{ order.store_name }})</span>
+            </div>
+            <div class="info-row">
+                <span>هاتف المحل:</span>
+                <span class="info-val" dir="ltr">{{ order.merchant_phone }}</span>
+            </div>
+            <div class="info-row">
+                <span>موظف الكول سنتر:</span>
+                <span class="info-val" style="color: #b91c1c;">{{ order.agent_name or 'خدمة العملاء' }}</span>
+            </div>
+        </div>
+
+        <!-- Recipient Info -->
+        <div class="section">
+            <div class="section-title">بيانات المستلم (الزبون):</div>
+            <div class="info-row">
+                <span>اسم الزبون:</span>
+                <span class="info-val" style="font-size: 15px;">{{ order.recipient_name }}</span>
+            </div>
+            <div class="info-row">
+                <span>رقم التلفون:</span>
+                <span class="info-val" dir="ltr" style="font-size: 15px; font-weight: bold;">{{ order.recipient_phone }}</span>
+            </div>
+            <div class="info-row">
+                <span>المنطقة / العنوان:</span>
+                <span class="info-val">{{ order.recipient_city }} - {{ order.recipient_address }}</span>
+            </div>
+        </div>
+
+        <!-- Item Breakdown & Driver Details -->
+        <div class="section">
+            <div class="section-title">تفاصيل الأغراض والأسعار:</div>
+            {% if order.items_detail %}
+            <div style="font-size: 12px; background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px; white-space: pre-line; line-height: 1.5;">
+                {{ order.items_detail }}
+            </div>
+            {% elif order.item_description %}
+            <div class="info-row">
+                <span>الوصف:</span>
+                <span class="info-val">{{ order.item_description }}</span>
+            </div>
+            {% endif %}
+
+            <div class="info-row" style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+                <span>سعر الغرض:</span>
+                <span class="info-val">{{ order.order_price|format_currency }} ل.ل ({{ order.order_price|to_usd(exchange_rate) }})</span>
+            </div>
+            <div class="info-row">
+                <span>أجرة الدليفري:</span>
+                <span class="info-val" style="color: #2563eb;">{{ order.delivery_fee|format_currency }} ل.ل ({{ order.delivery_fee|to_usd(exchange_rate) }})</span>
+            </div>
+        </div>
+
+        <!-- Courier Assigned Info with Phone -->
+        <div class="section" style="background-color: #fffbeb; padding: 8px 10px; border-radius: 8px; border: 1px solid #fef3c7;">
+            <div class="section-title" style="color: #b45309;">شب الدليفري المكلف بالتوصيل:</div>
+            <div class="info-row">
+                <span>اسم السائق:</span>
+                <span class="info-val" style="color: #92400e;">{{ order.courier_name or 'قيد التعيين' }}</span>
+            </div>
+            <div class="info-row">
+                <span>هاتف السائق:</span>
+                <span class="info-val" dir="ltr" style="font-weight: bold; color: #92400e;">{{ order.courier_phone or '-' }}</span>
+            </div>
+        </div>
+
+        <!-- Total COD Collection Box -->
+        <div class="total-box">
+            <div class="total-label">المبلغ المطلوب تحصيله من الزبون (COD):</div>
+            <div class="total-amount">
+                {{ (order.order_price + order.delivery_fee)|format_currency }} {{ currency }}
+            </div>
+            <div style="font-size: 16px; font-weight: 800; color: #16a34a; font-family: monospace; margin-top: 2px;">
+                ≈ {{ (order.order_price + order.delivery_fee)|to_usd(exchange_rate) }}
+            </div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+                سعر الصرف المعتمد: 1$ = {{ exchange_rate|format_currency }} ل.ل
+            </div>
+        </div>
+
+        {% if order.notes %}
+        <div style="font-size: 12px; background-color: #fffbeb; border: 1px solid #fef3c7; padding: 6px; border-radius: 6px; margin-bottom: 8px;">
+            <strong>ملاحظة:</strong> {{ order.notes }}
+        </div>
+        {% endif %}
+
+        <div class="footer-note">
+            {{ settings.receipt_footer_text }}
+        </div>
+    </div>
+
+    <script>
+        JsBarcode("#barcode", "{{ order.tracking_number }}", {
+            format: "CODE128",
+            lineColor: "#000",
+            width: 1.8,
+            height: 45,
+            displayValue: false
+        });
+    </script>
+</body>
+</html>

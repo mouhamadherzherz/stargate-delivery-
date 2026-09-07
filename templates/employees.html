@@ -1,0 +1,597 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">👥</span>
+                <h1 class="text-xl font-black text-slate-800 tracking-tight">إدارة الموظفين وصلاحيات الدخول</h1>
+            </div>
+            <p class="text-slate-500 text-xs mt-1">
+                تحكم بحسابات فريق العمل، تعيين كلمات المرور، وتحديد صلاحيات كل موظف للدخول إلى النظام.
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openModal('addEmployeeModal')" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-md shadow-red-600/20 transition">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>إضافة موظف جديد</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <div class="text-xs text-slate-400 font-bold">إجمالي الموظفين</div>
+                <div class="text-2xl font-black text-slate-800">{{ employees|length }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <div>
+                <div class="text-xs text-slate-400 font-bold">الحسابات النشطة</div>
+                <div class="text-2xl font-black text-emerald-600">
+                    {{ employees|selectattr('is_active', 'equalto', 1)|list|length }}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-crown"></i>
+            </div>
+            <div>
+                <div class="text-xs text-slate-400 font-bold">المدراء العامون</div>
+                <div class="text-2xl font-black text-amber-600">
+                    {{ employees|selectattr('role', 'equalto', 'admin')|list|length }}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <div class="text-xs text-slate-400 font-bold">طاقم العمليات والكول سنتر</div>
+                <div class="text-2xl font-black text-purple-600">
+                    {{ employees|rejectattr('role', 'equalto', 'admin')|list|length }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="relative flex-1 max-w-md">
+            <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3.5 text-slate-400 text-sm"></i>
+            <input type="text" id="employeeSearchInput" placeholder="بحث بالاسم، اسم المستخدم، أو رقم الهاتف..." 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-10 pl-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                   oninput="filterEmployeesTable()">
+        </div>
+        <div class="flex items-center gap-2">
+            <select id="roleFilterSelect" onchange="filterEmployeesTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-red-500">
+                <option value="">جميع الصلاحيات</option>
+                <option value="admin">المدير العام</option>
+                <option value="employee">موظف عمليات</option>
+                <option value="call_center">كول سنتر</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Employees Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right" id="employeesTable">
+                <thead class="bg-slate-50 border-b border-slate-200 text-xs font-black text-slate-500 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4">الموظف</th>
+                        <th class="px-6 py-4">اسم المستخدم</th>
+                        <th class="px-6 py-4">الصلاحية والوظيفة</th>
+                        <th class="px-6 py-4">رقم الهاتف</th>
+                        <th class="px-6 py-4">العملة</th>
+                        <th class="px-6 py-4">الحالة</th>
+                        <th class="px-6 py-4">آخر دخول</th>
+                        <th class="px-6 py-4 text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm">
+                    {% for emp in employees %}
+                    <tr class="hover:bg-slate-50/80 transition employee-row" 
+                        data-name="{{ emp.display_name }}" 
+                        data-username="{{ emp.username }}" 
+                        data-phone="{{ emp.phone or '' }}"
+                        data-role="{{ emp.role }}">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl font-black flex items-center justify-center text-sm shadow-xs
+                                    {% if emp.role == 'admin' %} bg-amber-100 text-amber-800 border border-amber-300
+                                    {% elif emp.role == 'call_center' %} bg-blue-100 text-blue-800 border border-blue-200
+                                    {% else %} bg-slate-100 text-slate-700 border border-slate-200 {% endif %}">
+                                    {{ emp.display_name[:2] }}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-slate-800">{{ emp.display_name }}</div>
+                                    <div class="text-xs text-slate-400">انضم: {{ emp.created_at[:10] if emp.created_at else '—' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono font-bold text-slate-700">
+                            {{ emp.username }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if emp.role == 'admin' %}
+                            <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 px-3 py-1 rounded-full text-xs font-black border border-amber-200">
+                                <i class="fa-solid fa-crown text-amber-500"></i> المدير العام
+                            </span>
+                            {% elif emp.role == 'call_center' %}
+                            <span class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-800 px-3 py-1 rounded-full text-xs font-bold border border-sky-200">
+                                <i class="fa-solid fa-headset text-sky-500"></i> كول سنتر
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold border border-slate-200">
+                                <i class="fa-solid fa-user-gear text-slate-500"></i> موظف عمليات
+                            </span>
+                            {% endif %}
+                            {% if emp.job_title %}
+                            <div class="text-[11px] text-slate-400 mt-1">{{ emp.job_title }}{% if emp.job_type %} · {{ emp.job_type }}{% endif %}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if emp.phone %}
+                            <div class="flex items-center gap-2" dir="ltr">
+                                <span class="font-mono text-slate-700 font-bold">{{ emp.phone }}</span>
+                                <a href="whatsapp://send?phone={{ emp.phone|clean_phone_for_whatsapp }}" class="text-emerald-500 hover:text-emerald-600" title="مراسلة عبر تطبيق الواتساب المكتبي 📱">
+                                    <i class="fa-brands fa-whatsapp text-base"></i>
+                                </a>
+                            </div>
+                            {% else %}
+                            <span class="text-slate-400">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-xs text-blue-600 font-bold">
+                            ل.ل
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if emp.is_active %}
+                            <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> نشط
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full text-xs font-bold border border-rose-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> معطّل
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-xs text-slate-500 font-mono">
+                            {{ emp.last_login[:16] if emp.last_login else 'لم يسجل بعد' }}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openEditEmployeeModal({{ emp.id }}, '{{ emp.display_name|replace("'", "\\'") }}', '{{ emp.username }}', '{{ emp.role }}', '{{ emp.phone or '' }}', {{ emp.is_active }}, '{{ emp.job_title or '' }}', '{{ emp.job_type or '' }}', 'ل.ل', '{{ (emp.custom_permissions or '')|replace("'", "\\'") }}')"
+                                        class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="تعديل الموظف">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                {% if emp.username != 'admin' %}
+                                <form method="POST" action="{{ url_for('delete_employee', emp_id=emp.id) }}" onsubmit="return confirm('هل أنت متأكد تماماً من حذف الموظف [{{ emp.display_name }}]؟ لا يمكن التراجع!')" class="inline">
+                                    <button type="submit" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="حذف الموظف">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                            لا يوجد موظفين مسجلين حالياً.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ADD EMPLOYEE MODAL -->
+<div id="addEmployeeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-red-600"></i>
+                <span>إضافة موظف جديد للنظام</span>
+            </h3>
+            <button onclick="closeModal('addEmployeeModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('add_employee') }}" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل للموظف:</label>
+                <input type="text" name="display_name" required placeholder="مثال: رامي خليل" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المستخدم (Login):</label>
+                    <input type="text" name="username" required placeholder="rami_k" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور (6 أحرف+):</label>
+                    <input type="password" name="password" required placeholder="••••••••" minlength="6" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-red-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز PIN للدخول السريع:</label>
+                    <input type="password" name="pin" placeholder="مثال: 1234 (اختياري)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">تأكيد رمز PIN:</label>
+                    <input type="password" name="confirm_pin" placeholder="تأكيد الرمز" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-red-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الدور والصلاحية:</label>
+                    <select name="role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-red-500">
+                        <option value="employee">موظف عمليات (افتراضي)</option>
+                        <option value="call_center">كول سنتر واستقبال</option>
+                        <option value="admin">مدير عام (كامل الصلاحيات)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف:</label>
+                    <input type="text" name="phone" placeholder="03123456" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500" dir="ltr">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المسمى الوظيفي:</label>
+                    <input type="text" name="job_title" placeholder="مثال: مشرف كول سنتر" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نوع الوظيفة:</label>
+                    <select name="job_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500">
+                        <option value="">— اختر —</option>
+                        <option value="دوام كامل">دوام كامل</option>
+                        <option value="دوام جزئي">دوام جزئي</option>
+                        <option value="عقد">عقد</option>
+                        <option value="مؤقت">مؤقت</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-black text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-halved text-amber-600"></i>
+                        <span>⚡ صلاحيات الموظف (ضع إشارة صح بجانب ما يحق له):</span>
+                    </label>
+                    <button type="button" onclick="toggleAllAddPermissions(true)" class="text-[11px] text-blue-600 font-bold hover:underline">تحديد الكل</button>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-red-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_view" checked class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500">
+                        <span class="font-bold text-slate-800">📦 عرض الطلبات</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-red-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_create" checked class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500">
+                        <span class="font-bold text-slate-800">➕ إضافة طلبات جديدة</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-red-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_edit" checked class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500">
+                        <span class="font-bold text-slate-800">✏️ تعديل وتحديث الطلب</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-rose-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_delete" class="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500">
+                        <span class="font-bold text-rose-700">🗑️ حذف الطلبات</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-amber-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="couriers_settle" class="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
+                        <span class="font-bold text-slate-800">🛵 تسكير حسابات السائقين</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="merchants_payout" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                        <span class="font-bold text-slate-800">🏪 صرف مستحقات التجار</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-teal-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="treasury_view" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
+                        <span class="font-bold text-slate-800">💰 عرض الخزينة والصندوق</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-purple-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="reports_view" class="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500">
+                        <span class="font-bold text-slate-800">📊 تقارير الأرباح والمحاسبة</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-blue-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="customers_manage" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span class="font-bold text-slate-800">📇 دليل الزبائن والعناوين</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="export_excel" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                        <span class="font-bold text-slate-800">📑 تصدير كشوفات الإكسل</span>
+                    </label>
+                </div>
+                <span class="text-[11px] text-slate-400 mt-1 block">العملة الأساسية للنظام: <b class="text-blue-600">ل.ل (ليرة لبنانية)</b> ثابتة لجميع الموظفين</span>
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('addEmployeeModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-red-600/20 transition">حفظ الموظف</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT EMPLOYEE MODAL -->
+<div id="editEmployeeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 lg:p-7 shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-blue-600"></i>
+                <span>تعديل بيانات الموظف وصلاحياته</span>
+            </h3>
+            <button onclick="closeModal('editEmployeeModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="editEmployeeForm" method="POST" action="" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل:</label>
+                <input type="text" id="edit_display_name" name="display_name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المستخدم الجديد (اختياري):</label>
+                    <input type="text" id="edit_new_username" name="new_username" placeholder="اتركه فارغاً للإبقاء الحالي" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500">
+                    <p class="text-[10px] text-slate-400 mt-1">الحالي: <span id="edit_username_display" class="font-bold text-slate-600"></span></p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الدور والصلاحية:</label>
+                    <select id="edit_role" name="role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                        <option value="employee">موظف عمليات</option>
+                        <option value="call_center">كول سنتر</option>
+                        <option value="admin">مدير عام</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف:</label>
+                    <input type="text" id="edit_phone" name="phone" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500" dir="ltr">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المسمى الوظيفي:</label>
+                    <input type="text" id="edit_job_title" name="job_title" placeholder="مثال: مشرف كول سنتر" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نوع الوظيفة:</label>
+                    <select id="edit_job_type" name="job_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+                        <option value="">— اختر —</option>
+                        <option value="دوام كامل">دوام كامل</option>
+                        <option value="دوام جزئي">دوام جزئي</option>
+                        <option value="عقد">عقد</option>
+                        <option value="مؤقت">مؤقت</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الحالة:</label>
+                    <div class="flex items-center gap-2 h-[42px]">
+                        <input type="checkbox" id="edit_is_active" name="is_active" value="1" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <label for="edit_is_active" class="text-xs font-bold text-slate-700">الحساب نشط</label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-black text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-halved text-blue-600"></i>
+                        <span>⚡ صلاحيات الموظف (حدد ما يمكنه فعله):</span>
+                    </label>
+                    <button type="button" onclick="toggleAllEditPermissions(true)" class="text-[11px] text-blue-600 font-bold hover:underline">تحديد الكل</button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-blue-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_view" id="perm_orders_view" class="edit-perm-chk w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span class="font-bold text-slate-800">📦 عرض الطلبات</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-blue-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_create" id="perm_orders_create" class="edit-perm-chk w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span class="font-bold text-slate-800">➕ إضافة طلبات جديدة</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-blue-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_edit" id="perm_orders_edit" class="edit-perm-chk w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span class="font-bold text-slate-800">✏️ تعديل وتحديث الطلب</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-rose-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="orders_delete" id="perm_orders_delete" class="edit-perm-chk w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500">
+                        <span class="font-bold text-rose-700">🗑️ حذف الطلبات</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-amber-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="couriers_settle" id="perm_couriers_settle" class="edit-perm-chk w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
+                        <span class="font-bold text-slate-800">🛵 تسكير حسابات السائقين</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="merchants_payout" id="perm_merchants_payout" class="edit-perm-chk w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                        <span class="font-bold text-slate-800">🏪 صرف مستحقات التجار</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-teal-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="treasury_view" id="perm_treasury_view" class="edit-perm-chk w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
+                        <span class="font-bold text-slate-800">💰 عرض الخزينة والصندوق</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-purple-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="reports_view" id="perm_reports_view" class="edit-perm-chk w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500">
+                        <span class="font-bold text-slate-800">📊 تقارير الأرباح والمحاسبة</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-blue-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="customers_manage" id="perm_customers_manage" class="edit-perm-chk w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span class="font-bold text-slate-800">📇 دليل الزبائن والعناوين</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 cursor-pointer transition">
+                        <input type="checkbox" name="permissions" value="export_excel" id="perm_export_excel" class="edit-perm-chk w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                        <span class="font-bold text-slate-800">📑 تصدير كشوفات الإكسل</span>
+                    </label>
+                </div>
+                <input type="hidden" id="edit_custom_permissions" name="custom_permissions">
+            </div>
+
+            <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
+                <label class="block text-xs font-black text-amber-900 flex items-center gap-1.5">
+                    <i class="fa-solid fa-key text-amber-600"></i>
+                    <span>تغيير كلمة المرور (اتركه فارغاً للإبقاء على الحالية):</span>
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                        <input type="password" id="edit_new_password" name="new_password" oninput="checkEmpPasswordMatch()" placeholder="كلمة مرور جديدة (6 أحرف+)" minlength="6" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-xs font-mono focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <input type="password" id="edit_confirm_password" name="confirm_password" oninput="checkEmpPasswordMatch()" placeholder="تأكيد كلمة المرور مرتين..." minlength="6" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-xs font-mono focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+                <span id="empPasswordMatchStatus" class="text-[11px] block font-bold"></span>
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('editEmployeeModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-blue-600/20 transition">حفظ التعديلات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterEmployeesTable() {
+        const query = document.getElementById('employeeSearchInput').value.toLowerCase().trim();
+        const role = document.getElementById('roleFilterSelect').value;
+        const rows = document.querySelectorAll('.employee-row');
+
+        rows.forEach(row => {
+            const name = (row.getAttribute('data-name') || '').toLowerCase();
+            const username = (row.getAttribute('data-username') || '').toLowerCase();
+            const phone = (row.getAttribute('data-phone') || '').toLowerCase();
+            const rowRole = row.getAttribute('data-role') || '';
+
+            const matchQuery = !query || name.includes(query) || username.includes(query) || phone.includes(query);
+            const matchRole = !role || rowRole === role;
+
+            if (matchQuery && matchRole) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function toggleAllAddPermissions(status) {
+        document.querySelectorAll('#addEmployeeModal input[name="permissions"]').forEach(cb => cb.checked = status);
+    }
+
+    function toggleAllEditPermissions(status) {
+        document.querySelectorAll('#editEmployeeModal input[name="permissions"]').forEach(cb => cb.checked = status);
+    }
+
+    function openEditEmployeeModal(id, name, username, role, phone, isActive, jobTitle, jobType, currency, customPermissions) {
+        document.getElementById('editEmployeeForm').action = `/employees/${id}/edit`;
+        document.getElementById('edit_display_name').value = name;
+        document.getElementById('edit_username_display').textContent = username;
+        document.getElementById('edit_new_username').value = '';
+        document.getElementById('edit_role').value = role;
+        document.getElementById('edit_phone').value = phone;
+        document.getElementById('edit_is_active').checked = Boolean(isActive);
+        if (document.getElementById('edit_job_title')) {
+            document.getElementById('edit_job_title').value = jobTitle || '';
+        }
+        if (document.getElementById('edit_job_type')) {
+            document.getElementById('edit_job_type').value = jobType || '';
+        }
+        if (document.getElementById('edit_custom_permissions')) {
+            document.getElementById('edit_custom_permissions').value = customPermissions || '';
+        }
+
+        // Parse customPermissions string (comma or space separated)
+        const perms = (customPermissions || '').split(',').map(p => p.trim());
+        const editCheckboxes = document.querySelectorAll('.edit-perm-chk');
+        
+        if (role === 'admin') {
+            // Admins have all permissions checked by default
+            editCheckboxes.forEach(cb => cb.checked = true);
+        } else if (!customPermissions || customPermissions.trim() === '') {
+            // Default permissions for regular employee if no custom set
+            editCheckboxes.forEach(cb => {
+                cb.checked = ['orders_view', 'orders_create', 'orders_edit', 'customers_manage'].includes(cb.value);
+            });
+        } else {
+            editCheckboxes.forEach(cb => {
+                cb.checked = perms.includes(cb.value);
+            });
+        }
+
+        openModal('editEmployeeModal');
+    }
+
+    function checkEmpPasswordMatch() {
+        const pwd = document.getElementById('edit_new_password').value;
+        const confirm = document.getElementById('edit_confirm_password').value;
+        const status = document.getElementById('empPasswordMatchStatus');
+
+        if (!pwd && !confirm) {
+            status.textContent = '';
+            return;
+        }
+
+        if (pwd === confirm) {
+            status.textContent = '✅ كلمتا المرور متطابقتان تماماً';
+            status.className = 'text-[11px] block font-bold text-emerald-600';
+        } else {
+            status.textContent = '❌ كلمتا المرور غير متطابقتين';
+            status.className = 'text-[11px] block font-bold text-rose-600';
+        }
+    }
+</script>
+{% endblock %}
