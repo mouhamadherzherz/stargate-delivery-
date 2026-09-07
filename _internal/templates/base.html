@@ -101,27 +101,53 @@
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
 
+    <!-- Mobile Overlay Backlayer -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
+
     <!-- Mobile Navigation Bar -->
-    <header class="bg-[#1E1B54] text-white shadow-lg lg:hidden flex items-center justify-between p-4 sticky top-0 z-50 border-b border-white/10">
+    <header class="bg-[#1E1B54] text-white shadow-lg lg:hidden flex items-center justify-between p-3.5 sticky top-0 z-50 border-b border-white/10">
         <div class="flex items-center space-x-3 space-x-reverse">
-            <button id="mobileMenuBtn" class="p-2 rounded-lg hover:bg-white/10 text-white focus:outline-none">
-                <i class="fa-solid fa-bars text-xl text-[#00B5FF]"></i>
+            <button id="mobileMenuBtn" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white focus:outline-none flex items-center justify-center">
+                <i class="fa-solid fa-bars text-lg text-[#00B5FF]"></i>
             </button>
             <div class="flex items-center gap-2">
-                <span class="text-xl">🇱🇧</span>
-                <span class="font-bold text-lg tracking-wide">{{ company_name }}</span>
+                <span class="text-lg">🇱🇧</span>
+                <span class="font-black text-base tracking-wide text-white">{{ company_name }}</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-xl flex items-center gap-1 shadow-xs transition" title="تسكير النظام وتسجيل الخروج">
+            <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج؟');" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition">
                 <i class="fa-solid fa-power-off text-xs"></i>
-                <span>تسكير 🔒</span>
+                <span>خروج 🔒</span>
             </a>
-            <div class="text-xs bg-[#00D26A]/20 text-[#00D26A] px-3 py-1.5 rounded-full border border-[#00D26A]/30 font-bold font-mono">
-                1$ = {{ exchange_rate|format_currency }} ل.ل
-            </div>
         </div>
     </header>
+
+    <!-- Mobile Sticky Bottom Navigation Bar for ultra-fast thumb navigation -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1E1B54]/95 backdrop-blur-lg border-t border-white/10 z-50 px-2 py-1.5 flex items-center justify-around text-slate-300">
+        <a href="{{ url_for('dashboard') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'dashboard' else 'text-slate-300' }}">
+            <i class="fa-solid fa-chart-pie text-lg"></i>
+            <span class="text-[10px] mt-0.5">الرئيسية</span>
+        </a>
+        <a href="{{ url_for('orders_list') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'orders' else 'text-slate-300' }}">
+            <i class="fa-solid fa-box-open text-lg"></i>
+            <span class="text-[10px] mt-0.5">الطلبات</span>
+        </a>
+        <a href="{{ url_for('ai_assistant_view') }}" class="flex flex-col items-center justify-center py-1 px-2 rounded-xl {{ 'text-amber-300 font-black' if active_page == 'ai_assistant' else 'text-amber-400' }}">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#00B5FF] to-[#FF7A00] flex items-center justify-center text-white shadow-md shadow-cyan-500/20 -mt-4 border-2 border-[#1E1B54]">
+                <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+            </div>
+            <span class="text-[10px] mt-0.5 font-bold">الذكاء</span>
+        </a>
+        <a href="{{ url_for('couriers_list') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'couriers' else 'text-slate-300' }}">
+            <i class="fa-solid fa-motorcycle text-lg"></i>
+            <span class="text-[10px] mt-0.5">السائقين</span>
+        </a>
+        <a href="{{ url_for('merchants_list') }}" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl {{ 'text-[#00B5FF] font-black' if active_page == 'merchants' else 'text-slate-300' }}">
+            <i class="fa-solid fa-store text-lg"></i>
+            <span class="text-[10px] mt-0.5">التجار</span>
+        </a>
+    </div>
 
     <div class="flex flex-1 relative overflow-hidden">
         <!-- Sidebar Navigation -->
@@ -415,17 +441,21 @@
         const sidebar = document.getElementById('sidebar');
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+        const mobileOverlay = document.getElementById('mobileOverlay');
 
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('translate-x-full');
-            });
+        function openSidebar() {
+            if (sidebar) sidebar.classList.remove('translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.remove('hidden');
         }
-        if (closeSidebarBtn) {
-            closeSidebarBtn.addEventListener('click', () => {
-                sidebar.classList.add('translate-x-full');
-            });
+
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.add('translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.add('hidden');
         }
+
+        if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openSidebar);
+        if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+        if (mobileOverlay) mobileOverlay.addEventListener('click', closeSidebar);
 
         // Global Live Search Handler
         const globalSearchInput = document.getElementById('globalLiveSearch');
