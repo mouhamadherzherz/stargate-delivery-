@@ -21,6 +21,10 @@
                 <i class="fa-solid fa-plus"></i>
                 <span>تسجيل دخل إضافي (سند قبض)</span>
             </button>
+            <button onclick="openModal('categoriesModal')" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-md shadow-purple-600/20 text-xs transition" title="تعديل وزيادة أنواع تصنيفات المصاريف والدخل">
+                <i class="fa-solid fa-tags"></i>
+                <span>إدارة التصنيفات 🏷️</span>
+            </button>
             <button onclick="openModal('transferModal')" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition">
                 <i class="fa-solid fa-right-left"></i>
                 <span>تحويل بين الصناديق</span>
@@ -372,6 +376,61 @@
         </form>
 
         <form id="deleteVaultForm" method="POST" action="" class="hidden"></form>
+    </div>
+</div>
+
+<!-- MODAL: MANAGE EXPENSE CATEGORIES -->
+<div id="categoriesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-tags text-purple-600"></i>
+                <span>إدارة وتعديل تصنيفات المصاريف والدخل</span>
+            </h3>
+            <button onclick="closeModal('categoriesModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Add Category Form -->
+        <form method="POST" action="{{ url_for('add_expense_category') }}" class="mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 space-y-3">
+            <label class="block text-xs font-black text-purple-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-plus-circle text-purple-600"></i>
+                <span>إضافة تصنيف مالي جديد:</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <input type="text" name="name" required placeholder="مثال: رواتب موظفين، صيانة سيارات..." class="flex-1 bg-white border border-purple-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-purple-500">
+                <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-purple-600/20 transition whitespace-nowrap">إضافة ➕</button>
+            </div>
+        </form>
+
+        <!-- Categories List with Edit and Delete -->
+        <div class="mt-4 space-y-2">
+            <label class="block text-xs font-bold text-slate-700 mb-2">التصنيفات الحالية في النظام (يمكنك التعديل والحذف):</label>
+            <div class="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
+                {% for cat in categories_list %}
+                <div class="p-3 bg-white flex items-center justify-between gap-3 hover:bg-slate-50 transition">
+                    <form method="POST" action="{{ url_for('edit_expense_category', cat_id=cat.id) }}" class="flex items-center gap-2 flex-1">
+                        <input type="text" name="name" value="{{ cat.name }}" required class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-purple-500 focus:bg-white">
+                        <button type="submit" class="bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-700 font-bold px-3 py-1.5 rounded-xl text-[11px] transition whitespace-nowrap" title="حفظ الاسم الجديد">
+                            <i class="fa-solid fa-check"></i> حفظ
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('delete_expense_category', cat_id=cat.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا التصنيف؟');">
+                        <button type="submit" class="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded-lg transition" title="حذف التصنيف">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-xs text-slate-400">لا توجد تصنيفات مسجلة</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 flex items-center justify-end border-t border-slate-100">
+            <button type="button" onclick="closeModal('categoriesModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2 rounded-xl text-xs transition">إغلاق</button>
+        </div>
     </div>
 </div>
 

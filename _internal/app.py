@@ -2953,6 +2953,7 @@ def treasury_view():
     transactions = [dict(r) for r in cursor.fetchall()]
     cursor.execute("SELECT id, name FROM expense_categories ORDER BY id ASC")
     cat_rows = cursor.fetchall()
+    categories_list = [dict(r) for r in cat_rows]
     categories = [r['name'] for r in cat_rows]
     if not categories:
         default_cats = ['وقود ومحروقات', 'صيانة دراجات وسيارات', 'رواتب وأجور',
@@ -2964,10 +2965,13 @@ def treasury_view():
             except Exception:
                 pass
         conn.commit()
+        cursor.execute("SELECT id, name FROM expense_categories ORDER BY id ASC")
+        cat_rows = cursor.fetchall()
+        categories_list = [dict(r) for r in cat_rows]
         categories = default_cats
     conn.close()
     return render_template('treasury.html', treasuries=treasuries, transactions=transactions,
-                           categories=categories, active_page='treasury')
+                           categories=categories, categories_list=categories_list, active_page='treasury')
 
 @app.route('/treasury/add-txn', methods=['POST'])
 @admin_required
@@ -3175,6 +3179,24 @@ def add_expense_category():
         conn.close()
     return redirect(url_for('treasury_view'))
 
+@app.route('/treasury/categories/<int:cat_id>/edit', methods=['POST'])
+@admin_required
+def edit_expense_category(cat_id):
+    new_name = request.form.get('name', '').strip()
+    if new_name:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM expense_categories WHERE id = ?", (cat_id,))
+        row = cursor.fetchone()
+        if row:
+            old_name = row['name']
+            cursor.execute("UPDATE expense_categories SET name = ? WHERE id = ?", (new_name, cat_id))
+            cursor.execute("UPDATE treasury_transactions SET category = ? WHERE category = ?", (new_name, old_name))
+            conn.commit()
+            flash(f"تم تعديل اسم التصنيف إلى [{new_name}] وتحديث الحركات المرتبطة به بنجاح ✏️", "success")
+        conn.close()
+    return redirect(url_for('treasury_view'))
+
 @app.route('/treasury/categories/<int:cat_id>/delete', methods=['POST'])
 @admin_required
 def delete_expense_category(cat_id):
@@ -3183,7 +3205,7 @@ def delete_expense_category(cat_id):
     cursor.execute("DELETE FROM expense_categories WHERE id = ?", (cat_id,))
     conn.commit()
     conn.close()
-    flash("تم حذف التصنيف بنجاح", "info")
+    flash("تم حذف التصنيف بنجاح 🗑️", "info")
     return redirect(url_for('treasury_view'))
 
 # =======================================================================
