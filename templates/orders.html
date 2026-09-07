@@ -11,18 +11,18 @@
             <div class="flex items-center gap-2">
                 <h2 class="text-2xl font-black text-slate-800">إدارة الأوردرات والطلبيات</h2>
                 <span class="text-2xl">📦</span>
-                <span class="text-xs bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full border border-red-200">
+                <span class="text-xs bg-[#00B5FF]/10 text-[#0080B8] font-black px-3 py-1 rounded-full border border-[#00B5FF]/30">
                     {{ orders|length }} أوردر
                 </span>
             </div>
             <p class="text-xs text-slate-500 mt-1">تسجيل شحنات المحلات، متابعة حركة السائقين، إرسال فواتير واتساب، وطباعة البوالص.</p>
         </div>
         <div class="flex items-center gap-3">
-            <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold px-4 py-3 rounded-2xl shadow-md shadow-sky-500/20 text-xs sm:text-sm transition transform active:scale-95 cursor-pointer" title="إرسال تقرير تنفيذي شامل ومفصل لحساب تيليجرام المدير">
+            <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-2 bg-[#00B5FF] hover:bg-[#0092D0] text-white font-bold px-4 py-3 rounded-2xl shadow-md shadow-[#00B5FF]/20 text-xs sm:text-sm transition transform active:scale-95 cursor-pointer" title="إرسال تقرير تنفيذي شامل ومفصل لحساب تيليجرام المدير">
                 <i class="fa-brands fa-telegram text-base"></i>
                 <span>إرسال تقرير للمدير 📲</span>
             </button>
-            <button onclick="openModal('newOrderModal')" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-red-600/30 text-sm transition transform active:scale-95">
+            <button onclick="openModal('newOrderModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] hover:to-[#C55F00] text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-[#FF7A00]/30 text-sm transition transform active:scale-95">
                 <i class="fa-solid fa-plus text-base"></i>
                 <span>+ تسجيل أوردر جديد</span>
             </button>
