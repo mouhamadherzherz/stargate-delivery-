@@ -494,7 +494,7 @@
                     </h4>
                     <p class="text-[11px] text-blue-700 mt-1">رفع ملف نسخة سابقة (.db) لاسترجاع الشحنات والحسابات في هذا البرنامج فوراً.</p>
                 </div>
-                <form method="POST" action="{{ url_for('restore_db') }}" enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
+                <form method="POST" action="{{ url_for('backup_db') }}" enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
                     <input type="file" name="backup_file" accept=".db" required class="text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                     <button type="submit" onclick="return confirm('هل أنت متأكد من استعادة هذه النسخة؟ سيتم استبدال البيانات الحالية بالنسخة المرفوعة.')" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-3.5 py-1.5 rounded-xl text-xs transition shadow-sm">
                         استعادة 📥

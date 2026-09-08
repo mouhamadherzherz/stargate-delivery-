@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1E1B54">
+    <meta name="application-name" content="stargate experts">
+    <title>Stargate Delivery - نظام محاسبة وإدارة الدلفري</title>
+    <!-- Local Offline Tailwind CSS Engine -->
+    <script src="/static/js/tailwindcss.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                screens: {
+                    'xs': '480px',
+                    'sm': '640px',
+                    'md': '768px',
+                    'lg': '1024px',
+                    'xl': '1280px',
+                    '2xl': '1536px',
+                },
+                extend: {
+                    colors: {
+                        stargate: {
+                            navy: '#1E1B54',
+                            cyan: '#00B5FF',
+                            orange: '#FF7A00',
+                            green: '#00D26A',
+                            dark: '#0F172A'
+                        },
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#00B5FF',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#1E1B54',
+                            900: '#0F172A',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Cairo', 'Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Local Offline Font Awesome Icons -->
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+    <!-- Local Offline Chart.js -->
+    <script src="/static/js/chart.min.js"></script>
+    <!-- Local Offline JsBarcode -->
+    <script src="/static/js/JsBarcode.all.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+        }
+        /* Mobile Touch & Table responsiveness */
+        @media (max-width: 768px) {
+            .table-responsive-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            input, select, textarea, button {
+                font-size: 16px !important; /* Prevents auto-zoom on iOS */
+            }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Mobile Overlay Backlayer -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
+
+    <!-- Mobile Navigation Bar -->
+    <header class="bg-[#1E1B54] text-white shadow-lg lg:hidden flex items-center justify-between p-3.5 sticky top-0 z-50 border-b border-white/10">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <button id="mobileMenuBtn" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white focus:outline-none flex items-center justify-center">
+                <i class="fa-solid fa-bars text-lg text-[#00B5FF]"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <span class="text-lg">🇱🇧</span>
+                <span class="font-black text-base tracking-wide text-white">Stargate Delivery</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/auth/logout" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج؟');" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition">
+                <i class="fa-solid fa-power-off text-xs"></i>
+                <span>خروج 🔒</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Mobile Sticky Bottom Navigation Bar for ultra-fast thumb navigation -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1E1B54]/95 backdrop-blur-lg border-t border-white/10 z-50 px-2 py-1.5 flex items-center justify-around text-slate-300">
+        <a href="/" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-[#00B5FF] font-black">
+            <i class="fa-solid fa-chart-pie text-lg"></i>
+            <span class="text-[10px] mt-0.5">الرئيسية</span>
+        </a>
+        <a href="/orders" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-300">
+            <i class="fa-solid fa-box-open text-lg"></i>
+            <span class="text-[10px] mt-0.5">الطلبات</span>
+        </a>
+        <a href="/ai/assistant" class="flex flex-col items-center justify-center py-1 px-2 rounded-xl text-amber-400">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#00B5FF] to-[#FF7A00] flex items-center justify-center text-white shadow-md shadow-cyan-500/20 -mt-4 border-2 border-[#1E1B54]">
+                <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+            </div>
+            <span class="text-[10px] mt-0.5 font-bold">الذكاء</span>
+        </a>
+        <a href="/couriers" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-300">
+            <i class="fa-solid fa-motorcycle text-lg"></i>
+            <span class="text-[10px] mt-0.5">السائقين</span>
+        </a>
+        <a href="/merchants" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-300">
+            <i class="fa-solid fa-store text-lg"></i>
+            <span class="text-[10px] mt-0.5">التجار</span>
+        </a>
+    </div>
+
+    <div class="flex flex-1 relative overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-[#1E1B54] text-slate-200 flex flex-col shrink-0 fixed inset-y-0 right-0 z-40 transform translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out border-l border-white/10 shadow-2xl">
+            <!-- Sidebar Header -->
+            <div class="p-5 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#1E1B54] to-[#151240]">
+                <div class="flex items-center gap-3">
+                    <div class="p-1.5 bg-white rounded-2xl shadow-lg border border-cyan-500/30 flex items-center justify-center shrink-0">
+                        <img src="/static/images/logo.png" alt="Stargate Logo" class="h-10 w-auto object-contain">
+                    </div>
+                    <div>
+                        <h1 class="font-black text-white text-base tracking-wide leading-tight">STARGATE</h1>
+                        <span class="text-[11px] text-[#00B5FF] font-black block tracking-wider uppercase">EXPERTS</span>
+                    </div>
+                </div>
+                <button id="closeSidebarBtn" class="lg:hidden text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links (Lebanese dialect with Role Protection) -->
+            <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
+                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold">
+                    <i class="fa-solid fa-chart-pie text-lg w-6 text-center text-[#FF7A00]"></i>
+                    <span>لوحة المتابعة العامة</span>
+                </a>
+
+                <a href="/ai/assistant" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-cyan-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg w-6 text-center text-amber-300"></i>
+                    <span class="flex-1">المساعد الذكي (AI)</span>
+                    <span class="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black">جديد</span>
+                </a>
+
+                <a href="/orders" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-box-open text-lg w-6 text-center text-[#00D26A]"></i>
+                    <span>الأوردرات والطلبيات</span>
+                </a>
+
+                <a href="/customers" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-address-book text-lg w-6 text-center text-[#00B5FF]"></i>
+                    <span>دليل الزبائن والعناوين</span>
+                </a>
+
+                <a href="/couriers" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-motorcycle text-lg w-6 text-center text-[#FF7A00]"></i>
+                    <span>شباب الدليفري والكاش</span>
+                </a>
+
+                <a href="/merchants" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-store text-lg w-6 text-center text-[#00D26A]"></i>
+                    <span>المحلات والتجار (البيجات)</span>
+                </a>
+
+                
+                <div class="pt-3 pb-1 px-4">
+                    <span class="text-[11px] uppercase tracking-wider text-amber-400 font-black">إدارة النظام 👑</span>
+                </div>
+
+                <a href="/admin/login" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition text-amber-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-crown text-lg w-6 text-center text-amber-400"></i>
+                    <span>لوحة تحكم المدير العام</span>
+                </a>
+
+                <a href="/employees" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-users-gear text-lg w-6 text-center text-cyan-300"></i>
+                    <span>إدارة الموظفين والحسابات</span>
+                </a>
+
+                <a href="/settings" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-gears text-lg w-6 text-center text-slate-300"></i>
+                    <span>الإعدادات</span>
+                </a>
+                
+
+                
+                <div class="pt-3 pb-1 px-4">
+                    <span class="text-[11px] uppercase tracking-wider text-[#00B5FF] font-black">المالية والتقارير 📊</span>
+                </div>
+                
+
+                
+                <a href="/settlements" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-file-invoice-dollar text-lg w-6 text-center text-[#00D26A]"></i>
+                    <span>سندات التسكير والدفع</span>
+                </a>
+                
+
+                
+                <a href="/treasury" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-vault text-lg w-6 text-center text-amber-400"></i>
+                    <span>الصندوق والمصاريف</span>
+                </a>
+                
+
+                
+                <a href="/reports" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-slate-200 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
+                    <span>تقارير الأرباح والمحاسبة</span>
+                </a>
+                
+
+                
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-400 bg-slate-950/50 space-y-2.5">
+                <a href="/auth/logout" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليم الوردية للموظف؟');" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-md shadow-rose-600/30">
+                    <i class="fa-solid fa-power-off text-sm"></i>
+                    <span>تسكير النظام وتسليم الموظف 🔒</span>
+                </a>
+                <div class="flex items-center justify-between pt-1">
+                    <span>السيستم:</span>
+                    <span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> شغّال محلياً 🇱🇧
+                    </span>
+                </div>
+                <div class="text-slate-500">سعر الصرف: 1$ = 89,500 ل.ل</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto bg-slate-50">
+            <!-- Top Header Desktop -->
+            <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 hidden lg:flex items-center justify-between px-6 py-3 shadow-xs gap-4 sticky top-0 z-30">
+                <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+                    <span class="text-xs bg-[#00D26A]/10 text-[#008f47] px-3.5 py-1.5 rounded-full font-bold border border-[#00D26A]/30 flex items-center gap-1.5 shadow-xs" title="سعر الصرف المعتمد">
+                        <i class="fa-solid fa-money-bill-transfer text-[#00D26A]"></i> 1$ = 89,500 ل.ل
+                    </span>
+
+                    
+                    <!-- Quick Street Cash Badge -->
+                    <a href="/couriers" class="text-xs bg-[#FF7A00]/10 hover:bg-[#FF7A00]/20 text-[#D46500] px-3.5 py-1.5 rounded-full font-black border border-[#FF7A00]/30 flex items-center gap-1.5 shadow-xs transition" title="كاش مقبوض بالشارع مع السائقين">
+                        <i class="fa-solid fa-motorcycle text-[#FF7A00]"></i>
+                        <span>كاش الشارع:</span>
+                        <span class="font-mono text-[#FF7A00] font-black">$0.00</span>
+                    </a>
+
+                    <!-- Quick Whish Badge -->
+                    <a href="/treasury" class="text-xs bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] px-3.5 py-1.5 rounded-full font-black border border-[#00B5FF]/30 flex items-center gap-1.5 shadow-xs transition" title="رصيد بطاقة Whish الإلكترونية المنفصلة">
+                        <i class="fa-solid fa-credit-card text-[#00B5FF]"></i>
+                        <span>ويش:</span>
+                        <span class="font-mono text-[#00B5FF] font-black">$0.00</span>
+                    </a>
+
+                    <!-- Active Role Badge & Switcher -->
+                    <span class="text-xs bg-[#1E1B54] text-white px-3.5 py-1.5 rounded-full font-black border border-[#1E1B54]/40 flex items-center gap-1.5 shadow-xs">
+                        <span>👑 المدير العام</span>
+                    </span>
+                    <a href="/auth/logout" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسكير وقفل النظام بالكامل لتسليمه للموظف">
+                        <i class="fa-solid fa-power-off text-rose-600"></i>
+                        <span>تسجيل خروج / تسكير 🔒</span>
+                    </a>
+                    
+                </div>
+
+                <!-- Global Live Search Bar -->
+                <div class="relative flex-1 max-w-md mx-2">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="globalLiveSearch" placeholder="بحث شامل سريع (أوردر، زبون، هاتف، متجر، سائق)..." 
+                               autocomplete="off"
+                               class="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-xl pr-9 pl-8 py-2 text-xs font-medium focus:ring-2 focus:ring-[#00B5FF] transition shadow-xs">
+                        <button id="clearGlobalSearchBtn" class="hidden absolute left-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Dropdown Results -->
+                    <div id="globalSearchResults" class="hidden absolute top-full mt-1.5 right-0 left-0 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden max-h-80 overflow-y-auto">
+                    </div>
+                </div>
+
+                <!-- User Profile & Action Controls -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] border border-[#00B5FF]/30 text-xs font-black px-3 py-2 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
+                        <i class="fa-brands fa-telegram text-[#00B5FF] text-sm"></i>
+                        <span class="hidden sm:inline">تقرير للمدير 📲</span>
+                    </button>
+
+                    <a href="/orders?open_new=1" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-md shadow-[#FF7A00]/25 transition">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>أوردر جديد</span>
+                    </a>
+
+                    
+                    <div class="flex items-center gap-2 pr-2 border-r border-slate-200">
+                    <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-black">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="text-right hidden xl:block">
+                            <div class="text-xs font-bold text-slate-800 leading-tight">المدير العام</div>
+                            <div class="text-[10px] text-slate-400">مدير عام</div>
+                        </div>
+                        <a href="/auth/logout" onclick="return confirm('هل أنت متأكد من تسكير النظام وتسجيل الخروج؟');" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-xs shadow-rose-600/20 cursor-pointer" title="تسكير النظام وتسجيل الخروج">
+                            <i class="fa-solid fa-power-off text-xs"></i>
+                            <span class="hidden sm:inline">تسكير النظام 🔒</span>
+                        </a>
+                    </div>
+                    
+                </div>
+            </header>
+
+            <!-- Flash Messages Notification Container -->
+            <div class="px-6 lg:px-8 pt-4">
+                
+                    
+                
+            </div>
+
+    <!-- Page Content Body -->
+            <div class="p-6 lg:p-8 flex-1">
+                
+<div class="space-y-6">
+
+    <!-- REAL-TIME FINANCIAL RISK RADAR ALERT BANNER -->
+    
+
+    <!-- Top Page Title & Quick Actions Banner -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+            <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                <span>Stargate Delivery - متابعة العمليات</span>
+                <span class="text-2xl">🇱🇧</span>
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">
+                
+                لوحة المتابعة الإدارية والمالية: الصندوق، كاش الشارع، مستحقات المحلات، والأرباح.
+                
+            </p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-2 bg-[#00B5FF] hover:bg-[#0092D0] text-white text-sm font-black px-4 py-2.5 rounded-xl shadow-md shadow-[#00B5FF]/20 transition cursor-pointer" title="إرسال تقرير تنفيذي شامل ومفصل لحساب تيليجرام المدير">
+                <i class="fa-brands fa-telegram text-base"></i>
+                <span>إرسال تقرير للمدير 📲</span>
+            </button>
+            <a href="/orders?open_new=1" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] hover:to-[#C55F00] text-white text-sm font-black px-4 py-2.5 rounded-xl shadow-md shadow-[#FF7A00]/25 transition">
+                <i class="fa-solid fa-plus"></i>
+                <span>تسجيل أوردر جديد 📦</span>
+            </a>
+            
+            <a href="/couriers" class="inline-flex items-center gap-2 bg-[#1E1B54] hover:bg-[#151240] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
+                <i class="fa-solid fa-motorcycle text-[#FF7A00]"></i>
+                <span>تسكير حساب دليفري</span>
+            </a>
+            <a href="/merchants" class="inline-flex items-center gap-2 bg-[#00D26A] hover:bg-[#00B359] text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                <span>دفع مصاري المحلات</span>
+            </a>
+            
+        </div>
+    </div>
+
+    
+    <!-- 5 Main Financial KPI Cards (Admin Only) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- 1. Treasury Cash -->
+        <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-5 rounded-2xl shadow-lg shadow-emerald-600/10 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-100">كاش الصندوق (الخزينة)</span>
+                <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
+                    <i class="fa-solid fa-vault text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xl font-black tracking-tight font-mono">0 <span class="text-xs font-sans font-normal">ل.ل</span></div>
+                <div class="text-xs text-emerald-200 font-bold font-mono mt-0.5">≈ $0.00</div>
+                <span class="text-[11px] text-emerald-100/80 mt-1 block font-medium">السيولة النقدية بالصندوق</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-emerald-100">
+                <a href="/treasury" class="hover:underline flex items-center gap-1 font-bold text-[11px]">
+                    <span>حركات الصندوق</span>
+                    <i class="fa-solid fa-arrow-left text-[9px]"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. Whish Money Card Wallet -->
+        <div class="bg-gradient-to-br from-purple-600 to-indigo-700 text-white p-5 rounded-2xl shadow-lg shadow-purple-600/10 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-100">محفظة ويش موني (Whish)</span>
+                <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
+                    <i class="fa-solid fa-credit-card text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xl font-black tracking-tight font-mono">0 <span class="text-xs font-sans font-normal">ل.ل</span></div>
+                <div class="text-xs text-purple-200 font-bold font-mono mt-0.5">≈ $0.00</div>
+                <span class="text-[11px] text-purple-100/80 mt-1 block font-medium">الرصيد الإلكتروني ببطاقة Whish</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-purple-100">
+                <a href="/treasury" class="hover:underline flex items-center gap-1 font-bold text-[11px]">
+                    <span>محافظ الدفع</span>
+                    <i class="fa-solid fa-arrow-left text-[9px]"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 3. Courier Custody in the Street -->
+        <div class="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-5 rounded-2xl shadow-lg shadow-amber-500/10 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-100">كاش الشارع مع السائقين</span>
+                <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
+                    <i class="fa-solid fa-motorcycle text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xl font-black tracking-tight font-mono">0 <span class="text-xs font-sans font-normal">ل.ل</span></div>
+                <div class="text-xs text-amber-200 font-bold font-mono mt-0.5">≈ $0.00</div>
+                <span class="text-[11px] text-amber-100/80 mt-1 block font-medium">كاش مقبوض مع الشباب بالشارع</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-amber-100">
+                <a href="/couriers" class="hover:underline flex items-center gap-1 font-bold text-[11px]">
+                    <span>تسكير حسابات الشباب</span>
+                    <i class="fa-solid fa-arrow-left text-[9px]"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 4. Pending Merchant Debts -->
+        <div class="bg-gradient-to-br from-blue-600 to-cyan-700 text-white p-5 rounded-2xl shadow-lg shadow-blue-600/10 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-blue-100">مستحقات المحلات</span>
+                <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
+                    <i class="fa-solid fa-store text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xl font-black tracking-tight font-mono">0 <span class="text-xs font-sans font-normal">ل.ل</span></div>
+                <div class="text-xs text-blue-200 font-bold font-mono mt-0.5">≈ $0.00</div>
+                <span class="text-[11px] text-blue-100/80 mt-1 block font-medium">مصاري المحلات الواجب دفعها</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-blue-100">
+                <a href="/merchants" class="hover:underline flex items-center gap-1 font-bold text-[11px]">
+                    <span>كشوفات المحلات</span>
+                    <i class="fa-solid fa-arrow-left text-[9px]"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 5. Month Net Profit -->
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 rounded-2xl shadow-lg shadow-slate-900/10 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300">صافي أرباح الدليفري</span>
+                <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
+                    <i class="fa-solid fa-chart-line text-base text-emerald-400"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xl font-black tracking-tight font-mono text-emerald-400">
+                    0 <span class="text-xs font-sans font-normal">ل.ل</span>
+                </div>
+                <div class="text-xs text-emerald-300 font-bold font-mono mt-0.5">≈ $0.00</div>
+                <span class="text-[11px] text-slate-400 mt-1 block font-medium">أرباح الدليفري بعد المصاريف</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+                <a href="/reports" class="hover:underline flex items-center gap-1 font-bold text-[11px]">
+                    <span>تقرير الأرباح المفصل</span>
+                    <i class="fa-solid fa-arrow-left text-[9px]"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- AI OPERATIONS & TOP PERFORMERS CENTER (مركز الذكاء الاصطناعي وإحصائيات التميز) -->
+    <div class="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 lg:p-7 rounded-3xl shadow-xl border border-indigo-900/50">
+        <div class="absolute -right-16 -top-16 w-56 h-56 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <!-- Left Info -->
+            <div class="space-y-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-bold">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300 animate-pulse"></i>
+                    <span>مركز التحليل الذكي وأداء الكادر البشري (AI Hub)</span>
+                </div>
+                <div>
+                    <h3 class="text-xl lg:text-2xl font-black text-white flex items-center gap-2.5">
+                        <span>إحصائيات التميز والتقارير الاستراتيجية</span>
+                        <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">
+                            كفاءة العمليات 40% ⚡
+                        </span>
+                    </h3>
+                    <p class="text-slate-300 text-xs mt-1 max-w-xl leading-relaxed">
+                        تقييم فوري وشامل لأداء السائقين، الموظفين، حركة الكاش في الشارع، ومستحقات المتاجر مع توصيات الذكاء الاصطناعي.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Top Performers Live Badges (Top Courier & Top Agent) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
+                <!-- Top Driver Badge -->
+                <div class="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-900 flex items-center justify-center text-xl font-black shadow-md shadow-amber-500/20 shrink-0">
+                        🏆
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-amber-300 font-bold uppercase tracking-wider">أفضل سائق أداءً (Top Driver)</div>
+                        <div class="text-sm font-black text-white truncate max-w-[140px]">
+                            بانتظار العمليات
+                        </div>
+                        <div class="text-[11px] text-slate-300 font-mono mt-0.5">
+                            
+                            <span class="text-slate-400">لا توجد تسليمات كافية</span>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Agent Badge -->
+                <div class="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400 text-white flex items-center justify-center text-xl font-black shadow-md shadow-blue-500/20 shrink-0">
+                        ⭐
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">أفضل موظف إدخال (Top Agent)</div>
+                        <div class="text-sm font-black text-white truncate max-w-[140px]">
+                            الكول سنتر
+                        </div>
+                        <div class="text-[11px] text-slate-300 font-mono mt-0.5">
+                            
+                            <span class="text-slate-400">بانتظار تسجيل الطلبات</span>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap lg:flex-col items-center justify-center gap-2 shrink-0">
+                <button type="button" onclick="openExecutiveReportModal()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-sm"></i>
+                    <span>التقرير الاستراتيجي الشامل 📊</span>
+                </button>
+                <a href="/ai/assistant" class="w-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-4 py-2 rounded-xl border border-white/15 transition flex items-center justify-center gap-1.5 backdrop-blur-sm">
+                    <i class="fa-solid fa-comments text-indigo-300"></i>
+                    <span>المستشار الذكي 💬</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Operations Mini Bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+                0
+            </div>
+            <div>
+                <span class="text-xs text-slate-500 font-semibold block">أوردرات اليوم</span>
+                <span class="text-sm font-bold text-slate-800">مجموع الوارد</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+                0
+            </div>
+            <div>
+                <span class="text-xs text-slate-500 font-semibold block">تسلّمت بنجاح</span>
+                <span class="text-sm font-bold text-emerald-700">أوردرات واصلة</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg">
+                0
+            </div>
+            <div>
+                <span class="text-xs text-slate-500 font-semibold block">عالطريق مع الدليفري</span>
+                <span class="text-sm font-bold text-amber-700">قيد التوصيل</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-lg">
+                0
+            </div>
+            <div>
+                <span class="text-xs text-slate-500 font-semibold block">روتور اليوم</span>
+                <span class="text-sm font-bold text-rose-700">راجع كلي/جزئي</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts & Summary Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 7 Days Delivery Trend Chart -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 text-base">📊 حركة التوصيل والإيرادات (آخر 7 أيام)</h3>
+                <span class="text-xs text-slate-400">تحديث فوري</span>
+            </div>
+            <div class="h-64">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Profit Summary Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+                <h3 class="font-bold text-slate-800 text-base mb-4">💼 ملخص أرباح اليوم والشهر</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                        <span class="text-sm text-slate-600 font-medium">إيراد أجور توصيل اليوم:</span>
+                        <span class="font-bold text-slate-800">0 ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                        <span class="text-sm text-slate-600 font-medium">عمولات مناديب اليوم:</span>
+                        <span class="font-bold text-amber-700">- 0 ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                        <span class="text-sm text-emerald-800 font-bold">صافي أرباح توصيل اليوم:</span>
+                        <span class="font-black text-emerald-700 text-base">0 ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-100">
+                        <span class="text-sm text-rose-800 font-medium">مصروفات تشغيلية (الشهر):</span>
+                        <span class="font-bold text-rose-700">- 0 ل.ل</span>
+                    </div>
+                </div>
+            </div>
+            <a href="/reports" class="w-full mt-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-center py-2.5 rounded-xl text-xs font-bold transition">
+                عرض تقرير الأرباح والخسائر الكامل
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Orders Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="font-bold text-slate-800 text-base">📦 أحدث الشحنات والطلبات</h3>
+            <a href="/orders" class="text-sm text-blue-600 hover:underline font-bold">عرض كافة الطلبات (0+) &larr;</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-bold border-b border-slate-100">
+                    <tr>
+                        <th class="py-3 px-6">رقم التتبع</th>
+                        <th class="py-3 px-6">التاجر / المتجر</th>
+                        <th class="py-3 px-6">المستلم والوجهة</th>
+                        <th class="py-3 px-6">المندوب</th>
+                        <th class="py-3 px-6">سعر البضاعة</th>
+                        <th class="py-3 px-6">أجرة التوصيل</th>
+                        <th class="py-3 px-6">الحالة</th>
+                        <th class="py-3 px-6">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-slate-400">لا توجد طلبات مسجلة بعد</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- STRATEGIC EXECUTIVE REPORT MODAL (التقرير الاستراتيجي الشامل) -->
+    <div id="executiveReportModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 md:p-6 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-900 flex items-center justify-center text-xl font-black shadow-lg shadow-amber-400/20">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-lg md:text-xl font-black text-white">التقرير الاستراتيجي وتقييم الأداء الشامل (AI Hub)</h3>
+                            <span id="modalHealthScoreBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                كفاءة النظام 40%
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-0.5">تحليل رقمي وتشغيلي دقيق لأداء الموظفين، السائقين، المتاجر وحركة الأموال.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeExecutiveReportModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/50">
+                <!-- 1. Executive Metric Highlights -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-[11px] font-bold text-slate-400 block">إجمالي الأوردرات</span>
+                        <span id="kpiTotalOrders" class="text-lg font-black text-slate-800 font-mono mt-0.5 block">0</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-[11px] font-bold text-emerald-600 block">نسبة التسليم الناجح</span>
+                        <span id="kpiSuccessRate" class="text-lg font-black text-emerald-600 font-mono mt-0.5 block">0.0%</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-[11px] font-bold text-rose-600 block">نسبة الرجوع (المرتجعات)</span>
+                        <span id="kpiReturnRate" class="text-lg font-black text-rose-600 font-mono mt-0.5 block">0.0%</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-[11px] font-bold text-amber-600 block">كاش مع السائقين</span>
+                        <span id="kpiCourierCustody" class="text-sm font-black text-amber-600 font-mono mt-0.5 block">0</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-[11px] font-bold text-blue-600 block">مستحقات المحلات</span>
+                        <span id="kpiMerchantDebt" class="text-sm font-black text-blue-600 font-mono mt-0.5 block">0</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-[11px] font-bold text-indigo-600 block">هامش ربح الشركة</span>
+                        <span id="kpiProfitMargin" class="text-lg font-black text-indigo-600 font-mono mt-0.5 block">0.0%</span>
+                    </div>
+                </div>
+
+                <!-- 2. Dual Leaderboards: Couriers (Best Driver) & Employees (Agents) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Couriers Leaderboard -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">🏆</span>
+                                <h4 class="font-black text-slate-800 text-sm">ترتيب وتقييم أداء السائقين (Couriers)</h4>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-semibold">حسب نسبة الإنجاز والسرعة</span>
+                        </div>
+                        <div class="overflow-x-auto flex-1">
+                            <table class="w-full text-right text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-100 pb-2">
+                                        <th class="py-2 px-2">الترتيب</th>
+                                        <th class="py-2 px-2">السائق</th>
+                                        <th class="py-2 px-2 text-center">المسلّم</th>
+                                        <th class="py-2 px-2 text-center">النجاح</th>
+                                        <th class="py-2 px-2 text-left">عمولته</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="couriersTableBody" class="divide-y divide-slate-50">
+                                    <tr>
+                                        <td colspan="5" class="py-6 text-center text-slate-400">جاري تحميل تقييم السائقين...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Agents / Call Center Leaderboard -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">⭐</span>
+                                <h4 class="font-black text-slate-800 text-sm">أداء موظفي الإدخال والكول سنتر (Staff)</h4>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-semibold">حسب حجم الطلبات والتحويل</span>
+                        </div>
+                        <div class="overflow-x-auto flex-1">
+                            <table class="w-full text-right text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-100 pb-2">
+                                        <th class="py-2 px-2">الترتيب</th>
+                                        <th class="py-2 px-2">الموظف</th>
+                                        <th class="py-2 px-2 text-center">المسجل</th>
+                                        <th class="py-2 px-2 text-center">المسلّم</th>
+                                        <th class="py-2 px-2 text-center">نسبة الإنجاز</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="agentsTableBody" class="divide-y divide-slate-50">
+                                    <tr>
+                                        <td colspan="5" class="py-6 text-center text-slate-400">جاري تحميل تقييم الموظفين...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Top Active Stores & AI Actionable Recommendations -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Top 5 Active Stores -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
+                            <i class="fa-solid fa-store text-indigo-600"></i>
+                            <h4 class="font-black text-slate-800 text-sm">أكثر المتاجر نشاطاً وتوليداً للشحنات</h4>
+                        </div>
+                        <div id="topMerchantsList" class="space-y-2.5">
+                            <div class="py-4 text-center text-xs text-slate-400">جاري التحميل...</div>
+                        </div>
+                    </div>
+
+                    <!-- AI Actionable Strategic Recommendations -->
+                    <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-5 rounded-2xl shadow-sm border border-indigo-800">
+                        <div class="flex items-center gap-2 pb-3 mb-3 border-b border-indigo-700/50">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                            <h4 class="font-black text-amber-300 text-sm">توصيات الذكاء الاصطناعي الذكية والمباشرة</h4>
+                        </div>
+                        <div id="aiRecommendationsList" class="space-y-2.5 text-xs text-indigo-100">
+                            <div class="py-4 text-center text-indigo-300">جاري إعداد التوصيات...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-white border-t border-slate-200 p-4 px-6 flex items-center justify-between shrink-0">
+                <span class="text-xs text-slate-500 font-medium">البيانات محدثة لحظياً وتتوافق مع الخزينة والمحاسبة 100%</span>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i>
+                        <span>طباعة التقرير</span>
+                    </button>
+                    <button type="button" onclick="closeExecutiveReportModal()" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-black transition">
+                        إغلاق النافذة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ADMIN UNLOCK PIN MODAL -->
+    <div id="adminUnlockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-red-600"></i>
+                    <span>تسجيل دخول المدير العام 👑</span>
+                </h3>
+                <button onclick="closeModal('adminUnlockModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form method="POST" action="/auth/unlock-admin" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">أدخل كلمة سر المدير:</label>
+                    <input type="password" name="pin" required placeholder="••••••••" autofocus class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-black tracking-widest text-center focus:ring-2 focus:ring-red-500 font-mono">
+                    <span class="text-[11px] text-slate-400 mt-1 block text-center">أدخل الرمز السري الخاص بالمدير للمتابعة</span>
+                </div>
+
+                <div class="pt-2 flex items-center justify-between gap-3 border-t border-slate-100">
+                    <a href="/auth/recover-admin" class="text-[11px] text-slate-400 hover:text-red-600 transition">نسيت كلمة المرور؟</a>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeModal('adminUnlockModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-red-600/20 transition">تأكيد الدخول</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Scripts -->
+    <script>
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        }
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
+
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+
+        function openSidebar() {
+            if (sidebar) sidebar.classList.remove('translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.remove('hidden');
+        }
+
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.add('translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.add('hidden');
+        }
+
+        if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openSidebar);
+        if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+        if (mobileOverlay) mobileOverlay.addEventListener('click', closeSidebar);
+
+        // Global Live Search Handler
+        const globalSearchInput = document.getElementById('globalLiveSearch');
+        const globalSearchResults = document.getElementById('globalSearchResults');
+        const clearGlobalSearchBtn = document.getElementById('clearGlobalSearchBtn');
+        let searchDebounceTimer = null;
+
+        if (globalSearchInput) {
+            globalSearchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                if (clearGlobalSearchBtn) {
+                    clearGlobalSearchBtn.classList.toggle('hidden', !query);
+                }
+                clearTimeout(searchDebounceTimer);
+                if (query.length < 2) {
+                    globalSearchResults.classList.add('hidden');
+                    globalSearchResults.innerHTML = '';
+                    return;
+                }
+                searchDebounceTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                        const data = await res.json();
+                        const results = data.results || [];
+                        if (results.length === 0) {
+                            globalSearchResults.innerHTML = `
+                                <div class="p-4 text-center text-slate-400 text-xs">
+                                    لا توجد نتائج مطابقة لـ "${query}"
+                                </div>
+                            `;
+                        } else {
+                            globalSearchResults.innerHTML = results.map(r => `
+                                <a href="${r.url}" class="flex items-center gap-3 p-3 hover:bg-slate-50 transition border-b border-slate-100 last:border-0">
+                                    <span class="text-base w-7 text-center">${r.icon || '🔍'}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <div class="text-xs font-bold text-slate-800 truncate">${r.title}</div>
+                                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold">${r.type}</span>
+                                        </div>
+                                        ${r.subtitle ? `<div class="text-[11px] text-slate-400 truncate">${r.subtitle}</div>` : ''}
+                                    </div>
+                                </a>
+                            `).join('');
+                        }
+                        globalSearchResults.classList.remove('hidden');
+                    } catch (e) {
+                        console.error('Search error', e);
+                    }
+                }, 250);
+            });
+
+            if (clearGlobalSearchBtn) {
+                clearGlobalSearchBtn.addEventListener('click', function() {
+                    globalSearchInput.value = '';
+                    globalSearchResults.classList.add('hidden');
+                    clearGlobalSearchBtn.classList.add('hidden');
+                    globalSearchInput.focus();
+                });
+            }
+
+            document.addEventListener('click', function(e) {
+                if (!globalSearchInput.contains(e.target) && !globalSearchResults.contains(e.target)) {
+                    globalSearchResults.classList.add('hidden');
+                }
+            });
+        }
+
+        // =======================================================================
+        //          REAL-TIME LIVE MULTI-DEVICE SYNC ENGINE ⚡
+        // =======================================================================
+        (function() {
+            let lastFingerprint = null;
+            let isPolling = false;
+
+            // Top Live Sync Toast Element
+            const liveToast = document.createElement('div');
+            liveToast.id = 'stargateLiveSyncToast';
+            liveToast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 text-white backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-2xl border border-emerald-500/40 text-xs font-black flex items-center gap-2.5 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px]';
+            liveToast.innerHTML = '<span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span><span id="stargateLiveSyncText">مزامنة حية فورية: تم تحديث البيانات!</span>';
+            document.body.appendChild(liveToast);
+
+            function showLiveToast(msg, duration = 3500) {
+                const textEl = document.getElementById('stargateLiveSyncText');
+                if (textEl) textEl.textContent = msg;
+                liveToast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+                liveToast.classList.add('opacity-100', 'translate-y-0');
+                setTimeout(() => {
+                    liveToast.classList.remove('opacity-100', 'translate-y-0');
+                    liveToast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+                }, duration);
+            }
+
+            let pendingRefresh = false;
+
+            function isUserActivelyWritingModal() {
+                // Check if any modal is open and has user-entered content
+                const visibleModals = Array.from(document.querySelectorAll('div[id$="Modal"]')).filter(m => {
+                    return !m.classList.contains('hidden') && m.offsetParent !== null;
+                });
+                if (visibleModals.length === 0) return false;
+
+                for (const modal of visibleModals) {
+                    const inputs = modal.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="radio"]):not([type="checkbox"]), textarea');
+                    for (const inp of inputs) {
+                        if (inp.value && inp.value.trim().length > 0) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function pollLiveSync() {
+                if (isPolling || document.hidden) return;
+                isPolling = true;
+
+                fetch('/api/live/pulse', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => {
+                    if (!res.ok) return null;
+                    return res.json();
+                })
+                .then(data => {
+                    isPolling = false;
+                    if (!data || !data.success) return;
+
+                    if (lastFingerprint === null) {
+                        lastFingerprint = data.fingerprint;
+                        return;
+                    }
+
+                    if (data.fingerprint !== lastFingerprint) {
+                        if (isUserActivelyWritingModal()) {
+                            pendingRefresh = true;
+                            showLiveToast('🔔 تم تسجيل بيانات جديدة! سيتم التحديث فور إغلاق النافذة...');
+                        } else {
+                            lastFingerprint = data.fingerprint;
+                            pendingRefresh = false;
+                            showLiveToast('🟢 تحديث فوري مباشر: تم تسجيل بيانات جديدة في السيستم!');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 500);
+                        }
+                    }
+                })
+                .catch(() => {
+                    isPolling = false;
+                });
+            }
+
+            // Check every 2.5 seconds for instant real-time synchronization
+            setInterval(pollLiveSync, 2500);
+
+            // Also check immediately when tab/device wakes up
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    pollLiveSync();
+                }
+            });
+
+            // If a refresh was pending while writing, reload immediately when modal is closed
+            window.addEventListener('click', (e) => {
+                if (pendingRefresh && !isUserActivelyWritingModal()) {
+                    pendingRefresh = false;
+                    window.location.reload();
+                }
+            });
+        })();
+    </script>
+    
+<script>
+    // Weekly Delivered Chart
+    const ctx = document.getElementById('weeklyChart').getContext('2d');
+    const chartDays = ["09/02", "09/03", "09/04", "09/05", "09/06", "09/07", "09/08"];
+    const chartDelivered = [0, 0, 0, 0, 0, 0, 0];
+    const chartRevenue = [0, 0, 0, 0, 0, 0, 0];
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartDays,
+            datasets: [
+                {
+                    label: 'عدد الطلبات المسلمة',
+                    data: chartDelivered,
+                    backgroundColor: 'rgba(37, 99, 235, 0.85)',
+                    borderRadius: 8,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'إيراد التوصيل (ل.ل)',
+                    data: chartRevenue,
+                    type: 'line',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                x: {
+                    grid: { display: false }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: { display: true, text: 'عدد الطلبات' },
+                    grid: { color: '#f1f5f9' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'الإيراد' }
+                }
+            }
+        }
+    });
+
+    // Executive Report Modal Controller
+    async function openExecutiveReportModal() {
+        const modal = document.getElementById('executiveReportModal');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        try {
+            const res = await fetch('/api/ai/executive-report');
+            const data = await res.json();
+            
+            if (data) {
+                // Update KPIs
+                if (data.health_score) {
+                    document.getElementById('modalHealthScoreBadge').innerText = `كفاءة النظام ${data.health_score}%`;
+                }
+                if (data.kpis) {
+                    document.getElementById('kpiTotalOrders').innerText = data.kpis.total_orders || 0;
+                    document.getElementById('kpiSuccessRate').innerText = `${data.kpis.success_rate || 0}%`;
+                    document.getElementById('kpiReturnRate').innerText = `${data.kpis.return_rate || 0}%`;
+                    document.getElementById('kpiProfitMargin').innerText = `${data.kpis.profit_margin_percent || 0}%`;
+                }
+
+                // Render Couriers Table
+                const couriersBody = document.getElementById('couriersTableBody');
+                if (data.couriers_ranking && data.couriers_ranking.length > 0) {
+                    couriersBody.innerHTML = data.couriers_ranking.map((c, i) => `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-2.5 px-2 font-bold">${c.badge || ('#' + (i+1))}</td>
+                            <td class="py-2.5 px-2 font-black text-slate-800">
+                                <div>${c.name}</div>
+                                <span class="text-[10px] text-slate-400">${c.phone || ''}</span>
+                            </td>
+                            <td class="py-2.5 px-2 text-center font-bold text-emerald-600">${c.delivered_count}</td>
+                            <td class="py-2.5 px-2 text-center font-mono font-bold">${c.success_rate}%</td>
+                            <td class="py-2.5 px-2 text-left font-mono font-bold text-amber-600">${(c.total_commission || 0).toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    couriersBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">لا توجد إحصائيات كافية للسائقين بعد</td></tr>`;
+                }
+
+                // Render Agents Table
+                const agentsBody = document.getElementById('agentsTableBody');
+                if (data.agents_ranking && data.agents_ranking.length > 0) {
+                    agentsBody.innerHTML = data.agents_ranking.map((a, i) => `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-2.5 px-2 font-bold">${a.badge || ('#' + (i+1))}</td>
+                            <td class="py-2.5 px-2 font-black text-slate-800">${a.agent_name}</td>
+                            <td class="py-2.5 px-2 text-center font-mono font-bold text-blue-600">${a.total_orders}</td>
+                            <td class="py-2.5 px-2 text-center font-mono font-bold text-emerald-600">${a.delivered_orders}</td>
+                            <td class="py-2.5 px-2 text-center font-mono font-bold">${a.success_rate}%</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    agentsBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">لا توجد إحصائيات لموظفي الإدخال بعد</td></tr>`;
+                }
+
+                // Render Top Merchants
+                const merchantsList = document.getElementById('topMerchantsList');
+                if (data.top_merchants && data.top_merchants.length > 0) {
+                    merchantsList.innerHTML = data.top_merchants.map((m, i) => `
+                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-black flex items-center justify-center">${i+1}</span>
+                                <span class="font-bold text-slate-800">${m.store_name || m.name}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-slate-500 font-semibold">${m.order_count} طلب</span>
+                                <span class="text-xs font-black text-indigo-600 font-mono">${(m.total_volume || 0).toLocaleString()} ل.ل</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    merchantsList.innerHTML = `<div class="py-4 text-center text-xs text-slate-400">لا توجد بيانات متاجر كافية</div>`;
+                }
+
+                // Render AI Recommendations
+                const recList = document.getElementById('aiRecommendationsList');
+                if (data.recommendations && data.recommendations.length > 0) {
+                    recList.innerHTML = data.recommendations.map(r => `
+                        <div class="p-2.5 rounded-xl bg-white/10 border border-white/10 flex items-start gap-2.5 leading-relaxed">
+                            <i class="fa-solid fa-lightbulb text-amber-300 mt-0.5 shrink-0 text-sm"></i>
+                            <span>${r}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    recList.innerHTML = `<div class="p-3 rounded-xl bg-white/10 text-center">العمليات تسير بكفاءة ممتازة ومثالية 🚀</div>`;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load executive report:', e);
+        }
+    }
+
+    function closeExecutiveReportModal() {
+        const modal = document.getElementById('executiveReportModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeExecutiveReportModal();
+    });
+
+    // Real-Time Auto-Check Heartbeat (every 25 seconds without page reload interruption)
+    setInterval(async () => {
+        try {
+            const res = await fetch('/api/ai/risk-radar');
+            const data = await res.json();
+            const risks = data.risks || data.flags || [];
+            // If new high severity risks appear, smoothly reload to display pulsating alert
+            const hasHigh = risks.some(r => r.severity === 'high');
+            const currentHasHigh = document.querySelector('.animate-pulse') !== null;
+            if (hasHigh !== currentHasHigh) {
+                window.location.reload();
+            }
+        } catch (e) {
+            // silent catch
+        }
+    }, 25000);
+</script>
+
+</body>
+</html>
