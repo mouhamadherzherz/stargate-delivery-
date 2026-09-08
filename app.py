@@ -114,12 +114,34 @@ DB_PATH = resolve_database_path()
 if os.path.dirname(DB_PATH):
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
+def get_persistent_secret_key():
+    env_key = os.environ.get('STARGATE_SECRET_KEY')
+    if env_key:
+        return env_key
+    key_path = os.path.join(os.path.dirname(DB_PATH), '.stargate_secret.key')
+    if os.path.exists(key_path):
+        try:
+            with open(key_path, 'r', encoding='utf-8') as f:
+                k = f.read().strip()
+                if len(k) >= 16:
+                    return k
+        except Exception:
+            pass
+    new_key = secrets.token_hex(32)
+    try:
+        os.makedirs(os.path.dirname(key_path), exist_ok=True)
+        with open(key_path, 'w', encoding='utf-8') as f:
+            f.write(new_key)
+    except Exception:
+        pass
+    return new_key
+
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
-app.secret_key = os.environ.get('STARGATE_SECRET_KEY') or secrets.token_hex(32)
-app.config['SESSION_PERMANENT'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
+app.secret_key = get_persistent_secret_key()
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 @app.after_request
 def set_secure_headers(response):
@@ -1708,6 +1730,7 @@ def login_page():
 
             if emp:
                 session.clear()
+                session.permanent = True
                 session['logged_in'] = True
                 session['user_id'] = emp['id']
                 session['username'] = emp['username']
@@ -1735,6 +1758,7 @@ def login_page():
             emp = cur.fetchone()
             if emp and verify_password(password, emp['password_hash']):
                 session.clear()
+                session.permanent = True
                 session['logged_in'] = True
                 session['user_id'] = emp['id']
                 session['username'] = emp['username']
