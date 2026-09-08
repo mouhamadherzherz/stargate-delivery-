@@ -1,27 +1,35 @@
-# Database & Temp Files - Track base production database for cloud deploys
-delivery.db
-*.db-wal
-*.db-shm
+# Python & Environment
+__pycache__/
+*.py[cod]
+*$py.class
+*.spec
+build/
+dist/
+_internal/
+
+# Databases & Backups (CRITICAL SECURITY)
+data/
+*.db
 *.sqlite
 *.sqlite3
-*.restore_temp
-backup_*.db
-legacy_database_archive_*.db
+backup/
 backups/
-db_backups/
-!data/stargate_production.db
+stargate-backup-before-upgrade/
 
-# Environment & Secrets
+# Environment Variables & Secrets
 .env
-*.env
+.env.local
+.env.*.local
+*.key
+.stargate_secret.key
 
-# Python Bytecode & Cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Logs & Diagnostics
+logs/
+*.log
 
-# Operating System Files
+# IDE & OS Files
+.vscode/
+.idea/
 Thumbs.db
 Desktop.ini
 .DS_Store
