@@ -4061,6 +4061,86 @@ def _auto_gdrive_backup_worker():
 _gdrive_thread = threading.Thread(target=_auto_gdrive_backup_worker, daemon=True)
 _gdrive_thread.start()
 
+_gdrive_sync_timer = None
+_gdrive_sync_lock = threading.Lock()
+
+def trigger_gdrive_sync_async(delay=8.0):
+    """Batched debounce sync to Google Drive whenever orders or financials change."""
+    global _gdrive_sync_timer
+    with _gdrive_sync_lock:
+        if _gdrive_sync_timer is not None:
+            try:
+                _gdrive_sync_timer.cancel()
+            except Exception:
+                pass
+
+        def _do_upload():
+            try:
+                if not os.path.exists(DB_PATH):
+                    return
+                conn = get_db()
+                row = conn.execute("SELECT gdrive_enabled, gdrive_credentials_json, gdrive_folder_id FROM settings WHERE id=1").fetchone()
+                conn.close()
+
+                creds = os.environ.get('GDRIVE_SERVICE_ACCOUNT_JSON') or (row['gdrive_credentials_json'] if row else '')
+                folder_id = os.environ.get('GDRIVE_FOLDER_ID') or (row['gdrive_folder_id'] if row else '')
+                enabled = bool(os.environ.get('GDRIVE_SERVICE_ACCOUNT_JSON')) or (bool(row['gdrive_enabled']) if row else False)
+
+                if enabled and creds:
+                    import google_drive_backup
+                    success, msg, details = google_drive_backup.upload_backup_to_drive(DB_PATH, creds, folder_id)
+                    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    status_str = "ناجح (تلقائي)" if success else f"فشل: {msg}"
+                    c2 = get_db()
+                    c2.execute("UPDATE settings SET gdrive_last_backup_time=?, gdrive_last_backup_status=? WHERE id=1", (now_str, status_str))
+                    c2.commit()
+                    c2.close()
+            except Exception:
+                pass
+
+        _gdrive_sync_timer = threading.Timer(delay, _do_upload)
+        _gdrive_sync_timer.daemon = True
+        _gdrive_sync_timer.start()
+
+@app.after_request
+def _auto_sync_mutations_to_gdrive(response):
+    try:
+        if request.method == 'POST' and response.status_code in (200, 201, 302):
+            path = request.path.lower()
+            if any(k in path for k in ['/order', '/merchant', '/courier', '/treasur', '/settle', '/expense', '/cash']):
+                if not any(ex in path for ex in ['/search', '/test', '/filter', '/export', '/report', '/backup']):
+                    trigger_gdrive_sync_async(delay=8.0)
+    except Exception:
+        pass
+    return response
+
+def check_and_restore_gdrive_on_startup():
+    """If running on Render / Cloud and the database has 0 orders, attempt auto-restore from Google Drive."""
+    try:
+        import time as _t
+        _t.sleep(2)
+        if not os.path.exists(DB_PATH):
+            return
+        conn = get_db()
+        cnt_row = conn.execute("SELECT count(*) FROM orders").fetchone()
+        order_count = cnt_row[0] if cnt_row else 0
+
+        row = conn.execute("SELECT gdrive_credentials_json, gdrive_folder_id FROM settings WHERE id=1").fetchone()
+        conn.close()
+
+        creds = os.environ.get('GDRIVE_SERVICE_ACCOUNT_JSON') or (row['gdrive_credentials_json'] if row else '')
+        folder_id = os.environ.get('GDRIVE_FOLDER_ID') or (row['gdrive_folder_id'] if row else '')
+
+        if order_count == 0 and creds:
+            import google_drive_backup
+            success, msg, details = google_drive_backup.download_latest_backup_from_drive(creds, folder_id, DB_PATH)
+            if success:
+                print(f"[Stargate] Auto-restored cloud database on startup: {msg}")
+    except Exception:
+        pass
+
+threading.Thread(target=check_and_restore_gdrive_on_startup, daemon=True).start()
+
 # =======================================================================
 #                         TELEGRAM & AI API ENDPOINTS
 # =======================================================================

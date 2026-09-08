@@ -213,3 +213,74 @@ def prune_old_backups(service, folder_id, keep_last=30):
                 service.files().delete(fileId=old_file['id']).execute()
             except Exception:
                 pass
+
+
+def download_latest_backup_from_drive(credentials_data, folder_id, target_db_path):
+    """
+    Finds the latest stargate_backup_*.db in Google Drive and downloads it to target_db_path safely.
+    Returns (success: bool, message: str, details: dict).
+    """
+    temp_dest = None
+    try:
+        from googleapiclient.http import MediaIoBaseDownload
+        service, client_email = get_drive_service(credentials_data)
+
+        query = "name contains 'stargate_backup_' and trashed = false"
+        if folder_id and folder_id.strip():
+            query = f"'{folder_id.strip()}' in parents and " + query
+
+        results = service.files().list(
+            q=query,
+            orderBy="createdTime desc",
+            pageSize=1,
+            fields="files(id, name, size, createdTime)"
+        ).execute()
+
+        files = results.get('files', [])
+        if not files:
+            return False, "لا توجد أي نسخ احتياطية سابقة على Google Drive.", None
+
+        latest_file = files[0]
+        file_id = latest_file['id']
+        filename = latest_file['name']
+
+        # Download to a temporary file first
+        temp_dir = tempfile.gettempdir()
+        temp_dest = os.path.join(temp_dir, f"restore_{filename}")
+
+        req = service.files().get_media(fileId=file_id)
+        with open(temp_dest, 'wb') as fh:
+            downloader = MediaIoBaseDownload(fh, req)
+            done = False
+            while not done:
+                status, done = downloader.next_chunk()
+
+        # Validate SQLite integrity
+        chk_conn = sqlite3.connect(temp_dest)
+        chk_conn.execute("SELECT count(*) FROM sqlite_master").fetchone()
+        chk_conn.close()
+
+        # Safely copy into target_db_path
+        os.makedirs(os.path.dirname(os.path.abspath(target_db_path)), exist_ok=True)
+        src_conn = sqlite3.connect(temp_dest)
+        dst_conn = sqlite3.connect(target_db_path)
+        with dst_conn:
+            src_conn.backup(dst_conn)
+        src_conn.close()
+        dst_conn.close()
+
+        return True, f"تمت استعادة أحدث نسخة احتياطية بنجاح من Google Drive ({filename})", {
+            'file_id': file_id,
+            'filename': filename,
+            'created_time': latest_file.get('createdTime')
+        }
+
+    except Exception as e:
+        return False, f"فشل تنزيل النسخة الاحتياطية من Google Drive: {e}", None
+    finally:
+        if temp_dest and os.path.exists(temp_dest):
+            try:
+                os.remove(temp_dest)
+            except Exception:
+                pass
+
