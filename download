@@ -1,0 +1,9 @@
+*.pyc
+__pycache__/
+*.exe
+*.db
+*.log
+.env
+_internal/
+dist/
+build/

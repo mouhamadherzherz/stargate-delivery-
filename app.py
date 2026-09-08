@@ -116,34 +116,10 @@ DB_PATH = resolve_database_path()
 if os.path.dirname(DB_PATH):
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
-def get_persistent_secret_key():
-    env_key = os.environ.get('STARGATE_SECRET_KEY')
-    if env_key:
-        return env_key
-    key_path = os.path.join(os.path.dirname(DB_PATH), '.stargate_secret.key')
-    if os.path.exists(key_path):
-        try:
-            with open(key_path, 'r', encoding='utf-8') as f:
-                k = f.read().strip()
-                if len(k) >= 16:
-                    return k
-        except Exception:
-            pass
-    new_key = secrets.token_hex(32)
-    try:
-        os.makedirs(os.path.dirname(key_path), exist_ok=True)
-        with open(key_path, 'w', encoding='utf-8') as f:
-            f.write(new_key)
-    except Exception:
-        pass
-    return new_key
-
+import config
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
-app.secret_key = get_persistent_secret_key()
-app.config['SESSION_PERMANENT'] = True
+app.config.from_object(config.Config)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 @app.after_request
 def set_secure_headers(response):
@@ -153,7 +129,6 @@ def set_secure_headers(response):
     return response
 
 # ===================== GLOBAL DEFAULTS =====================
-DEFAULT_ADMIN_PIN         = "19701313"
 DEFAULT_EXCHANGE_RATE     = 89500.0
 DEFAULT_DELIVERY_FEE      = 268500.0
 DEFAULT_RETURN_FEE        = 89500.0
@@ -202,21 +177,6 @@ def verify_password(pw, hashed):
     if hashed.startswith(('scrypt:', 'pbkdf2:')):
         return check_password_hash(hashed, pw_str)
     return secrets.compare_digest(hashlib.sha256(pw_str.encode('utf-8')).hexdigest(), hashed)
-
-def hash_pin(pin):
-    return hashlib.sha256(str(pin).strip().encode('utf-8')).hexdigest()
-
-def verify_admin_pin(pin):
-    pin_str = str(pin).strip()
-    if not pin_str:
-        return False
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT admin_pin FROM settings WHERE id = 1")
-    row = cursor.fetchone()
-    conn.close()
-    stored_pin = str(row['admin_pin']).strip() if row and row['admin_pin'] else hash_pin(DEFAULT_ADMIN_PIN)
-    return (pin_str == stored_pin or hash_pin(pin_str) == stored_pin)
 
 def login_required(f):
     @wraps(f)
@@ -440,8 +400,7 @@ def inject_global_data():
     is_admin = user_role in ('admin', 'super_admin')
 
     safe_settings = dict(settings)
-    safe_settings['has_admin_pin'] = bool(settings.get('admin_pin'))
-    safe_settings['admin_pin'] = ''
+    
 
     return {
         'settings': safe_settings,
@@ -478,7 +437,6 @@ def init_db():
             default_return_fee REAL DEFAULT 89500.0,
             default_driver_commission REAL DEFAULT 179000.0,
             receipt_footer_text TEXT,
-            admin_pin TEXT DEFAULT '19701313',
             whatsapp_gateway_enabled INTEGER DEFAULT 0,
             whatsapp_provider TEXT DEFAULT 'ultramsg',
             whatsapp_instance_id TEXT,
@@ -507,7 +465,19 @@ def init_db():
 
         cur.execute("SELECT id FROM settings WHERE id = 1")
         if not cur.fetchone():
-            conn.execute("INSERT INTO settings (id, admin_pin) VALUES (1, '19701313')")
+            conn.execute("INSERT INTO settings (id) VALUES (1)")
+
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT,
+            details TEXT,
+            user_role TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
 
         conn.execute("""
         CREATE TABLE IF NOT EXISTS employees (
@@ -525,8 +495,7 @@ def init_db():
             job_title TEXT,
             job_type TEXT,
             currency TEXT DEFAULT 'ل.ل',
-            custom_permissions TEXT,
-            pin TEXT
+            custom_permissions TEXT
         )
         """)
 
@@ -537,6 +506,23 @@ def init_db():
             INSERT INTO employees (username, password_hash, display_name, role, is_active)
             VALUES ('stargate', ?, 'المدير العام', 'admin', 1)
             """, (hash_password(_default_pw),))
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS merchant_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("SELECT COUNT(*) as c FROM merchant_categories")
+        if cur.fetchone()['c'] == 0:
+            default_m_cats = [
+                'مطاعم وسناك', 'حلويات ومخابز', 'أزياء وملابس',
+                'إلكترونيات وهواتف', 'سوبرماركت ومواد غذائية',
+                'عطور وتجميل', 'أخرى'
+            ]
+            for cat in default_m_cats:
+                cur.execute("INSERT OR IGNORE INTO merchant_categories (name) VALUES (?)", (cat,))
 
         conn.execute("""
         CREATE TABLE IF NOT EXISTS couriers (
@@ -1113,66 +1099,33 @@ def login_page():
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         login_type = request.form.get('login_type', 'userpass')
-        if login_type == 'pin':
-            pin = request.form.get('pin', '').strip()
-            if not pin:
-                flash("يرجى إدخال رمز PIN للدخول", "warning")
-                return render_template('login.html')
-            
-            conn = get_db()
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM employees WHERE pin = ? AND is_active = 1 LIMIT 1", (pin,))
-            emp = cur.fetchone()
-            
-            if not emp and verify_admin_pin(pin):
-                cur.execute("SELECT * FROM employees WHERE role IN ('admin', 'super_admin') AND is_active = 1 LIMIT 1")
-                emp = cur.fetchone()
-
-            if emp:
-                session.clear()
-                session.permanent = True
-                session['logged_in'] = True
-                session['user_id'] = emp['id']
-                session['username'] = emp['username']
-                session['display_name'] = emp['display_name']
-                session['user_role'] = emp['role']
-                session['custom_permissions'] = dict(emp).get('custom_permissions', '')
-                cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
-                conn.commit()
-                conn.close()
-                flash(f"أهلاً وسهلاً بك {emp['display_name']}! 👋", "success")
-                return redirect(url_for('dashboard'))
-            else:
-                conn.close()
-                flash("رمز PIN غير صحيح أو الحساب غير نشط!", "danger")
+        
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        if not username or not password:
+            flash("يرجى إدخال اسم المستخدم وكلمة السر", "warning")
             return render_template('login.html')
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM employees WHERE username = ? AND is_active = 1 LIMIT 1", (username,))
+        emp = cur.fetchone()
+        if emp and verify_password(password, emp['password_hash']):
+            session.clear()
+            session.permanent = True
+            session['logged_in'] = True
+            session['user_id'] = emp['id']
+            session['username'] = emp['username']
+            session['display_name'] = emp['display_name']
+            session['user_role'] = emp['role']
+            session['custom_permissions'] = dict(emp).get('custom_permissions', '')
+            cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
+            conn.commit()
+            conn.close()
+            flash(f"أهلاً وسهلاً بك {emp['display_name']}! 👋", "success")
+            return redirect(url_for('dashboard'))
         else:
-            username = request.form.get('username', '').strip()
-            password = request.form.get('password', '').strip()
-            if not username or not password:
-                flash("يرجى إدخال اسم المستخدم وكلمة السر", "warning")
-                return render_template('login.html')
-            conn = get_db()
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM employees WHERE username = ? AND is_active = 1 LIMIT 1", (username,))
-            emp = cur.fetchone()
-            if emp and verify_password(password, emp['password_hash']):
-                session.clear()
-                session.permanent = True
-                session['logged_in'] = True
-                session['user_id'] = emp['id']
-                session['username'] = emp['username']
-                session['display_name'] = emp['display_name']
-                session['user_role'] = emp['role']
-                session['custom_permissions'] = dict(emp).get('custom_permissions', '')
-                cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
-                conn.commit()
-                conn.close()
-                flash(f"أهلاً وسهلاً بك {emp['display_name']}! 👋", "success")
-                return redirect(url_for('dashboard'))
-            else:
-                conn.close()
-                flash("اسم المستخدم أو كلمة السر غير صحيحة!", "danger")
+            conn.close()
+            flash("اسم المستخدم أو كلمة السر غير صحيحة!", "danger")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -1243,7 +1196,6 @@ def add_employee():
     display_name = request.form.get('display_name', '').strip()
     role = request.form.get('role', 'employee').strip()
     phone = request.form.get('phone', '').strip() or None
-    pin = request.form.get('pin', '').strip() or None
     permissions_list = request.form.getlist('permissions')
     custom_permissions = ','.join([p.strip() for p in permissions_list if p.strip()])
 
@@ -1255,9 +1207,9 @@ def add_employee():
     cur = conn.cursor()
     try:
         cur.execute("""
-        INSERT INTO employees (username, password_hash, display_name, role, phone, is_active, pin, custom_permissions)
-        VALUES (?, ?, ?, ?, ?, 1, ?, ?)
-        """, (username, hash_password(password), display_name, role, phone, pin, custom_permissions))
+        INSERT INTO employees (username, password_hash, display_name, role, phone, is_active, custom_permissions)
+        VALUES (?, ?, ?, ?, ?, 1, ?)
+        """, (username, hash_password(password), display_name, role, phone, custom_permissions))
         conn.commit()
         flash(f"تمت إضافة الموظف [{display_name}] بنجاح 🧑💼", "success")
     except sqlite3.IntegrityError:
@@ -1272,7 +1224,6 @@ def edit_employee(emp_id):
     display_name = request.form.get('display_name', '').strip()
     role = request.form.get('role', 'employee').strip()
     phone = request.form.get('phone', '').strip() or None
-    pin = request.form.get('pin', '').strip() or None
     new_password = request.form.get('new_password', '').strip()
     permissions_list = request.form.getlist('permissions')
     custom_permissions = ','.join([p.strip() for p in permissions_list if p.strip()])
@@ -1282,14 +1233,14 @@ def edit_employee(emp_id):
     try:
         if new_password:
             cur.execute("""
-            UPDATE employees SET display_name=?, role=?, phone=?, pin=?, custom_permissions=?, password_hash=?
+            UPDATE employees SET display_name=?, role=?, phone=?, custom_permissions=?, password_hash=?
             WHERE id=?
-            """, (display_name, role, phone, pin, custom_permissions, hash_password(new_password), emp_id))
+            """, (display_name, role, phone, custom_permissions, hash_password(new_password), emp_id))
         else:
             cur.execute("""
-            UPDATE employees SET display_name=?, role=?, phone=?, pin=?, custom_permissions=?
+            UPDATE employees SET display_name=?, role=?, phone=?, custom_permissions=?
             WHERE id=?
-            """, (display_name, role, phone, pin, custom_permissions, emp_id))
+            """, (display_name, role, phone, custom_permissions, emp_id))
         conn.commit()
         flash(f"تم تعديل الموظف [{display_name}] بنجاح ✏️", "success")
     finally:
@@ -1474,6 +1425,10 @@ def update_order_status(order_id):
             flash("الأوردر غير موجود", "danger")
             return redirect(url_for('orders_list'))
         order = dict(order)
+        if order.get('is_settled_with_merchant') or order.get('is_settled_with_courier'):
+            flash("⚠️ لا يمكن تغيير حالة أوردر مسوّى ومصروف مسبقاً في سند تسوية!", "warning")
+            return redirect(url_for('orders_list'))
+            
         old_status = order['status']
         custom_collected = request.form.get('collected_amount')
         custom_notes = request.form.get('notes')
@@ -1573,9 +1528,13 @@ def delete_order(order_id):
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT status, courier_id, collected_amount, order_price, delivery_fee, payment_method FROM orders WHERE id = ?", (order_id,))
+        cursor.execute("SELECT * FROM orders WHERE id = ?", (order_id,))
         row = cursor.fetchone()
         if row:
+            if row['is_settled_with_merchant'] or row['is_settled_with_courier']:
+                flash("⚠️ لا يمكن حذف أوردر مسوّى ومصروف مسبقاً في سند تسوية!", "danger")
+                return redirect(url_for('orders_list'))
+                
             cursor.execute("DELETE FROM settlement_items WHERE order_id = ?", (order_id,))
             if row['status'] == 'delivered' and row['courier_id'] and row['payment_method'] != 'whish':
                 collected = row['collected_amount'] or (row['order_price'] + row['delivery_fee'])
@@ -1663,19 +1622,19 @@ DEFAULT_MERCHANT_CATEGORIES = [
     'خضار وفواكه', 'كافيه ومشروبات', 'هدايا واكسسوارات', 'صيدلية ومستحضرات', 'عام'
 ]
 
-def get_merchant_categories(conn):
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS merchant_categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL)")
-    conn.commit()
-    cursor.execute("SELECT id, name FROM merchant_categories ORDER BY id ASC")
-    rows = cursor.fetchall()
-    if not rows:
-        for cat in DEFAULT_MERCHANT_CATEGORIES:
-            cursor.execute("INSERT OR IGNORE INTO merchant_categories (name) VALUES (?)", (cat,))
-        conn.commit()
-        cursor.execute("SELECT id, name FROM merchant_categories ORDER BY id ASC")
-        rows = cursor.fetchall()
-    return [dict(r) for r in rows]
+def get_merchant_categories(conn=None):
+    """جلب كافة تصنيفات المتاجر من قاعدة البيانات مرتبة أبجدياً"""
+    should_close = False
+    if conn is None:
+        conn = get_db()
+        should_close = True
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name FROM merchant_categories ORDER BY name ASC")
+        return [dict(r) for r in cursor.fetchall()]
+    finally:
+        if should_close:
+            conn.close()
 
 @app.route('/merchants')
 @login_required
@@ -1707,7 +1666,7 @@ def merchants_list():
     treasuries = [dict(r) for r in cursor.fetchall()]
     conn.close()
     return render_template('merchants.html', merchants=merchants, treasuries=treasuries,
-                           categories=[c['name'] for c in merchant_cats], active_page='merchants')
+                           categories=merchant_cats, active_page='merchants')
 
 @app.route('/merchants/add', methods=['POST'])
 @admin_required
@@ -2279,51 +2238,110 @@ def delete_vault(vault_id):
     return redirect(url_for('treasury_view'))
 
 # ===================== CATEGORY MANAGEMENT =====================
+
 @app.route('/merchants/categories/add', methods=['POST'])
 @admin_required
 def add_merchant_category():
-    cat_name = request.form.get('name', '').strip()
-    if cat_name:
-        conn = get_db()
-        cursor = conn.cursor()
-        get_merchant_categories(conn)
-        try:
-            cursor.execute("INSERT INTO merchant_categories (name) VALUES (?)", (cat_name,))
-            conn.commit()
-            flash(f"تمت إضافة تصنيف المتاجر [{cat_name}] بنجاح 🏷️", "success")
-        except sqlite3.IntegrityError:
-            flash(f"التصنيف [{cat_name}] موجود مسبقاً!", "warning")
-        finally:
-            conn.close()
+    if request.is_json:
+        data = request.get_json() or {}
+        cat_name = data.get('name', '').strip()
+    else:
+        cat_name = request.form.get('name', '').strip()
+
+    if not cat_name:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'اسم التصنيف مطلوب'}), 400
+        flash("يرجى إدخال اسم التصنيف!", "warning")
+        return redirect(url_for('merchants_list'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO merchant_categories (name) VALUES (?)", (cat_name,))
+        new_id = cursor.lastrowid
+        conn.commit()
+        if request.is_json:
+            return jsonify({'success': True, 'category': {'id': new_id, 'name': cat_name}, 'message': 'تمت الإضافة بنجاح'})
+        flash(f"تمت إضافة تصنيف المتاجر [{cat_name}] بنجاح 🏷️", "success")
+    except sqlite3.IntegrityError:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'التصنيف موجود مسبقاً'}), 409
+        flash(f"التصنيف [{cat_name}] موجود مسبقاً!", "warning")
+    except Exception as e:
+        if request.is_json:
+            return jsonify({'success': False, 'message': str(e)}), 500
+        flash(f"حدث خطأ أثناء الإضافة: {e}", "danger")
+    finally:
+        conn.close()
+
     return redirect(url_for('merchants_list'))
+
 
 @app.route('/merchants/categories/<int:cat_id>/edit', methods=['POST'])
 @admin_required
 def edit_merchant_category(cat_id):
-    new_name = request.form.get('name', '').strip()
-    if new_name:
-        conn = get_db()
-        cursor = conn.cursor()
+    if request.is_json:
+        data = request.get_json() or {}
+        new_name = data.get('name', '').strip()
+    else:
+        new_name = request.form.get('name', '').strip()
+
+    if not new_name:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'الاسم الجديد مطلوب'}), 400
+        flash("يرجى إدخال الاسم الجديد للتصنيف!", "warning")
+        return redirect(url_for('merchants_list'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
         cursor.execute("SELECT name FROM merchant_categories WHERE id = ?", (cat_id,))
         row = cursor.fetchone()
-        if row:
-            old_name = row['name']
-            cursor.execute("UPDATE merchant_categories SET name = ? WHERE id = ?", (new_name, cat_id))
-            cursor.execute("UPDATE merchants SET category = ? WHERE category = ?", (new_name, old_name))
-            conn.commit()
-            flash(f"تم تعديل التصنيف إلى [{new_name}] ✏️", "success")
+        if not row:
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'التصنيف غير موجود'}), 404
+            flash("التصنيف غير موجود!", "danger")
+            return redirect(url_for('merchants_list'))
+
+        old_name = row['name']
+        cursor.execute("UPDATE merchant_categories SET name = ? WHERE id = ?", (new_name, cat_id))
+        cursor.execute("UPDATE merchants SET category = ? WHERE category = ?", (new_name, old_name))
+        conn.commit()
+
+        if request.is_json:
+            return jsonify({'success': True, 'message': f'تم تعديل التصنيف إلى {new_name}'})
+        flash(f"تم تعديل التصنيف إلى [{new_name}] ✏️", "success")
+    except sqlite3.IntegrityError:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'الاسم الجديد مستخدم بالفعل'}), 409
+        flash(f"الاسم [{new_name}] مستخدم بالفعل!", "warning")
+    finally:
         conn.close()
+
     return redirect(url_for('merchants_list'))
+
 
 @app.route('/merchants/categories/<int:cat_id>/delete', methods=['POST'])
 @admin_required
 def delete_merchant_category(cat_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM merchant_categories WHERE id = ?", (cat_id,))
-    conn.commit()
-    conn.close()
-    flash("تم حذف تصنيف التاجر بنجاح 🗑️", "info")
+    try:
+        cursor.execute("SELECT name FROM merchant_categories WHERE id = ?", (cat_id,))
+        row = cursor.fetchone()
+        if row:
+            old_name = row['name']
+            # تحويل المتاجر المرتبطة بهذا التصنيف إلى تصنيف عام بدلاً من بقائها معلقة
+            cursor.execute("UPDATE merchants SET category = 'عام' WHERE category = ?", (old_name,))
+            cursor.execute("DELETE FROM merchant_categories WHERE id = ?", (cat_id,))
+            conn.commit()
+
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'تم حذف التصنيف بنجاح'})
+        flash("تم حذف تصنيف التاجر وتحديث المتاجر المرتبطة به 🗑️", "info")
+    finally:
+        conn.close()
+
     return redirect(url_for('merchants_list'))
 
 @app.route('/treasury/categories/add', methods=['POST'])
@@ -2605,17 +2623,12 @@ def save_settings():
     exchange_rate = parse_safe_float(request.form.get('exchange_rate'), DEFAULT_EXCHANGE_RATE)
     default_delivery_fee = parse_safe_float(request.form.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
     gemini_key = request.form.get('gemini_api_key', '').strip()
-    new_pin = request.form.get('admin_pin', '').strip()
-
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
     UPDATE settings SET company_name=?, phone=?, address=?, exchange_rate=?, default_delivery_fee=?, gemini_api_key=?, updated_at=CURRENT_TIMESTAMP
     WHERE id=1
     """, (company_name, phone, address, exchange_rate, default_delivery_fee, gemini_key))
-
-    if new_pin and len(new_pin) >= 4:
-        cursor.execute("UPDATE settings SET admin_pin = ? WHERE id = 1", (new_pin,))
 
     conn.commit()
     conn.close()
