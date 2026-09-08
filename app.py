@@ -2715,6 +2715,81 @@ def add_merchant():
     flash(f"تمت إضافة متجر [{store}] - ({category}) بنجاح 🏪", "success")
     return redirect(url_for('merchants_list'))
 
+@app.route('/api/merchants/quick-add', methods=['POST'])
+@login_required
+def api_quick_add_merchant():
+    """تسجيل متجر/تاجر جديد وحفظه تلقائياً فوراً بدون الحاجة لزر حفظ."""
+    try:
+        data = request.get_json(silent=True) or request.form.to_dict() or {}
+        store = (data.get('store_name') or '').strip()
+        name = (data.get('name') or '').strip()
+        category = (data.get('category') or 'عام').strip() or 'عام'
+        phone = (data.get('phone') or '').strip()
+        address = (data.get('address') or '').strip()
+        fee = parse_safe_float(data.get('default_delivery_fee'), DEFAULT_DELIVERY_FEE)
+        notes = (data.get('notes') or '').strip()
+
+        if not store and not name and not phone:
+            return jsonify({'success': False, 'message': 'يرجى إدخال اسم المتجر أو الهاتف على الأقل'}), 400
+
+        if not name and store:
+            name = store
+        elif not store and name:
+            store = name
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Check existing by phone or store
+        existing = None
+        if phone:
+            cursor.execute("SELECT * FROM merchants WHERE phone = ? LIMIT 1", (phone,))
+            existing = cursor.fetchone()
+        if not existing and store:
+            cursor.execute("SELECT * FROM merchants WHERE store_name = ? OR name = ? LIMIT 1", (store, store))
+            existing = cursor.fetchone()
+
+        if existing:
+            cursor.execute("""
+                UPDATE merchants SET
+                    name = COALESCE(NULLIF(?, ''), name),
+                    store_name = COALESCE(NULLIF(?, ''), store_name),
+                    category = COALESCE(NULLIF(?, ''), category),
+                    phone = COALESCE(NULLIF(?, ''), phone),
+                    address = COALESCE(NULLIF(?, ''), address)
+                WHERE id = ?
+            """, (name, store, category, phone, address, existing['id']))
+            conn.commit()
+            m_id = existing['id']
+            is_new = False
+        else:
+            cursor.execute("""
+                INSERT INTO merchants (name, store_name, category, phone, address, default_delivery_fee, payment_type)
+                VALUES (?, ?, ?, ?, ?, ?, 'postpaid')
+            """, (name, store, category, phone, address, fee))
+            conn.commit()
+            m_id = cursor.lastrowid
+            is_new = True
+
+        cursor.execute("SELECT * FROM merchants WHERE id = ?", (m_id,))
+        m = dict(cursor.fetchone())
+        conn.close()
+
+        # Instant cloud auto-backup trigger
+        try:
+            trigger_gdrive_sync_async(delay=3.0)
+        except Exception:
+            pass
+
+        return jsonify({
+            'success': True,
+            'is_new': is_new,
+            'message': f"تم الحفظ التلقائي بنجاح ({store or name}) ⚡",
+            'merchant': m
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'خطأ أثناء الحفظ التلقائي: {str(e)}'}), 500
+
 @app.route('/merchants/<int:merchant_id>/edit', methods=['POST'])
 @admin_required
 def edit_merchant(merchant_id):

@@ -24,6 +24,52 @@
         </div>
     </div>
 
+    <!-- Quick Add Merchant Bar with Instant Auto-Save (بدون الحاجة لزر حفظ) -->
+    <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 p-5 rounded-2xl border-2 border-emerald-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500 text-white font-black text-sm shadow-sm">⚡</span>
+                <div>
+                    <h3 class="text-sm font-black text-slate-800">تسجيل متجر جديد (حفظ تلقائي فوري 🟢)</h3>
+                    <p class="text-[11px] text-slate-500 font-bold">اكتب اسم المحل ورقم الهاتف وسيتم الحفظ في السيستم وقاعدة البيانات وسحابة جوجل تلقائياً دون الحاجة لزر حفظ.</p>
+                </div>
+            </div>
+            <div id="quickAddStatusBadge" class="text-xs font-black text-emerald-800 bg-emerald-100 px-3.5 py-1.5 rounded-xl border border-emerald-300 hidden items-center gap-1.5 shadow-xs">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                <span id="quickAddStatusText">تم الحفظ التلقائي بنجاح! ⚡</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-center">
+            <div class="md:col-span-2">
+                <input type="text" id="quickStoreName" placeholder="اسم المتجر / الصفحة / البراند *" 
+                       class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-xs"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); triggerAutoSaveMerchant();}"
+                       onblur="triggerAutoSaveMerchantIfReady()">
+            </div>
+            <div>
+                <input type="text" id="quickStorePhone" placeholder="رقم الهاتف *" dir="ltr"
+                       class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-left font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-xs"
+                       oninput="if(this.value.trim().length>=8){triggerAutoSaveMerchantIfReady();}"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); triggerAutoSaveMerchant();}"
+                       onblur="triggerAutoSaveMerchantIfReady()">
+            </div>
+            <div>
+                <select id="quickStoreCategory" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-xs"
+                        onchange="triggerAutoSaveMerchantIfReady()">
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {{ 'selected' if cat == 'عام' }}>🏷️ {{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <input type="text" id="quickStoreAddress" placeholder="العنوان / الفرع (اختياري)" 
+                       class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-xs"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); triggerAutoSaveMerchant();}"
+                       onblur="triggerAutoSaveMerchantIfReady()">
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Search & Category Filter Bar -->
     <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -532,6 +578,95 @@
 
         const countEl = document.getElementById('visibleMerchantsCount');
         if (countEl) countEl.textContent = visibleCount;
+    }
+
+    let isAutoSavingMerchant = false;
+
+    function triggerAutoSaveMerchantIfReady() {
+        const store = (document.getElementById('quickStoreName').value || '').trim();
+        const phone = (document.getElementById('quickStorePhone').value || '').trim();
+        if (store && phone.length >= 7) {
+            triggerAutoSaveMerchant();
+        }
+    }
+
+    function triggerAutoSaveMerchant() {
+        if (isAutoSavingMerchant) return;
+        const storeInput = document.getElementById('quickStoreName');
+        const phoneInput = document.getElementById('quickStorePhone');
+        const catInput = document.getElementById('quickStoreCategory');
+        const addressInput = document.getElementById('quickStoreAddress');
+
+        const store = (storeInput.value || '').trim();
+        const phone = (phoneInput.value || '').trim();
+        const category = (catInput.value || 'عام').trim();
+        const address = (addressInput.value || '').trim();
+
+        if (!store && !phone) return;
+
+        isAutoSavingMerchant = true;
+        const badge = document.getElementById('quickAddStatusBadge');
+        const badgeText = document.getElementById('quickAddStatusText');
+        if (badge) {
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+            badgeText.textContent = 'جاري الحفظ التلقائي... ⏳';
+        }
+
+        fetch('/api/merchants/quick-add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                store_name: store,
+                name: store,
+                phone: phone,
+                category: category,
+                address: address
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            isAutoSavingMerchant = false;
+            if (data.success) {
+                if (badge) {
+                    badgeText.textContent = `✅ تم الحفظ التلقائي بنجاح (${data.merchant.store_name || store}) ⚡`;
+                    setTimeout(() => {
+                        badge.classList.add('hidden');
+                        badge.classList.remove('inline-flex');
+                    }, 4000);
+                }
+                storeInput.value = '';
+                phoneInput.value = '';
+                addressInput.value = '';
+                storeInput.focus();
+
+                // Reload after short delay to display fresh cards and statistics cleanly
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                if (badge) {
+                    badgeText.textContent = `⚠️ ${data.message || 'فشل الحفظ'}`;
+                    setTimeout(() => {
+                        badge.classList.add('hidden');
+                        badge.classList.remove('inline-flex');
+                    }, 5000);
+                }
+            }
+        })
+        .catch(err => {
+            isAutoSavingMerchant = false;
+            if (badge) {
+                badgeText.textContent = '❌ تعذر الاتصال بالسيرفر';
+                setTimeout(() => {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                }, 4000);
+            }
+        });
     }
 </script>
 {% endblock %}

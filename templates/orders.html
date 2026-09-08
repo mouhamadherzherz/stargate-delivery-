@@ -593,9 +593,31 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">
-                        اختيار المتجر / المحل <span class="text-red-500">*</span>
-                    </label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-slate-700">
+                            اختيار المتجر / المحل <span class="text-red-500">*</span>
+                        </label>
+                        <button type="button" onclick="toggleOrderQuickMerchantBar()" class="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 transition">
+                            <i class="fa-solid fa-bolt text-emerald-500"></i>
+                            <span>تسجيل متجر جديد وحفظه تلقائياً ⚡</span>
+                        </button>
+                    </div>
+
+                    <!-- Inline Quick Merchant Auto-Save Bar for Orders -->
+                    <div id="orderQuickMerchantBar" class="hidden mb-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-emerald-900">
+                            <span>⚡ تسجيل متجر وحفظه تلقائياً دون مغادرة الطلب:</span>
+                            <span id="orderQuickMerchantStatus" class="text-emerald-600 font-black"></span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <input type="text" id="orderQuickStoreName" placeholder="اسم المتجر / الصفحة *" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold focus:ring-2 focus:ring-emerald-500">
+                            <input type="text" id="orderQuickStorePhone" placeholder="رقم الهاتف *" dir="ltr" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold font-mono text-left focus:ring-2 focus:ring-emerald-500">
+                            <button type="button" onclick="executeOrderQuickMerchantSave()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shadow-xs">
+                                حفظ فوري واختيار ⚡
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="flex flex-col sm:flex-row gap-2">
                         <div class="relative sm:w-1/3">
                             <input type="text" id="merchantSearchFilter" oninput="filterMerchantOptions(this.value)" placeholder="🔍 بحث سريع بالمحل..." class="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl pr-8 pl-2 py-2 text-xs font-bold focus:ring-2 focus:ring-amber-500">
@@ -1974,6 +1996,78 @@ function updateTileStyles(groupName) {
             inputsDiv.appendChild(inp);
         });
         form.submit();
+    }
+
+    // Quick Add Merchant directly from order modal with Instant Auto-Save
+    function toggleOrderQuickMerchantBar() {
+        const bar = document.getElementById('orderQuickMerchantBar');
+        if (bar) {
+            bar.classList.toggle('hidden');
+            if (!bar.classList.contains('hidden')) {
+                const nameInput = document.getElementById('orderQuickStoreName');
+                if (nameInput) nameInput.focus();
+            }
+        }
+    }
+
+    function executeOrderQuickMerchantSave() {
+        const nameInput = document.getElementById('orderQuickStoreName');
+        const phoneInput = document.getElementById('orderQuickStorePhone');
+        const statusEl = document.getElementById('orderQuickMerchantStatus');
+
+        const storeName = (nameInput.value || '').trim();
+        const storePhone = (phoneInput.value || '').trim();
+
+        if (!storeName && !storePhone) {
+            if (statusEl) statusEl.textContent = 'يرجى إدخال اسم المتجر أو الهاتف';
+            return;
+        }
+
+        if (statusEl) statusEl.textContent = 'جاري الحفظ التلقائي... ⏳';
+
+        fetch('/api/merchants/quick-add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                store_name: storeName,
+                name: storeName,
+                phone: storePhone,
+                category: 'عام'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (statusEl) statusEl.textContent = '✅ تم الحفظ واختيار المتجر بنجاح!';
+                const select = document.getElementById('modalMerchantSelect');
+                if (select && data.merchant) {
+                    const opt = document.createElement('option');
+                    opt.value = data.merchant.id;
+                    opt.textContent = `${data.merchant.name || data.merchant.store_name} (${data.merchant.store_name || data.merchant.name})`;
+                    opt.setAttribute('data-fee', data.merchant.default_delivery_fee || '');
+                    opt.setAttribute('data-store', data.merchant.store_name || '');
+                    opt.setAttribute('data-name', data.merchant.name || '');
+                    opt.setAttribute('data-phone', data.merchant.phone || '');
+                    select.appendChild(opt);
+                    select.value = data.merchant.id;
+                    onMerchantChange(select);
+                }
+                setTimeout(() => {
+                    toggleOrderQuickMerchantBar();
+                    nameInput.value = '';
+                    phoneInput.value = '';
+                    if (statusEl) statusEl.textContent = '';
+                }, 1200);
+            } else {
+                if (statusEl) statusEl.textContent = '❌ ' + (data.message || 'فشل الحفظ');
+            }
+        })
+        .catch(err => {
+            if (statusEl) statusEl.textContent = '❌ خطأ في الاتصال';
+        });
     }
 
     // Keyboard shortcut: Press F2 anywhere to open new order modal

@@ -1,7 +1,5 @@
-# Database & Temp Files - NEVER TRACK OR OVERWRITE DATA IN GIT
+# Database & Temp Files - Track base production database for cloud deploys
 delivery.db
-stargate_production.db
-*.db
 *.db-wal
 *.db-shm
 *.sqlite
@@ -9,9 +7,9 @@ stargate_production.db
 *.restore_temp
 backup_*.db
 legacy_database_archive_*.db
-data/
 backups/
 db_backups/
+!data/stargate_production.db
 
 # Environment & Secrets
 .env
