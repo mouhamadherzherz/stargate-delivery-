@@ -136,12 +136,28 @@ DEFAULT_RETURN_FEE       = 89500.0
 DEFAULT_COMMISSION       = 179000.0
 DEFAULT_DRIVER_COMMISSION = 179000.0
 
-# ===================== DATABASE CONNECTION =====================
+# ===================== DATABASE CONNECTION & AUTO-PERSISTENCE =====================
+import atexit
+
+def checkpoint_db_on_exit():
+    """Forces SQLite to flush all pending WAL logs directly into the main database file on shutdown."""
+    try:
+        if os.path.exists(DB_PATH):
+            conn = sqlite3.connect(DB_PATH, timeout=5.0)
+            conn.execute("PRAGMA wal_checkpoint(FULL)")
+            conn.close()
+    except Exception:
+        pass
+
+atexit.register(checkpoint_db_on_exit)
+
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = FULL")
+    conn.execute("PRAGMA wal_autocheckpoint = 10")
     conn.execute("PRAGMA busy_timeout = 30000")
     return conn
 
