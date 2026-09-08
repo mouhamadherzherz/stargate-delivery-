@@ -285,6 +285,44 @@ def download_latest_backup_from_drive(credentials_data, folder_id, target_db_pat
     """
     temp_dest = None
     try:
+        # Mode 1: Google Apps Script Web App
+        if is_apps_script_url(credentials_data):
+            url = credentials_data.strip()
+            try:
+                res = requests.get(url, params={'action': 'getLatest', 'folderId': (folder_id or '').strip()}, timeout=30)
+                if res.status_code == 200:
+                    try:
+                        data = res.json()
+                    except Exception:
+                        data = {}
+                    if data.get('success') and data.get('fileBase64'):
+                        file_bytes = base64.b64decode(data['fileBase64'])
+                        filename = data.get('fileName', 'stargate_backup_restored.db')
+                        temp_dir = tempfile.gettempdir()
+                        temp_dest = os.path.join(temp_dir, f"restore_{filename}")
+                        with open(temp_dest, 'wb') as fh:
+                            fh.write(file_bytes)
+                        chk_conn = sqlite3.connect(temp_dest)
+                        chk_conn.execute("SELECT count(*) FROM sqlite_master").fetchone()
+                        chk_conn.close()
+                        os.makedirs(os.path.dirname(os.path.abspath(target_db_path)), exist_ok=True)
+                        src_conn = sqlite3.connect(temp_dest)
+                        dst_conn = sqlite3.connect(target_db_path)
+                        with dst_conn:
+                            src_conn.backup(dst_conn)
+                        src_conn.close()
+                        dst_conn.close()
+                        return True, f"تمت استعادة أحدث نسخة احتياطية بنجاح من Google Drive ({filename})", {
+                            'filename': filename
+                        }
+                    else:
+                        return False, f"لا توجد نسخ احتياطية متاحة للتحميل عبر Google Apps Script: {data.get('error')}", None
+                else:
+                    return False, f"فشل الاتصال بـ Google Apps Script (كود {res.status_code})", None
+            except Exception as ae:
+                return False, f"خطأ أثناء التحميل من Google Apps Script: {ae}", None
+
+        # Mode 2: Service Account
         from googleapiclient.http import MediaIoBaseDownload
         service, client_email = get_drive_service(credentials_data)
 
