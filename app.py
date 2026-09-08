@@ -5353,7 +5353,31 @@ def run_offline_server():
         if not opened:
             webbrowser.open(local_url)
 
-    threading.Thread(target=open_browser, daemon=True).start()
+    # Auto-start Cloudflare Tunnel for multi-device live phone access
+    def start_cloudflare_tunnel():
+        cf_exe = r"C:\StargateDelivery\cloudflared.exe"
+        if os.path.exists(cf_exe):
+            try:
+                import subprocess, re
+                p = subprocess.Popen([cf_exe, "tunnel", "--url", f"http://127.0.0.1:{port}"],
+                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+                for line in p.stdout:
+                    match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
+                    if match:
+                        live_url = match.group(0)
+                        desktop = os.path.expanduser('~/Desktop')
+                        txt_path = os.path.join(desktop, 'رابط_النظام_للهواتف.url')
+                        try:
+                            with open(txt_path, 'w', encoding='utf-8') as f:
+                                f.write(f"[InternetShortcut]\nURL={live_url}\n")
+                        except Exception:
+                            pass
+                        print(f"[*] Cloudflare Live Phone URL: {live_url}")
+                        break
+            except Exception:
+                pass
+
+    threading.Thread(target=start_cloudflare_tunnel, daemon=True).start()
 
     print("=" * 65)
     print(f"[*] Stargate Delivery System - يعمل الآن!")

@@ -548,18 +548,23 @@
                 }, duration);
             }
 
-            function isUserActivelyTyping() {
-                const active = document.activeElement;
-                if (!active) return false;
-                const tag = active.tagName.toLowerCase();
-                if (tag === 'input' || tag === 'textarea' || tag === 'select') {
-                    if (active.id && (active.id.includes('Search') || active.id.includes('Filter'))) {
-                        return false;
+            let pendingRefresh = false;
+
+            function isUserActivelyWritingModal() {
+                // Check if any modal is open and has user-entered content
+                const visibleModals = Array.from(document.querySelectorAll('div[id$="Modal"]')).filter(m => {
+                    return !m.classList.contains('hidden') && m.offsetParent !== null;
+                });
+                if (visibleModals.length === 0) return false;
+
+                for (const modal of visibleModals) {
+                    const inputs = modal.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="radio"]):not([type="checkbox"]), textarea');
+                    for (const inp of inputs) {
+                        if (inp.value && inp.value.trim().length > 0) {
+                            return true;
+                        }
                     }
-                    return true;
                 }
-                const openModals = document.querySelectorAll('div[id$="Modal"]:not(.hidden)');
-                if (openModals.length > 0) return true;
                 return false;
             }
 
@@ -584,13 +589,16 @@
                     }
 
                     if (data.fingerprint !== lastFingerprint) {
-                        lastFingerprint = data.fingerprint;
-                        showLiveToast('🟢 تحديث فوري: تم تسجيل بيانات أو طلب جديد في السيستم! جاري العرض...');
-
-                        if (!isUserActivelyTyping()) {
+                        if (isUserActivelyWritingModal()) {
+                            pendingRefresh = true;
+                            showLiveToast('🔔 تم تسجيل بيانات جديدة! سيتم التحديث فور إغلاق النافذة...');
+                        } else {
+                            lastFingerprint = data.fingerprint;
+                            pendingRefresh = false;
+                            showLiveToast('🟢 تحديث فوري مباشر: تم تسجيل بيانات جديدة في السيستم!');
                             setTimeout(() => {
                                 window.location.reload();
-                            }, 1200);
+                            }, 500);
                         }
                     }
                 })
@@ -599,13 +607,21 @@
                 });
             }
 
-            // Start polling every 4 seconds for instant real-time updates
-            setInterval(pollLiveSync, 4000);
+            // Check every 2.5 seconds for instant real-time synchronization
+            setInterval(pollLiveSync, 2500);
 
-            // Also poll immediately when device screen wakes up
+            // Also check immediately when tab/device wakes up
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) {
                     pollLiveSync();
+                }
+            });
+
+            // If a refresh was pending while writing, reload immediately when modal is closed
+            window.addEventListener('click', (e) => {
+                if (pendingRefresh && !isUserActivelyWritingModal()) {
+                    pendingRefresh = false;
+                    window.location.reload();
                 }
             });
         })();
