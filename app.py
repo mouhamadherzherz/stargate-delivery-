@@ -4241,6 +4241,63 @@ def check_and_restore_gdrive_on_startup():
 threading.Thread(target=check_and_restore_gdrive_on_startup, daemon=True).start()
 
 # =======================================================================
+#                  REAL-TIME LIVE SYNC PULSE ENDPOINT
+# =======================================================================
+
+@app.route('/api/live/pulse')
+@login_required
+def api_live_pulse():
+    """نبض المزامنة اللحظية الحية: يتيح لأي جهاز (هاتف أو كمبيوتر) معرفة التحديثات الجديدة فوراً."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Orders fingerprint
+        cursor.execute("SELECT COUNT(*), COALESCE(MAX(id), 0), COALESCE(MAX(created_at), '') FROM orders")
+        o_row = cursor.fetchone()
+        order_count = o_row[0] or 0
+        last_order_id = o_row[1] or 0
+        last_order_time = str(o_row[2] or '')
+
+        # Merchants fingerprint
+        cursor.execute("SELECT COUNT(*), COALESCE(MAX(id), 0) FROM merchants")
+        m_row = cursor.fetchone()
+        merchant_count = m_row[0] or 0
+        last_merchant_id = m_row[1] or 0
+
+        # Couriers fingerprint
+        cursor.execute("SELECT COUNT(*), COALESCE(MAX(id), 0) FROM couriers")
+        c_row = cursor.fetchone()
+        courier_count = c_row[0] or 0
+        last_courier_id = c_row[1] or 0
+
+        # Employees count & last login
+        cursor.execute("SELECT COUNT(*), COALESCE(MAX(last_login), '') FROM employees")
+        e_row = cursor.fetchone()
+        employee_count = e_row[0] or 0
+        last_emp_login = str(e_row[1] or '')
+
+        conn.close()
+
+        fingerprint = f"{order_count}:{last_order_id}:{merchant_count}:{last_merchant_id}:{courier_count}:{employee_count}"
+
+        return jsonify({
+            'success': True,
+            'fingerprint': fingerprint,
+            'order_count': order_count,
+            'last_order_id': last_order_id,
+            'last_order_time': last_order_time,
+            'merchant_count': merchant_count,
+            'last_merchant_id': last_merchant_id,
+            'courier_count': courier_count,
+            'employee_count': employee_count,
+            'last_emp_login': last_emp_login,
+            'timestamp': datetime.now().strftime('%H:%M:%S')
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# =======================================================================
 #                         TELEGRAM & AI API ENDPOINTS
 # =======================================================================
 

@@ -523,24 +523,91 @@
             });
         }
 
-        // Auto Security Screen Lock & Session Protection (10 Minutes Inactivity)
+        // =======================================================================
+        //          REAL-TIME LIVE MULTI-DEVICE SYNC ENGINE ⚡
+        // =======================================================================
         (function() {
-            let inactivityTimer;
-            const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 Minutes auto-lock
+            let lastFingerprint = null;
+            let isPolling = false;
 
-            function resetInactivityTimer() {
-                clearTimeout(inactivityTimer);
-                inactivityTimer = setTimeout(() => {
-                    if (document.visibilityState === 'visible') {
-                        location.href = '/logout';
-                    }
-                }, INACTIVITY_LIMIT);
+            // Top Live Sync Toast Element
+            const liveToast = document.createElement('div');
+            liveToast.id = 'stargateLiveSyncToast';
+            liveToast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 text-white backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-2xl border border-emerald-500/40 text-xs font-black flex items-center gap-2.5 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px]';
+            liveToast.innerHTML = '<span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span><span id="stargateLiveSyncText">مزامنة حية فورية: تم تحديث البيانات!</span>';
+            document.body.appendChild(liveToast);
+
+            function showLiveToast(msg, duration = 3500) {
+                const textEl = document.getElementById('stargateLiveSyncText');
+                if (textEl) textEl.textContent = msg;
+                liveToast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+                liveToast.classList.add('opacity-100', 'translate-y-0');
+                setTimeout(() => {
+                    liveToast.classList.remove('opacity-100', 'translate-y-0');
+                    liveToast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+                }, duration);
             }
 
-            ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
-                document.addEventListener(evt, resetInactivityTimer, { passive: true });
+            function isUserActivelyTyping() {
+                const active = document.activeElement;
+                if (!active) return false;
+                const tag = active.tagName.toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+                    if (active.id && (active.id.includes('Search') || active.id.includes('Filter'))) {
+                        return false;
+                    }
+                    return true;
+                }
+                const openModals = document.querySelectorAll('div[id$="Modal"]:not(.hidden)');
+                if (openModals.length > 0) return true;
+                return false;
+            }
+
+            function pollLiveSync() {
+                if (isPolling || document.hidden) return;
+                isPolling = true;
+
+                fetch('/api/live/pulse', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => {
+                    if (!res.ok) return null;
+                    return res.json();
+                })
+                .then(data => {
+                    isPolling = false;
+                    if (!data || !data.success) return;
+
+                    if (lastFingerprint === null) {
+                        lastFingerprint = data.fingerprint;
+                        return;
+                    }
+
+                    if (data.fingerprint !== lastFingerprint) {
+                        lastFingerprint = data.fingerprint;
+                        showLiveToast('🟢 تحديث فوري: تم تسجيل بيانات أو طلب جديد في السيستم! جاري العرض...');
+
+                        if (!isUserActivelyTyping()) {
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1200);
+                        }
+                    }
+                })
+                .catch(() => {
+                    isPolling = false;
+                });
+            }
+
+            // Start polling every 4 seconds for instant real-time updates
+            setInterval(pollLiveSync, 4000);
+
+            // Also poll immediately when device screen wakes up
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    pollLiveSync();
+                }
             });
-            resetInactivityTimer();
         })();
     </script>
     {% block scripts %}{% endblock %}
