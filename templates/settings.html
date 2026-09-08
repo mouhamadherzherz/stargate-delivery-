@@ -504,6 +504,154 @@
         </div>
     </div>
 
+    <!-- 3. Google Drive Cloud Archiving & Automatic Backup Card -->
+    <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                <i class="fa-brands fa-google-drive text-amber-500 text-xl"></i>
+                <span>الأرشفة السحابية التلقائية إلى Google Drive (Cloud Backup)</span>
+            </h3>
+            {% if settings.gdrive_enabled and settings.gdrive_credentials_json %}
+            <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-emerald-200">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i> النسخ السحابي مفعّل
+            </span>
+            {% else %}
+            <span class="text-xs bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                <i class="fa-solid fa-circle-pause text-slate-400"></i> غير مفعّل حالياً
+            </span>
+            {% endif %}
+        </div>
+
+        <p class="text-xs text-slate-500 leading-relaxed">
+            يقوم النظام بحفظ وأرشفة قاعدة البيانات تلقائياً وفورياً إلى مجلد محدد على حساب Google Drive الخاص بك عبر <b>Google Drive API (v3)</b> باستخدام حساب الخدمة (Service Account)، مما يضمن عدم ضياع أي بيانات على الإطلاق في حالة حدوث أي طارئ.
+        </p>
+
+        <!-- Status & Last Sync Banner -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div>
+                    <span class="block text-[11px] font-bold text-slate-500">توقيت آخر رفع سحابي:</span>
+                    <span id="gdriveLastTimeDisplay" class="text-xs font-black text-slate-800 font-mono">{{ settings.gdrive_last_backup_time or 'لم يتم الرفع بعد' }}</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-signal"></i>
+                </div>
+                <div>
+                    <span class="block text-[11px] font-bold text-slate-500">حالة آخر عملية أرشفة:</span>
+                    <span id="gdriveLastStatusDisplay" class="text-xs font-black {% if 'فشل' in (settings.gdrive_last_backup_status or '') %}text-rose-600{% else %}text-emerald-700{% endif %}">
+                        {{ settings.gdrive_last_backup_status or 'جاهز للتشغيل' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Google Drive Form -->
+        <form method="POST" action="{{ url_for('save_gdrive_settings') }}" enctype="multipart/form-data" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Toggle Enable -->
+                <div class="sm:col-span-1 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <label class="block text-xs font-black text-slate-800 cursor-pointer" for="gdriveToggle">تفعيل الأرشفة السحابية</label>
+                        <span class="text-[10px] text-slate-500">تشغيل النسخ الآلي لقوقل درايف</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="gdriveToggle" name="gdrive_enabled" value="1" {% if settings.gdrive_enabled %}checked{% endif %} class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                    </label>
+                </div>
+
+                <!-- Interval -->
+                <div class="sm:col-span-1">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">تكرار الأرشفة التلقائية</label>
+                    <select name="gdrive_auto_interval" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:ring-2 focus:ring-amber-500">
+                        <option value="hourly" {% if settings.gdrive_auto_interval == 'hourly' %}selected{% endif %}>⏱️ كل ساعة (موصى به للأعمال النشطة)</option>
+                        <option value="6hours" {% if settings.gdrive_auto_interval == '6hours' %}selected{% endif %}>🕒 كل 6 ساعات</option>
+                        <option value="daily" {% if not settings.gdrive_auto_interval or settings.gdrive_auto_interval == 'daily' %}selected{% endif %}>📅 يومياً (عند انتهاء اليوم)</option>
+                    </select>
+                </div>
+
+                <!-- Folder ID -->
+                <div class="sm:col-span-1">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">معرّف مجلد الحفظ (Folder ID)</label>
+                    <input type="text" id="gdriveFolderIdInput" name="gdrive_folder_id" value="{{ settings.gdrive_folder_id or '' }}" placeholder="مثال: 1a2B3c4D5e6F7g8H9..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:ring-2 focus:ring-amber-500 text-left" dir="ltr">
+                    <span class="text-[10px] text-slate-400 block mt-0.5">رمز المجلد من نهاية رابط Google Drive</span>
+                </div>
+            </div>
+
+            <!-- Credentials JSON input -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <label class="block text-xs font-bold text-slate-700">
+                        كود مفتاح حساب الخدمة (Google Service Account JSON Key) <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg text-[11px] border border-slate-200 transition">
+                            <i class="fa-solid fa-file-arrow-up"></i> رفع ملف JSON
+                            <input type="file" id="gdriveFileLoader" accept=".json" class="hidden" onchange="loadGdriveJsonFile(event)">
+                        </label>
+                        <button type="button" onclick="toggleGdriveJsonVisibility()" class="text-[11px] text-blue-600 hover:underline">
+                            <span id="gdriveToggleText">إخفاء / إظهار الكود</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <textarea id="gdriveCredentialsInput" name="gdrive_credentials_json" rows="4" placeholder='الصق هنا محتوى ملف المفتاح بصيغة JSON... (يبدأ بـ {"type": "service_account", "project_id": ...})' class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:ring-2 focus:ring-amber-500 text-left leading-relaxed" dir="ltr">{{ settings.gdrive_credentials_json or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Status Alert Box (for test results) -->
+            <div id="gdriveActionAlert" class="hidden p-3.5 rounded-xl text-xs font-bold leading-relaxed"></div>
+
+            <!-- Buttons -->
+            <div class="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-slate-100">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="testGoogleDriveConnection()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2.5 rounded-xl text-xs transition border border-slate-300 flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-plug text-blue-600"></i>
+                        <span>فحص واختبار الاتصال والمجلد 🔍</span>
+                    </button>
+
+                    <button type="button" onclick="uploadGoogleDriveBackupNow()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>أرشفة ورفع نسخة سحابية الآن 🚀</span>
+                    </button>
+                </div>
+
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>حفظ إعدادات Google Drive 💾</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Step-by-Step Mini Guide Accordion -->
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
+            <button type="button" onclick="document.getElementById('gdriveGuideBox').classList.toggle('hidden')" class="w-full flex items-center justify-between text-xs font-bold text-slate-700 hover:text-blue-600 transition cursor-pointer">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question text-amber-500"></i>
+                    <span>كيفية إنشاء مفتاح Google Service Account وربطه بحسابك المخصص في 3 دقائق؟</span>
+                </span>
+                <i class="fa-solid fa-chevron-down text-[10px]"></i>
+            </button>
+
+            <div id="gdriveGuideBox" class="hidden text-xs text-slate-600 space-y-2 pt-2 border-t border-slate-200/60 leading-relaxed">
+                <ol class="list-decimal list-inside space-y-1.5 pr-2">
+                    <li>افتح <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-600 font-bold underline">Google Cloud Console</a> وسجل دخول بحساب Google المخصص للحفظ.</li>
+                    <li>أنشئ مشروعاً جديداً (مثلاً: <b>Stargate Backup</b>) ثم فعّل خدمة <b>Google Drive API</b> من قائمة (APIs & Services > Enable APIs).</li>
+                    <li>اذهب إلى <b>Credentials > Create Credentials > Service Account</b> واكتب اسماً للحساب ثم اضغط إنشاء.</li>
+                    <li>ادخل على حساب الخدمة المنشأ، واذهب إلى تبويب <b>Keys > Add Key > Create new key</b> واختر <b>JSON</b> وسيتم تنزيل المفتاح لجهازك.</li>
+                    <li>افتح موقع <a href="https://drive.google.com/" target="_blank" class="text-blue-600 font-bold underline">Google Drive</a> وأنشئ مجلداً باسم (مثلاً: <b>Stargate_Backups</b>)، ثم اضغط زر مشاركة (Share) وشارك المجلد مع إيميل حساب الخدمة (client_email) مع منحه صلاحية <b>محرر (Editor)</b>.</li>
+                    <li>انسخ معرّف المجلد من رابط الصفحة والصقه في خانة <b>Folder ID</b> أعلاه، وارفع ملف الـ JSON واضغط حفظ واختبار!</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
     <!-- DANGER ZONE: CLEAR / WIPE ALL DATA CARD -->
     <div class="bg-rose-50/60 p-6 lg:p-8 rounded-3xl border-2 border-rose-200 shadow-sm space-y-4">
         <div class="flex items-center gap-3 text-rose-800">
@@ -815,6 +963,97 @@
         } catch (e) {
             statusDiv.className = 'p-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 block';
             statusDiv.innerHTML = '❌ خطأ في الاتصال بالخادم: ' + e.message;
+        }
+    }
+
+    // Google Drive Functions
+    function loadGdriveJsonFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                document.getElementById('gdriveCredentialsInput').value = JSON.stringify(parsed, null, 2);
+                const alertDiv = document.getElementById('gdriveActionAlert');
+                alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                alertDiv.innerHTML = '✅ تم تحميل وقراءة ملف JSON بنجاح (' + (parsed.client_email || file.name) + '). اضغط "حفظ إعدادات Google Drive" أو "فحص واختبار الاتصال".';
+            } catch(err) {
+                alert('الملف المختار ليس بصيغة JSON صالحة!');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function toggleGdriveJsonVisibility() {
+        const area = document.getElementById('gdriveCredentialsInput');
+        const text = document.getElementById('gdriveToggleText');
+        if (area.style.display === 'none') {
+            area.style.display = 'block';
+            text.innerText = 'إخفاء الكود';
+        } else {
+            area.style.display = 'none';
+            text.innerText = 'إظهار الكود';
+        }
+    }
+
+    async function testGoogleDriveConnection() {
+        const creds = document.getElementById('gdriveCredentialsInput').value.trim();
+        const folderId = document.getElementById('gdriveFolderIdInput').value.trim();
+        const alertDiv = document.getElementById('gdriveActionAlert');
+        alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-blue-50 text-blue-800 border border-blue-200 block';
+        alertDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> جاري الاتصال بخوادم Google Drive والتحقق من حساب الخدمة والمجلد...';
+
+        try {
+            const res = await fetch('/settings/gdrive/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credentials_json: creds, folder_id: folderId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                alertDiv.innerHTML = '✅ ' + data.message;
+            } else {
+                alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-rose-50 text-rose-800 border border-rose-200 block';
+                alertDiv.innerHTML = '❌ ' + data.message;
+            }
+        } catch (e) {
+            alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-rose-50 text-rose-800 border border-rose-200 block';
+            alertDiv.innerHTML = '❌ فشل الاتصال بالخادم المحلي: ' + e.message;
+        }
+    }
+
+    async function uploadGoogleDriveBackupNow() {
+        const alertDiv = document.getElementById('gdriveActionAlert');
+        alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-amber-50 text-amber-900 border border-amber-200 block';
+        alertDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> جاري إنشاء لقطة متكاملة من قاعدة البيانات ورفعها إلى Google Drive الآن...';
+
+        try {
+            const res = await fetch('/settings/gdrive/upload_now', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                alertDiv.innerHTML = '🚀 ' + data.message + (data.details && data.details.link ? ' <a href="' + data.details.link + '" target="_blank" class="underline font-black mr-2">عرض في Google Drive</a>' : '');
+                if (data.time) {
+                    const timeEl = document.getElementById('gdriveLastTimeDisplay');
+                    if (timeEl) timeEl.innerText = data.time;
+                    const statusEl = document.getElementById('gdriveLastStatusDisplay');
+                    if (statusEl) {
+                        statusEl.innerText = 'ناجح';
+                        statusEl.className = 'text-xs font-black text-emerald-700';
+                    }
+                }
+            } else {
+                alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-rose-50 text-rose-800 border border-rose-200 block';
+                alertDiv.innerHTML = '❌ ' + data.message;
+            }
+        } catch (e) {
+            alertDiv.className = 'p-3.5 rounded-xl text-xs font-bold leading-relaxed bg-rose-50 text-rose-800 border border-rose-200 block';
+            alertDiv.innerHTML = '❌ فشل الاتصال بالخادم: ' + e.message;
         }
     }
 </script>

@@ -671,6 +671,12 @@ def init_db():
             ("whatsapp_template_courier", "TEXT DEFAULT ''"),
             ("whatsapp_template_merchant", "TEXT DEFAULT ''"),
             ("whatsapp_template_delivered", "TEXT DEFAULT ''"),
+            ("gdrive_enabled", "INTEGER DEFAULT 0"),
+            ("gdrive_folder_id", "TEXT DEFAULT ''"),
+            ("gdrive_credentials_json", "TEXT DEFAULT ''"),
+            ("gdrive_auto_interval", "TEXT DEFAULT 'daily'"),
+            ("gdrive_last_backup_time", "TEXT DEFAULT ''"),
+            ("gdrive_last_backup_status", "TEXT DEFAULT ''"),
         ]:
             if col not in settings_cols:
                 conn.execute(f"ALTER TABLE settings ADD COLUMN {col} {definition}")
@@ -3908,6 +3914,152 @@ def save_settings():
     conn.close()
     flash("تم حفظ كافة الإعدادات وقوالب الواتساب بنجاح ⚙️", "success")
     return redirect(url_for('settings_view'))
+
+# =======================================================================
+#                    GOOGLE DRIVE CLOUD BACKUP & ARCHIVING
+# =======================================================================
+
+@app.route('/settings/gdrive/save', methods=['POST'])
+@admin_required
+def save_gdrive_settings():
+    gdrive_enabled = 1 if request.form.get('gdrive_enabled') else 0
+    gdrive_folder_id = request.form.get('gdrive_folder_id', '').strip()
+    gdrive_credentials_json = request.form.get('gdrive_credentials_json', '').strip()
+    gdrive_auto_interval = request.form.get('gdrive_auto_interval', 'daily').strip()
+
+    # Handle file upload if provided
+    if 'credentials_file' in request.files:
+        cfile = request.files['credentials_file']
+        if cfile and cfile.filename:
+            try:
+                content = cfile.read().decode('utf-8', errors='ignore')
+                if content.strip().startswith('{'):
+                    gdrive_credentials_json = content.strip()
+            except Exception:
+                pass
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+    UPDATE settings SET
+        gdrive_enabled = ?,
+        gdrive_folder_id = ?,
+        gdrive_credentials_json = ?,
+        gdrive_auto_interval = ?,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+    """, (gdrive_enabled, gdrive_folder_id, gdrive_credentials_json, gdrive_auto_interval))
+    conn.commit()
+    conn.close()
+
+    flash("تم حفظ إعدادات النسخ الاحتياطي السحابي Google Drive بنجاح ☁️", "success")
+    return redirect(url_for('settings_view'))
+
+
+@app.route('/settings/gdrive/test', methods=['POST'])
+@admin_required
+def test_gdrive_connection():
+    try:
+        data = request.get_json(silent=True) or request.form
+        credentials_json = data.get('credentials_json', '').strip()
+        folder_id = data.get('folder_id', '').strip()
+
+        if not credentials_json:
+            conn = get_db()
+            row = conn.execute("SELECT gdrive_credentials_json, gdrive_folder_id FROM settings WHERE id=1").fetchone()
+            conn.close()
+            if row:
+                credentials_json = row['gdrive_credentials_json'] or ''
+                if not folder_id:
+                    folder_id = row['gdrive_folder_id'] or ''
+
+        if not credentials_json:
+            return jsonify({'success': False, 'message': 'يرجى إدخال أو لصق كود مفتاح حساب الخدمة (Service Account JSON) أولاً.'})
+
+        import google_drive_backup
+        success, msg, client_email = google_drive_backup.test_drive_connection(credentials_json, folder_id)
+        return jsonify({'success': success, 'message': msg, 'client_email': client_email})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'خطأ أثناء اختبار الاتصال: {e}'})
+
+
+@app.route('/settings/gdrive/upload_now', methods=['POST'])
+@admin_required
+def upload_now_gdrive():
+    try:
+        conn = get_db()
+        row = conn.execute("SELECT gdrive_credentials_json, gdrive_folder_id FROM settings WHERE id=1").fetchone()
+        if not row or not row['gdrive_credentials_json']:
+            conn.close()
+            return jsonify({'success': False, 'message': 'بيانات اعتماد Google Drive غير متوفرة. يرجى حفظ مفتاح حساب الخدمة أولاً.'})
+
+        credentials_json = row['gdrive_credentials_json']
+        folder_id = row['gdrive_folder_id'] or ''
+        conn.close()
+
+        import google_drive_backup
+        success, msg, details = google_drive_backup.upload_backup_to_drive(DB_PATH, credentials_json, folder_id)
+
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        status_str = "ناجح" if success else f"فشل: {msg}"
+        conn = get_db()
+        conn.execute("UPDATE settings SET gdrive_last_backup_time=?, gdrive_last_backup_status=? WHERE id=1", (now_str, status_str))
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': success, 'message': msg, 'details': details, 'time': now_str})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'خطأ غير متوقع أثناء الرفع: {e}'})
+
+
+def _auto_gdrive_backup_worker():
+    """Background thread for scheduled Google Drive archiving."""
+    import time
+    time.sleep(30)
+    while True:
+        try:
+            if os.path.exists(DB_PATH):
+                conn = get_db()
+                row = conn.execute("SELECT gdrive_enabled, gdrive_credentials_json, gdrive_folder_id, gdrive_auto_interval, gdrive_last_backup_time FROM settings WHERE id=1").fetchone()
+                conn.close()
+                if row and row['gdrive_enabled'] and row['gdrive_credentials_json']:
+                    creds = row['gdrive_credentials_json']
+                    folder_id = row['gdrive_folder_id'] or ''
+                    interval = row['gdrive_auto_interval'] or 'daily'
+                    last_time_str = row['gdrive_last_backup_time']
+
+                    should_backup = False
+                    now = datetime.now()
+                    if not last_time_str:
+                        should_backup = True
+                    else:
+                        try:
+                            last_dt = datetime.strptime(last_time_str, "%Y-%m-%d %H:%M:%S")
+                            diff_hours = (now - last_dt).total_seconds() / 3600.0
+                            if interval == 'hourly' and diff_hours >= 1.0:
+                                should_backup = True
+                            elif interval == '6hours' and diff_hours >= 6.0:
+                                should_backup = True
+                            elif interval == 'daily' and diff_hours >= 24.0:
+                                should_backup = True
+                        except Exception:
+                            should_backup = True
+
+                    if should_backup:
+                        import google_drive_backup
+                        success, msg, details = google_drive_backup.upload_backup_to_drive(DB_PATH, creds, folder_id)
+                        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+                        status_str = "ناجح" if success else f"فشل: {msg}"
+                        conn = get_db()
+                        conn.execute("UPDATE settings SET gdrive_last_backup_time=?, gdrive_last_backup_status=? WHERE id=1", (now_str, status_str))
+                        conn.commit()
+                        conn.close()
+        except Exception:
+            pass
+        time.sleep(180)
+
+_gdrive_thread = threading.Thread(target=_auto_gdrive_backup_worker, daemon=True)
+_gdrive_thread.start()
 
 # =======================================================================
 #                         TELEGRAM & AI API ENDPOINTS
