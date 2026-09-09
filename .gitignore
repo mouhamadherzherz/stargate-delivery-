@@ -1,27 +1,9 @@
-# Database & Temp Files - Track base production database for cloud deploys
-delivery.db
-*.db-wal
-*.db-shm
-*.sqlite
-*.sqlite3
-*.restore_temp
-backup_*.db
-legacy_database_archive_*.db
-backups/
-db_backups/
-!data/stargate_production.db
-
-# Environment & Secrets
-.env
-*.env
-
-# Python Bytecode & Cache
-__pycache__/
 *.pyc
-*.pyo
-*.pyd
-
-# Operating System Files
-Thumbs.db
-Desktop.ini
-.DS_Store
+__pycache__/
+*.exe
+*.db
+*.log
+.env
+_internal/
+dist/
+build/
