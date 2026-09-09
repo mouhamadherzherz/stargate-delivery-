@@ -3001,24 +3001,115 @@ def find_free_port(preferred_port=5000):
     for p in [preferred_port, 8080, 8085, 8888, 8000]:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                s.bind(('0.0.0.0', p))
+                s.bind(('127.0.0.1', p))
                 return p
             except OSError:
                 continue
     return preferred_port
 
-def run_server():
+
+def auto_migrate_db(conn):
+    """فحص وإضافة أعمدة جديدة تلقائياً عند كل تشغيل دون المساس بالبيانات القديمة"""
+    cursor = conn.cursor()
+    try:
+        cursor.execute("PRAGMA table_info(orders)")
+        order_cols = [r[1] for r in cursor.fetchall()]
+        order_migrations = [
+            ("is_settled_with_merchant", "INTEGER DEFAULT 0"),
+            ("is_settled_with_courier",  "INTEGER DEFAULT 0"),
+            ("merchant_settlement_id",   "TEXT DEFAULT NULL"),
+            ("courier_settlement_id",    "TEXT DEFAULT NULL"),
+            ("scheduled_date",           "TEXT DEFAULT NULL"),
+            ("return_fee",               "REAL DEFAULT 0"),
+            ("notes",                    "TEXT DEFAULT ''"),
+        ]
+        for col, col_def in order_migrations:
+            if col not in order_cols:
+                cursor.execute(f"ALTER TABLE orders ADD COLUMN {col} {col_def}")
+
+        cursor.execute("PRAGMA table_info(merchants)")
+        merchant_cols = [r[1] for r in cursor.fetchall()]
+        for col, col_def in [("notes", "TEXT DEFAULT ''"), ("return_fee_policy", "TEXT DEFAULT 'full'"), ("payment_type", "TEXT DEFAULT 'postpaid'")]:
+            if col not in merchant_cols:
+                cursor.execute(f"ALTER TABLE merchants ADD COLUMN {col} {col_def}")
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS merchant_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        cursor.execute("SELECT COUNT(*) as c FROM merchant_categories")
+        if cursor.fetchone()[0] == 0:
+            for cat in ['مطاعم وسناك','حلويات ومخابز','أزياء وملابس','إلكترونيات وهواتف','سوبرماركت ومواد غذائية','عطور وتجميل','عام']:
+                cursor.execute("INSERT OR IGNORE INTO merchant_categories (name) VALUES (?)", (cat,))
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATE] Warning: {e}")
+
+
+def run_flask_server(port):
+    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False, threaded=True)
+
+
+def run_cloud_server():
     cloud_port = os.environ.get('PORT')
     port = int(cloud_port) if cloud_port and cloud_port.isdigit() else find_free_port(5000)
+    print("=" * 65)
+    print(f"[*] Stargate Delivery System - Cloud Mode on port {port}")
+    print("=" * 65)
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
 
-    print("=" * 65)
-    print(f"[*] Stargate Delivery System - Running Successfully")
-    print(f"[*] Server Listening on: 0.0.0.0:{port}")
-    print("=" * 65)
-    try:
-        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
-    except Exception as e:
-        print(f"[ERROR] Failed to start server: {e}")
 
 if __name__ == '__main__':
-    run_server()
+    # تشغيل الهجرة التلقائية عند كل إقلاع
+    try:
+        _mc = get_db()
+        auto_migrate_db(_mc)
+        _mc.close()
+    except Exception as _me:
+        print(f"[MIGRATE] {_me}")
+
+    # وضع السحابة إذا كان PORT محدداً
+    if os.environ.get('PORT'):
+        run_cloud_server()
+    else:
+        # وضع سطح المكتب: تشغيل Flask في الخلفية ثم فتح نافذة pywebview
+        _port = find_free_port(5000)
+        _server_thread = threading.Thread(target=run_flask_server, args=(_port,), daemon=True)
+        _server_thread.start()
+
+        # انتظر حتى يستجيب السيرفر (max 6 ثواني)
+        import socket as _sock, time as _time
+        for _ in range(30):
+            try:
+                _sock.create_connection(('127.0.0.1', _port), timeout=0.5).close()
+                break
+            except OSError:
+                _time.sleep(0.2)
+
+        try:
+            import webview
+            _icon_paths = [
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'icons', 'stargate_logo.ico'),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app_icon.ico'),
+            ]
+            _icon = next((p for p in _icon_paths if os.path.exists(p)), None)
+            webview.create_window(
+                title='Stargate Delivery System',
+                url=f'http://127.0.0.1:{_port}',
+                width=1366,
+                height=850,
+                min_size=(1024, 700),
+                resizable=True,
+            )
+            webview.start(debug=False)
+        except ImportError:
+            import webbrowser
+            print(f"[INFO] pywebview not found. Opening browser at http://127.0.0.1:{_port}")
+            webbrowser.open(f'http://127.0.0.1:{_port}')
+            try:
+                while True:
+                    _time.sleep(1)
+            except KeyboardInterrupt:
+                pass
