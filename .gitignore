@@ -1,35 +1,9 @@
-# Python & Environment
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.spec
-build/
-dist/
-_internal/
-
-# Databases & Backups (CRITICAL SECURITY)
-data/
+*.exe
 *.db
-*.sqlite
-*.sqlite3
-backup/
-backups/
-stargate-backup-before-upgrade/
-
-# Environment Variables & Secrets
-.env
-.env.local
-.env.*.local
-*.key
-.stargate_secret.key
-
-# Logs & Diagnostics
-logs/
 *.log
-
-# IDE & OS Files
-.vscode/
-.idea/
-Thumbs.db
-Desktop.ini
-.DS_Store
+.env
+_internal/
+dist/
+build/
