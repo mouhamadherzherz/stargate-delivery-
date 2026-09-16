@@ -4,7 +4,7 @@
 <div class="space-y-6">
 
     <!-- REAL-TIME FINANCIAL RISK RADAR ALERT BANNER -->
-    {% if risk_flags and risk_flags|length > 0 %}
+    {% if is_admin and risk_flags and risk_flags|length > 0 %}
     <div class="rounded-2xl p-4 border-2 shadow-lg transition-all duration-300 {% if risk_flags|selectattr('severity', 'equalto', 'high')|list|length > 0 %}bg-rose-50 border-rose-500 text-rose-900 shadow-rose-500/20 animate-pulse{% else %}bg-amber-50 border-amber-400 text-amber-900 shadow-amber-500/10{% endif %}">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
@@ -44,6 +44,71 @@
     </div>
     {% endif %}
 
+        <!-- صندوق المحادثة والاستعلام الذكي الداخلي (Native Offline AI Assistant) -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 shadow-xl border border-indigo-500/30 text-white space-y-3.5">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 text-lg font-black shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                        <span>المساعد الذكي الداخلي للمدير والموظف</span>
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">يعمل أوفلاين 100% ⚡</span>
+                    </h3>
+                    <p class="text-xs text-slate-300 mt-0.5">اسأل أي سؤال باللغة الطبيعية عن الصندوق، الخزائن، عهد السائقين، أو إحصائيات وأرباح اليوم</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-2">
+            <input type="text" id="aiQueryInput" placeholder="اسأل الذكاء الداخلي (مثال: كم كاش مع علي اليوم؟ أو ما هو رصيد الصندوق؟ أو كم طلب تسلم اليوم؟)..." 
+                   class="w-full bg-white/10 hover:bg-white/15 focus:bg-white text-white focus:text-slate-950 border border-white/20 focus:border-amber-400 rounded-2xl px-4 py-3 text-xs font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 transition"
+                   onkeydown="if(event.key==='Enter') executeAiQuery()">
+            <button type="button" onclick="executeAiQuery()" class="px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-95 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shrink-0 cursor-pointer">
+                <i class="fa-solid fa-bolt text-sm"></i>
+                <span>إرسال</span>
+            </button>
+        </div>
+
+        <div id="aiAnswerBox" class="hidden p-3.5 bg-white/10 backdrop-blur-md border border-indigo-400/30 rounded-2xl text-xs font-bold text-amber-200 flex items-start gap-2.5 animate-in">
+            <i class="fa-solid fa-circle-info text-amber-400 text-sm mt-0.5 shrink-0"></i>
+            <span id="aiAnswerContent" class="leading-relaxed text-slate-100"></span>
+        </div>
+    </div>
+
+    <script>
+    function executeAiQuery() {
+        const input = document.getElementById('aiQueryInput');
+        const q = (input ? input.value : '').trim();
+        if (!q) return;
+
+        const answerBox = document.getElementById('aiAnswerBox');
+        const content = document.getElementById('aiAnswerContent');
+        answerBox.classList.remove('hidden');
+        content.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري استرجاع الإجابة من المحرك الداخلي...';
+
+        const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+        fetch('/api/ai/ask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({query: q})
+        })
+        .then(r => r.json())
+        .then(res => {
+            content.textContent = res.answer || 'لا توجد إجابة متاحة';
+        })
+        .catch(err => {
+            content.textContent = 'تعذر الاتصال بالمساعد الذكي: ' + err.message;
+        });
+    }
+    </script>
+
+
     <!-- Top Page Title & Quick Actions Banner -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
@@ -64,27 +129,99 @@
                 <i class="fa-brands fa-telegram text-base"></i>
                 <span>إرسال تقرير للمدير 📲</span>
             </button>
-            <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] hover:to-[#C55F00] text-white text-sm font-black px-4 py-2.5 rounded-xl shadow-md shadow-[#FF7A00]/25 transition">
-                <i class="fa-solid fa-plus"></i>
-                <span>تسجيل أوردر جديد 📦</span>
+        </div>
+    </div>
+
+    
+    <!-- ================= TABLET TOUCH COMMAND PAD (شاشة اللمس التفاعلية للموظف) ================= -->
+    <div class="bg-gradient-to-r from-[#1E1B54] via-[#151240] to-[#1E1B54] p-5 sm:p-6 rounded-3xl shadow-xl border border-indigo-900/50 text-white relative overflow-hidden">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center text-lg shadow-md shadow-orange-500/30">
+                    <i class="fa-solid fa-tablet-screen-button"></i>
+                </span>
+                <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">لوحة العمليات اللمسية السريعة</h3>
+                    <p class="text-xs text-cyan-200/80">كبسات زر كبيرة وملونة لتنفيذ المهام اليومية بسلاسة وسرعة فائقة بدون ضياع</p>
+                </div>
+            </div>
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-slate-200 border border-white/15">
+                <i class="fa-solid fa-hand-pointer text-amber-400"></i>
+                <span>لمسة واحدة للعملية</span>
+            </span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <!-- Tile 1: New Order -->
+            <a href="{{ url_for('orders_list') }}?open_new=1" class="tablet-touch-btn bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white p-4 rounded-2xl shadow-lg shadow-orange-500/25 flex flex-col items-center justify-center text-center gap-2 border border-orange-400/30 group">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-black block">تسجيل أوردر 📦</span>
+                    <span class="text-[11px] text-amber-100/90 font-medium">إدخال فوري</span>
+                </div>
             </a>
-            {% if is_admin %}
-            <a href="{{ url_for('couriers_list') }}" class="inline-flex items-center gap-2 bg-[#1E1B54] hover:bg-[#151240] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
-                <i class="fa-solid fa-motorcycle text-[#FF7A00]"></i>
-                <span>تسكير حساب دليفري</span>
+
+            <!-- Tile 2: Orders List & Status -->
+            <a href="{{ url_for('orders_list') }}" class="tablet-touch-btn bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white p-4 rounded-2xl shadow-lg shadow-blue-500/25 flex flex-col items-center justify-center text-center gap-2 border border-blue-400/30 group">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-black block">متابعة الطلبات 📋</span>
+                    <span class="text-[11px] text-sky-100/90 font-medium">{{ stats.today_orders_count }} اليوم</span>
+                </div>
             </a>
-            <a href="{{ url_for('merchants_list') }}" class="inline-flex items-center gap-2 bg-[#00D26A] hover:bg-[#00B359] text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-[#00D26A]/20 transition">
-                <i class="fa-solid fa-hand-holding-dollar"></i>
-                <span>دفع مصاري المحلات</span>
+
+            <!-- Tile 3: Couriers & Street Cash -->
+            <a href="{{ url_for('couriers_list') }}" class="tablet-touch-btn bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white p-4 rounded-2xl shadow-lg shadow-amber-600/25 flex flex-col items-center justify-center text-center gap-2 border border-amber-500/30 group">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                    <i class="fa-solid fa-motorcycle"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-black block">كاش السائقين 🛵</span>
+                    <span class="text-[11px] text-amber-100/90 font-mono font-bold">{{ stats.total_courier_custody|format_currency }}</span>
+                </div>
+            </a>
+
+            <!-- Tile 4: Merchants Payout -->
+            <a href="{{ url_for('merchants_list') }}" class="tablet-touch-btn bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white p-4 rounded-2xl shadow-lg shadow-emerald-600/25 flex flex-col items-center justify-center text-center gap-2 border border-emerald-400/30 group">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-black block">أرباح المحلات 🏬</span>
+                    <span class="text-[11px] text-emerald-100/90 font-mono font-bold">{{ stats.total_merchant_debt|format_currency }}</span>
+                </div>
+            </a>
+
+            {% if is_admin or has_permission('treasury_view') %}
+            <!-- Tile 5: Treasury & Whish Wallet (Admin / Finance) -->
+            <a href="{{ url_for('treasury_view') }}" class="tablet-touch-btn bg-gradient-to-br from-purple-700 via-indigo-800 to-slate-900 hover:from-purple-800 hover:to-black text-white p-4 rounded-2xl shadow-lg shadow-purple-700/25 flex flex-col items-center justify-center text-center gap-2 border border-purple-400/30 group">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                    <i class="fa-solid fa-vault"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-black block">الخزنة و Whish 💰</span>
+                    <span class="text-[11px] text-purple-200/90 font-mono font-bold">كاش: {{ stats.cash_treasury|format_currency }} | ويش: {{ stats.whish_treasury|format_currency }}</span>
+                </div>
             </a>
             {% else %}
-            <a href="{{ url_for('orders_list') }}" class="inline-flex items-center gap-2 bg-[#1E1B54] hover:bg-[#151240] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition">
-                <i class="fa-solid fa-box-open text-[#00B5FF]"></i>
-                <span>كل الأوردرات</span>
+            <!-- Tile 5: Customers Directory (Employee Friendly) -->
+            <a href="{{ url_for('customers_list') }}" class="tablet-touch-btn bg-gradient-to-br from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white p-4 rounded-2xl shadow-lg shadow-purple-600/25 flex flex-col items-center justify-center text-center gap-2 border border-purple-400/30 group">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                    <i class="fa-solid fa-address-book"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-black block">دليل الزبائن 👥</span>
+                    <span class="text-[11px] text-purple-100/90 font-medium">بحث العناوين والهواتف</span>
+                </div>
             </a>
             {% endif %}
         </div>
     </div>
+
 
     {% if is_admin %}
     <!-- 5 Main Financial KPI Cards (Admin Only) -->
@@ -92,15 +229,23 @@
         <!-- 1. Treasury Cash -->
         <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-5 rounded-2xl shadow-lg shadow-emerald-600/10 relative overflow-hidden">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-100">كاش الصندوق (الخزينة)</span>
+                <span class="text-xs font-bold text-emerald-100">كاش الصندوق (درج المحل)</span>
                 <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
-                    <i class="fa-solid fa-vault text-base"></i>
+                    <i class="fa-solid fa-cash-register text-base"></i>
                 </div>
             </div>
             <div class="mt-3">
                 <div class="text-xl font-black tracking-tight font-mono">{{ stats.cash_treasury|format_currency }} <span class="text-xs font-sans font-normal">{{ currency }}</span></div>
                 <div class="text-xs text-emerald-200 font-bold font-mono mt-0.5">≈ {{ stats.cash_treasury|to_usd(exchange_rate) }}</div>
-                <span class="text-[11px] text-emerald-100/80 mt-1 block font-medium">السيولة النقدية بالصندوق</span>
+                <span class="text-[11px] text-emerald-100/80 mt-1 block font-medium">السيولة النقدية بدرج المحل (لليومية)</span>
+                {% if is_admin and stats.owner_vault_balance is defined and stats.owner_vault_balance > 0 %}
+                <div class="mt-2.5 pt-2 border-t border-white/15 flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                        <i class="fa-solid fa-crown text-[9px]"></i> قاصة الإدارة:
+                    </span>
+                    <span class="text-xs font-mono font-black text-amber-200">{{ stats.owner_vault_balance|format_currency }} <span class="text-[9px] font-sans">ل.ل</span></span>
+                </div>
+                {% endif %}
             </div>
             <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-emerald-100">
                 <a href="{{ url_for('treasury_view') }}" class="hover:underline flex items-center gap-1 font-bold text-[11px]">
@@ -395,7 +540,7 @@
                         </td>
                         <td class="py-3.5 px-6">
                             <div class="font-medium text-slate-800">{{ order.recipient_name }}</div>
-                            <span class="text-xs text-slate-400">{{ order.recipient_city }} - {{ order.recipient_address[:25] }}...</span>
+                            <span class="text-xs text-slate-400">{{ order.recipient_city }} - {{ (order.recipient_address or '')[:25] }}...</span>
                         </td>
                         <td class="py-3.5 px-6">
                             {% if order.courier_name %}

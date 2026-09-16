@@ -49,6 +49,15 @@
             border-color: rgba(59, 130, 246, 0.7);
             background: rgba(30, 41, 59, 1);
         }
+        /* Mask PIN strictly and hide native browser reveal buttons */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none !important;
+        }
+        .pin-masked {
+            -webkit-text-security: disc !important;
+            text-security: disc !important;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-particles flex items-center justify-center p-4">
@@ -102,6 +111,7 @@
             </h2>
 
             <form method="POST" action="{{ url_for('login_page') }}" class="space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <!-- Authentication Mode Toggle -->
                 <div class="flex p-1 bg-slate-800/80 rounded-xl mb-6 border border-slate-700/50">
                     <button type="button" onclick="switchLoginMode('userpass')" id="btn-userpass" class="flex-1 py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white shadow-md transition-all">الاسم وكلمة المرور</button>
@@ -143,14 +153,29 @@
                 <!-- PIN Fields -->
                 <div id="pin_fields" class="hidden space-y-5">
                     <div>
-                        <label class="block text-slate-300 text-sm font-semibold mb-2">
-                            <i class="fa-solid fa-lock ml-1 text-blue-400"></i>
-                            رمز PIN الخاص بك (للمدير أو الموظف)
+                        <label class="block text-slate-300 text-sm font-semibold mb-2 flex items-center justify-between">
+                            <span><i class="fa-solid fa-lock ml-1 text-blue-400"></i> رمز PIN السريع (مخفي ومحمي)</span>
+                            <span class="text-xs text-slate-500 font-normal">أدخل رمزك السري</span>
                         </label>
-                        <input type="password" name="pin" id="pin" autocomplete="off"
-                               class="input-field w-full px-4 py-4 rounded-xl text-center tracking-[1em] text-white text-2xl placeholder-slate-500 transition-all"
-                               placeholder="****">
+                        <div class="relative">
+                            <input type="password" name="pin" id="pin" autocomplete="off"
+                                   inputmode="numeric" pattern="[0-9]*"
+                                   style="-webkit-text-security: disc; text-security: disc;"
+                                   class="input-field pin-masked w-full px-4 py-3.5 rounded-xl text-center tracking-[0.8em] text-white text-xl placeholder-slate-500 transition-all font-mono"
+                                   placeholder="••••••••">
+                            <button type="button" onclick="togglePinVisibility()" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors">
+                                <i id="pin-eye-icon" class="fa-solid fa-eye text-sm"></i>
+                            </button>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Recovery Link -->
+                <div class="flex items-center justify-between text-xs px-1">
+                    <a href="/forgot_password" class="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-key-skeleton"></i>
+                        <span>استرداد الحساب / نسيت كلمة المرور؟</span>
+                    </a>
                 </div>
 
                 <!-- Submit Button -->
@@ -197,6 +222,19 @@
                 icon.className = 'fa-solid fa-eye text-sm';
             }
         }
+        function togglePinVisibility() {
+            const pinInp = document.getElementById('pin');
+            const pinIcon = document.getElementById('pin-eye-icon');
+            if (pinInp.type === 'password') {
+                pinInp.type = 'text';
+                pinInp.style.webkitTextSecurity = 'none';
+                pinIcon.className = 'fa-solid fa-eye-slash text-sm';
+            } else {
+                pinInp.type = 'password';
+                pinInp.style.webkitTextSecurity = 'disc';
+                pinIcon.className = 'fa-solid fa-eye text-sm';
+            }
+        }
         function switchLoginMode(mode) {
             document.getElementById('login_type').value = mode;
             
@@ -240,6 +278,25 @@
                 document.getElementById('password').focus();
             }
         });
+
+        // Auto-Scale Login Screen for Small Laptops and High-DPI screens
+        (function() {
+            function autoScaleLogin() {
+                const h = window.innerHeight;
+                const w = window.innerWidth;
+                let z = 1.0;
+                if (h < 680 || w < 1100) {
+                    z = 0.78;
+                } else if (h < 780 || w < 1366) {
+                    z = 0.85;
+                } else if (h < 880) {
+                    z = 0.90;
+                }
+                document.body.style.zoom = z;
+            }
+            window.addEventListener('resize', autoScaleLogin);
+            autoScaleLogin();
+        })();
     </script>
 </body>
 </html>

@@ -136,7 +136,7 @@
 <body>
 
     <div class="controls">
-        <a href="whatsapp://send?phone={{ order.recipient_phone|clean_phone_for_whatsapp }}" class="btn btn-whatsapp" style="background-color: #16a34a;">
+        <a href="https://wa.me/{{ order.recipient_phone|clean_phone_for_whatsapp }}" target="_blank" class="btn btn-whatsapp" style="background-color: #16a34a;">
             <i class="fa-brands fa-whatsapp text-lg"></i> إرسال واتساب بزنس 📱
         </a>
         <a href="{{ url_for('order_whatsapp', order_id=order.id) }}" target="_blank" class="btn btn-whatsapp" style="background-color: #0d9488;">
@@ -178,6 +178,18 @@
         <div class="section">
             <div class="section-title">بيانات الأوردر وموظف الاتصال:</div>
             <div class="info-row">
+            {% if order.second_merchant_name or order.second_store_name or order.second_merchant_id %}
+            <div class="info-row" style="background: #fdf4ff; padding: 4px 6px; border-radius: 6px; border: 1px solid #f0abfc; margin-bottom: 4px;">
+                <span style="color: #86198f; font-weight: bold;">🏪 متجر 1:</span>
+                <span class="info-val">{{ order.merchant_name }} ({{ order.store_name }}) {% if order.first_merchant_price and order.first_merchant_price > 0 %}- {{ order.first_merchant_price|format_currency }} ل.ل{% endif %}</span>
+            </div>
+            <div class="info-row" style="background: #fdf4ff; padding: 4px 6px; border-radius: 6px; border: 1px solid #f0abfc; margin-bottom: 4px;">
+                <span style="color: #86198f; font-weight: bold;">🏪 متجر 2:</span>
+                <span class="info-val">{{ order.second_merchant_name or order.second_store_name }} {% if order.second_merchant_price and order.second_merchant_price > 0 %}- {{ order.second_merchant_price|format_currency }} ل.ل{% endif %}</span>
+            </div>
+            <div style="font-size: 10px; color: #701a75; font-weight: bold; margin-bottom: 4px;">💡 ملاحظة للسائق: الطلب مستلم من متجرين مع أجرة دليفري واحدة موحدة للزبون.</div>
+            {% else %}
+            <div class="info-row">
                 <span>المحل / البيج:</span>
                 <span class="info-val">{{ order.merchant_name }} ({{ order.store_name }})</span>
             </div>
@@ -185,7 +197,7 @@
                 <span>هاتف المحل:</span>
                 <span class="info-val" dir="ltr">{{ order.merchant_phone }}</span>
             </div>
-            <div class="info-row">
+            {% endif %}
                 <span>موظف الكول سنتر:</span>
                 <span class="info-val" style="color: #b91c1c;">{{ order.agent_name or 'خدمة العملاء' }}</span>
             </div>
@@ -211,7 +223,28 @@
         <!-- Item Breakdown & Driver Details -->
         <div class="section">
             <div class="section-title">تفاصيل الأغراض والأسعار:</div>
-            {% if order.items_detail %}
+            {% if order_items and order_items|length > 0 %}
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 12px;">
+                <thead>
+                    <tr style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1; text-align: right;">
+                        <th style="padding: 4px 6px;">الصنف / المنتج</th>
+                        <th style="padding: 4px 6px; text-align: center;">الكمية</th>
+                        <th style="padding: 4px 6px; text-align: center;">سعر الوحدة</th>
+                        <th style="padding: 4px 6px; text-align: left;">المجموع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for itm in order_items %}
+                    <tr style="border-bottom: 1px dashed #e2e8f0;">
+                        <td style="padding: 4px 6px; font-weight: bold;">{{ itm.product_name }}</td>
+                        <td style="padding: 4px 6px; text-align: center;">{{ itm.quantity }}</td>
+                        <td style="padding: 4px 6px; text-align: center; font-family: monospace;">{{ "{:,.0f}".format(itm.unit_price) }} ل.ل</td>
+                        <td style="padding: 4px 6px; text-align: left; font-family: monospace; font-weight: bold;">{{ "{:,.0f}".format(itm.subtotal) }} ل.ل</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif order.items_detail %}
             <div style="font-size: 12px; background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px; white-space: pre-line; line-height: 1.5;">
                 {{ order.items_detail }}
             </div>
@@ -249,14 +282,21 @@
         <div class="total-box">
             <div class="total-label">المبلغ المطلوب تحصيله من الزبون (COD):</div>
             <div class="total-amount">
-                {{ (order.order_price + order.delivery_fee)|format_currency }} {{ currency }}
+                {% if order.payment_method == 'whish' %}
+                    <span style="font-size: 18px; color: #6b21a8;">مدفوع إلكترونياً (Whish)</span><br>
+                    0 {{ currency }}
+                {% else %}
+                    {{ (order.order_price + order.delivery_fee)|format_currency }} {{ currency }}
+                {% endif %}
             </div>
+            {% if order.payment_method != 'whish' %}
             <div style="font-size: 16px; font-weight: 800; color: #16a34a; font-family: monospace; margin-top: 2px;">
                 ≈ {{ (order.order_price + order.delivery_fee)|to_usd(exchange_rate) }}
             </div>
             <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
                 سعر الصرف المعتمد: 1$ = {{ exchange_rate|format_currency }} ل.ل
             </div>
+            {% endif %}
         </div>
 
         {% if order.notes %}

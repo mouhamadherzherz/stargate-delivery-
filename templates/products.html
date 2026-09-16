@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة المنتجات والمخزون والتسعير | Stargate Experts{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-12">
+    <!-- Header & Action Bar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 backdrop-blur-xl p-5 rounded-2xl shadow-xl">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+                <i class="fa-solid fa-tags text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black text-white flex items-center gap-3">
+                    <span>إدارة المنتجات ومصفوفة التسعير</span>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 font-mono font-bold">POS Core</span>
+                </h1>
+                <p class="text-xs text-slate-400 mt-1">تحديد تكاليف الشراء، أسعار الجملة والمفرق، مراقبة مستويات المخزون ومنع الأخطاء البشرية.</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="openAddProductModal()" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-sky-500/25 transition">
+                <i class="fa-solid fa-plus"></i>
+                <span>إضافة منتج جديد</span>
+            </button>
+            <a href="{{ url_for('products_list', low_stock='1') }}" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/20 text-sm font-semibold px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>النواقص ({{ low_stock_count }})</span>
+            </a>
+            <a href="{{ url_for('products_list') }}" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold px-3 py-2.5 rounded-xl flex items-center gap-2 transition">
+                <i class="fa-solid fa-rotate"></i>
+                <span>الكل</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900/80 border border-slate-800/80 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">إجمالي المنتجات</span>
+                <span class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-sm"><i class="fa-solid fa-boxes-stacked"></i></span>
+            </div>
+            <div class="text-2xl font-black text-white mt-2">{{ total_products }}</div>
+            <p class="text-[11px] text-slate-500 mt-1">منتج وخدمة مسجلة بالنظام</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800/80 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">قيمة التكلفة للمخزون</span>
+                <span class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+            </div>
+            <div class="text-2xl font-black text-indigo-400 mt-2">{{ "{:,.0f}".format(total_cost_valuation) }} <span class="text-xs text-slate-400 font-normal">ل.ل</span></div>
+            <p class="text-[11px] text-slate-500 mt-1">إجمالي رأس المال المحبوس في البضائع</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800/80 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">القيمة البيعية المقدرة</span>
+                <span class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm"><i class="fa-solid fa-chart-pie"></i></span>
+            </div>
+            <div class="text-2xl font-black text-emerald-400 mt-2">{{ "{:,.0f}".format(total_retail_valuation) }} <span class="text-xs text-slate-400 font-normal">ل.ل</span></div>
+            <p class="text-[11px] text-slate-500 mt-1">العائد المتوقع عند بيع كامل المخزون</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800/80 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">أصناف قاربت على النفاد</span>
+                <span class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm"><i class="fa-solid fa-bell"></i></span>
+            </div>
+            <div class="text-2xl font-black {{ 'text-rose-400' if low_stock_count > 0 else 'text-slate-400' }} mt-2">{{ low_stock_count }}</div>
+            <p class="text-[11px] text-slate-500 mt-1">تتطلب إعادة طلب وتوريد فوري</p>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <form method="GET" action="{{ url_for('products_list') }}" class="flex-1 w-full flex items-center gap-3">
+            <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" name="search" value="{{ search_query or '' }}" placeholder="ابحث بالاسم، الباركود، أو رمز SKU..." class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl pr-10 pl-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+            </div>
+            <select name="category" onchange="this.form.submit()" class="bg-slate-950/80 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+                <option value="">جميع التصنيفات</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {{ 'selected' if selected_category == cat else '' }}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">بحث</button>
+            {% if search_query or selected_category %}
+            <a href="{{ url_for('products_list') }}" class="text-xs text-slate-400 hover:text-white underline">مسح التصفية</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Products Data Table -->
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-slate-950/70 border-b border-slate-800 text-xs text-slate-400 uppercase font-semibold">
+                    <tr>
+                        <th class="py-4 px-4">الصنف والباركود</th>
+                        <th class="py-4 px-4">التصنيف</th>
+                        <th class="py-4 px-4">سعر التكلفة (شراء)</th>
+                        <th class="py-4 px-4">سعر الجملة</th>
+                        <th class="py-4 px-4">سعر المفرق (البيع)</th>
+                        <th class="py-4 px-4">هامش الربح</th>
+                        <th class="py-4 px-4">الرصيد المتاح</th>
+                        <th class="py-4 px-4 text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 font-medium">
+                    {% for p in products %}
+                    {% set margin_retail = (p.retail_price - p.cost_price) %}
+                    {% set margin_percent = ((margin_retail / p.cost_price) * 100) if p.cost_price > 0 else 0 %}
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3.5 px-4">
+                            <div class="font-bold text-white text-base">{{ p.name }}</div>
+                            <div class="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                                <span class="font-mono bg-slate-800 px-2 py-0.5 rounded text-sky-400"><i class="fa-solid fa-barcode text-[10px] ml-1"></i>{{ p.barcode or 'بدون باركود' }}</span>
+                                {% if p.sku %}<span class="text-slate-500 font-mono">SKU: {{ p.sku }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-semibold">{{ p.category or 'عام' }}</span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-semibold text-slate-300">{{ "{:,.0f}".format(p.cost_price) }} <span class="text-[10px] text-slate-500">ل.ل</span></div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-bold text-amber-400">{{ "{:,.0f}".format(p.wholesale_price) }} <span class="text-[10px] text-slate-500">ل.ل</span></div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-black text-emerald-400 text-base">{{ "{:,.0f}".format(p.retail_price) }} <span class="text-[10px] text-slate-500">ل.ل</span></div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <div class="text-xs font-bold text-emerald-400">+{{ "{:,.0f}".format(margin_retail) }} ل.ل</div>
+                            <div class="text-[10px] text-slate-400">({{ "{:.1f}".format(margin_percent) }}%)</div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            {% if p.stock_quantity <= p.min_stock_alert %}
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold text-xs">
+                                <i class="fa-solid fa-circle-exclamation text-[10px]"></i>
+                                <span>{{ p.stock_quantity }} {{ p.unit }} (منخفض)</span>
+                            </div>
+                            {% else %}
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-xs">
+                                <span>{{ p.stock_quantity }} {{ p.unit }}</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-4 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick='openAdjustStockModal({{ p.id }}, {{ p.name|tojson }}, {{ p.stock_quantity }}, {{ p.unit|tojson }})' title="تسوية وجرد المخزون" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition">
+                                    <i class="fa-solid fa-dolly text-xs"></i>
+                                </button>
+                                <button onclick='openEditProductModal({{ p|tojson }})' title="تعديل الأسعار والبيانات" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 flex items-center justify-center transition">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <form method="POST" action="{{ url_for('delete_product', prod_id=p.id) }}" onsubmit="return confirm('هل أنت متأكد من رغبتك في حذف هذا الصنف؟');" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" title="حذف" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-rose-400 flex items-center justify-center transition">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-box-open text-4xl mb-3 block text-slate-600"></i>
+                            <p class="text-sm font-semibold">لم يتم العثور على أي منتجات مطابقة.</p>
+                            <p class="text-xs text-slate-500 mt-1">اضغط على زر "إضافة منتج جديد" لبدء إدخال مصفوفة أسعارك.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add / Edit Product -->
+<div id="productModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-fade-in">
+        <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+            <h3 id="modalTitle" class="text-lg font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-tag text-sky-400"></i>
+                <span>إضافة منتج جديد</span>
+            </h3>
+            <button onclick="closeProductModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="productForm" method="POST" action="{{ url_for('create_product') }}" class="p-5 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="edit_prod_id" name="prod_id" value="">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">اسم الصنف أو الخدمة *</label>
+                    <input type="text" id="prod_name" name="name" required placeholder="مثال: شاحن سريع 33W" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">الباركود (Barcode)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="prod_barcode" name="barcode" placeholder="امسح بالباركود..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500">
+                        <button type="button" onclick="generateRandomBarcode()" class="bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs px-2.5 rounded-xl" title="توليد تلقائي"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">رمز التخزين (SKU)</label>
+                    <input type="text" id="prod_sku" name="sku" placeholder="مثال: PRD-001" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">التصنيف</label>
+                    <input type="text" id="prod_category" name="category" list="category_suggestions" placeholder="إلكترونيات، طرود..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+                    <datalist id="category_suggestions">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">وحدة القياس</label>
+                    <select id="prod_unit" name="unit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+                        <option value="قطعة">قطعة</option>
+                        <option value="طرد">طرد</option>
+                        <option value="علبة">علبة</option>
+                        <option value="درزن">درزن</option>
+                        <option value="كيلو">كيلو</option>
+                        <option value="خدمة">خدمة</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Pricing Matrix Box -->
+            <div class="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl space-y-3">
+                <div class="text-xs font-black text-sky-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-coins"></i>
+                    <span>مصفوفة الأسعار والهوامش (ليرة لبنانية)</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">سعر التكلفة (الشراء) *</label>
+                        <input type="number" step="any" id="prod_cost" name="cost_price" required value="0" oninput="calcMargins()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">سعر الجملة *</label>
+                        <input type="number" step="any" id="prod_wholesale" name="wholesale_price" required value="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-amber-400 font-bold focus:outline-none focus:border-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">سعر المفرق (الجمهور) *</label>
+                        <input type="number" step="any" id="prod_retail" name="retail_price" required value="0" oninput="calcMargins()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-emerald-400 font-black focus:outline-none focus:border-sky-500">
+                    </div>
+                </div>
+                <div id="marginPreview" class="text-xs text-slate-400 pt-1 flex items-center justify-between border-t border-slate-800/50">
+                    <span>هامش ربح القطعة مفرق: <strong id="marginVal" class="text-emerald-400 font-bold">0 ل.ل</strong></span>
+                    <span>النسبة: <strong id="marginPct" class="text-emerald-400 font-bold">0%</strong></span>
+                </div>
+            </div>
+
+            <!-- Inventory Box -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">الرصيد الأولي المتوفر بالمخزن</label>
+                    <input type="number" step="any" id="prod_stock" name="stock_quantity" value="0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">حد التنبيه عند النقص (Low Alert)</label>
+                    <input type="number" step="any" id="prod_min_alert" name="min_stock_alert" value="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-rose-400 font-bold focus:outline-none focus:border-sky-500">
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end gap-2.5">
+                <button type="button" onclick="closeProductModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold px-4 py-2.5 rounded-xl transition">إلغاء</button>
+                <button type="submit" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white text-sm font-black px-6 py-2.5 rounded-xl shadow-lg shadow-sky-500/20 transition">حفظ الصنف</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Adjust Stock (تسوية جردية وتوريد) -->
+<div id="stockModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
+        <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+            <h3 class="text-base font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-dolly text-amber-400"></i>
+                <span>تسوية وتوريد المخزون</span>
+            </h3>
+            <button onclick="closeStockModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="stockForm" method="POST" action="" class="p-5 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <p class="text-xs text-slate-400">الصنف:</p>
+                <p id="stock_item_name" class="text-base font-bold text-white"></p>
+                <p class="text-xs text-slate-400 mt-1">الرصيد الحالي: <span id="stock_current_val" class="font-bold text-emerald-400"></span></p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">نوع الحركة *</label>
+                <select name="action_type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+                    <option value="add">➕ توريد كمية جديدة (+ إضافة رصيد)</option>
+                    <option value="deduct">➖ صرف / تالف / فقدان (- خصم رصيد)</option>
+                    <option value="set">⚖️ مطابقة جرد فعلي (تعديل مباشر للرقم)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">الكمية *</label>
+                <input type="number" step="any" name="quantity" required placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-sky-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">البيان أو سبب التعديل *</label>
+                <input type="text" name="notes" required placeholder="مثال: فاتورة توريد رقم 104 أو جرد مستودع..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end gap-2.5">
+                <button type="button" onclick="closeStockModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold px-4 py-2.5 rounded-xl transition">إلغاء</button>
+                <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 transition">تأكيد حركة المخزون</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function calcMargins() {
+    const cost = parseFloat(document.getElementById('prod_cost').value) || 0;
+    const retail = parseFloat(document.getElementById('prod_retail').value) || 0;
+    const margin = retail - cost;
+    const pct = cost > 0 ? ((margin / cost) * 100).toFixed(1) : 0;
+    document.getElementById('marginVal').textContent = margin.toLocaleString() + ' ل.ل';
+    document.getElementById('marginPct').textContent = pct + '%';
+}
+
+function generateRandomBarcode() {
+    const code = '629' + Math.floor(1000000 + Math.random() * 9000000);
+    document.getElementById('prod_barcode').value = code;
+}
+
+function openAddProductModal() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-plus text-sky-400"></i><span>إضافة منتج جديد</span>';
+    document.getElementById('productForm').action = "{{ url_for('create_product') }}";
+    document.getElementById('edit_prod_id').value = '';
+    document.getElementById('prod_name').value = '';
+    document.getElementById('prod_barcode').value = '';
+    document.getElementById('prod_sku').value = '';
+    document.getElementById('prod_category').value = '';
+    document.getElementById('prod_unit').value = 'قطعة';
+    document.getElementById('prod_cost').value = '0';
+    document.getElementById('prod_wholesale').value = '0';
+    document.getElementById('prod_retail').value = '0';
+    document.getElementById('prod_stock').value = '0';
+    document.getElementById('prod_min_alert').value = '5';
+    calcMargins();
+    document.getElementById('productModal').classList.remove('hidden');
+}
+
+function openEditProductModal(p) {
+    document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen text-sky-400"></i><span>تعديل الصنف: ' + p.name + '</span>';
+    document.getElementById('productForm').action = "/products/" + p.id + "/edit";
+    document.getElementById('edit_prod_id').value = p.id;
+    document.getElementById('prod_name').value = p.name;
+    document.getElementById('prod_barcode').value = p.barcode || '';
+    document.getElementById('prod_sku').value = p.sku || '';
+    document.getElementById('prod_category').value = p.category || '';
+    document.getElementById('prod_unit').value = p.unit || 'قطعة';
+    document.getElementById('prod_cost').value = p.cost_price || 0;
+    document.getElementById('prod_wholesale').value = p.wholesale_price || 0;
+    document.getElementById('prod_retail').value = p.retail_price || 0;
+    document.getElementById('prod_stock').value = p.stock_quantity || 0;
+    document.getElementById('prod_min_alert').value = p.min_stock_alert || 5;
+    calcMargins();
+    document.getElementById('productModal').classList.remove('hidden');
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').classList.add('hidden');
+}
+
+function openAdjustStockModal(id, name, currentStock, unit) {
+    document.getElementById('stock_item_name').textContent = name;
+    document.getElementById('stock_current_val').textContent = currentStock + ' ' + unit;
+    document.getElementById('stockForm').action = "/products/" + id + "/adjust-stock";
+    document.getElementById('stockModal').classList.remove('hidden');
+}
+
+function closeStockModal() {
+    document.getElementById('stockModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

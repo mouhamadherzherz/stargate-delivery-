@@ -56,6 +56,13 @@
     <script src="{{ url_for('static', filename='js/JsBarcode.all.min.js') }}"></script>
 
     <style>
+        /* Prevent entire page horizontal scroll & jitter */
+        html, body {
+            overflow-x: hidden !important;
+            width: 100%;
+            max-width: 100vw;
+        }
+
         body {
             font-family: 'Cairo', sans-serif;
             -webkit-tap-highlight-color: transparent;
@@ -97,6 +104,29 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+    
+        /* Tablet & Touch Screen Enhancements */
+        .tablet-touch-btn {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tablet-touch-btn:active {
+            transform: scale(0.94);
+        }
+        .touch-scroll-x {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        /* Desktop Sidebar Toggle Utility */
+        @media (min-width: 1024px) {
+            aside#sidebar.desktop-sidebar-hidden {
+                display: none !important;
+            }
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
@@ -112,7 +142,7 @@
             </button>
             <div class="flex items-center gap-2">
                 <span class="text-lg">🇱🇧</span>
-                <span class="font-black text-base tracking-wide text-white">{{ company_name }}</span>
+                <span class="font-black text-base tracking-wide text-white">{{ company_name }}</span><span class="text-[10px] bg-amber-400 text-indigo-950 font-black px-2 py-0.5 rounded-full shadow-xs">v7.0 (تحديث 7)</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -160,7 +190,7 @@
                     </div>
                     <div>
                         <h1 class="font-black text-white text-base tracking-wide leading-tight">STARGATE</h1>
-                        <span class="text-[11px] text-[#00B5FF] font-black block tracking-wider uppercase">EXPERTS</span>
+                        <span class="text-[11px] text-[#00B5FF] font-black block tracking-wider uppercase">EXPERTS <span class="text-[9px] bg-[#FF7A00] text-white px-1.5 py-0.5 rounded-full ml-1">v7.0 • التحديث 7 ⭐</span></span>
                     </div>
                 </div>
                 <button id="closeSidebarBtn" class="lg:hidden text-slate-400 hover:text-white p-1">
@@ -186,6 +216,12 @@
                     <span>الأوردرات والطلبيات</span>
                 </a>
 
+                <a href="{{ url_for('map_dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'map' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-satellite-dish text-lg w-6 text-center text-cyan-400"></i>
+                    <span class="flex-1">رادار العمليات والخريطة الحية</span>
+                    <span class="text-[10px] bg-cyan-500 text-slate-950 px-2 py-0.5 rounded-full font-black animate-pulse">مباشر</span>
+                </a>
+
                 <a href="{{ url_for('customers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'customers' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-address-book text-lg w-6 text-center text-[#00B5FF]"></i>
                     <span>دليل الزبائن والعناوين</span>
@@ -196,9 +232,21 @@
                     <span>شباب الدليفري والكاش</span>
                 </a>
 
+                <a href="{{ url_for('courier_app_view') }}" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-amber-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-mobile-screen-button text-lg w-6 text-center text-amber-400"></i>
+                    <span class="flex-1">تطبيق السائق للجوال 🛵</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                </a>
+
                 <a href="{{ url_for('merchants_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'merchants' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-store text-lg w-6 text-center text-[#00D26A]"></i>
                     <span>المحلات والتجار (البيجات)</span>
+                </a>
+
+                <a href="{{ url_for('service_providers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'service_providers' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-wrench text-lg w-6 text-center text-emerald-400"></i>
+                    <span class="flex-1">الخدمات والمهن الحرة</span>
+                    <span class="text-[10px] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-full font-black">جديد</span>
                 </a>
 
                 {% if is_admin %}
@@ -219,6 +267,18 @@
                 <a href="{{ url_for('settings_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'settings' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-gears text-lg w-6 text-center text-slate-300"></i>
                     <span>الإعدادات</span>
+                </a>
+
+                <a href="{{ url_for('admin_updates') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 font-bold' if active_page == 'updates' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-cloud-arrow-down text-lg w-6 text-center text-emerald-400"></i>
+                    <span class="flex-1">تحديثات النظام (OTA)</span>
+                    <span class="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">جديد</span>
+                </a>
+
+                <a href="{{ url_for('system_health_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'system_health' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-heart-pulse text-lg w-6 text-center text-rose-400"></i>
+                    <span class="flex-1">مركز تشخيص الخدمات</span>
+                    <span class="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-bold">مباشر</span>
                 </a>
                 {% endif %}
 
@@ -246,6 +306,28 @@
                 <a href="{{ url_for('reports_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'reports' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
                     <span>تقارير الأرباح والمحاسبة</span>
+                </a>
+
+                <a href="{{ url_for('accounting_ledger') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'accounting_ledger' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-scale-balanced text-lg w-6 text-center text-emerald-400"></i>
+                    <span>دفتر اليومية المالي ⚖️</span>
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('products_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'products' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-tags text-lg w-6 text-center text-amber-400"></i>
+                    <span>المنتجات والمخزون والتسعير 🏷️</span>
+                </a>
+
+                <a href="{{ url_for('user_guide_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'guide' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-book-open text-lg w-6 text-center text-cyan-400"></i>
+                    <span>دليل التشغيل والمستخدم 📖</span>
+                </a>
+
+                {% if is_admin %}
+                <a href="{{ url_for('admin_telemetry_errors') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'telemetry' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-satellite-dish text-lg w-6 text-center text-rose-400"></i>
+                    <span>مركز مراقبة الأخطاء 📡</span>
                 </a>
                 {% endif %}
 
@@ -277,47 +359,59 @@
         <!-- Main Content Area -->
         <main class="flex-1 flex flex-col min-w-0 overflow-y-auto bg-slate-50">
             <!-- Top Header Desktop -->
-            <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 hidden lg:flex items-center justify-between px-6 py-3 shadow-xs gap-4 sticky top-0 z-30">
-                <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
-                    <span class="text-xs bg-[#00D26A]/10 text-[#008f47] px-3.5 py-1.5 rounded-full font-bold border border-[#00D26A]/30 flex items-center gap-1.5 shadow-xs" title="سعر الصرف المعتمد">
+            <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 hidden lg:flex items-center justify-between px-4 py-2 shadow-xs gap-3 sticky top-0 z-30">
+                <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                    <!-- Desktop Sidebar Toggle Button -->
+                    <button type="button" onclick="toggleDesktopSidebar()" id="desktopSidebarToggleBtn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition active:scale-95 cursor-pointer shrink-0" title="إخفاء / إظهار القائمة الجانبية لتوسيع الشاشة">
+                        <i class="fa-solid fa-bars-staggered text-sm"></i>
+                    </button>
+
+                    <!-- Version 7 Badge -->
+                    <span class="text-xs bg-gradient-to-r from-[#1E1B54] to-indigo-900 text-amber-300 font-black px-3 py-1.5 rounded-full border border-amber-400/40 flex items-center gap-1.5 shadow-md" title="رقم إصدار النظام">
+                        <i class="fa-solid fa-rocket text-amber-400 animate-pulse"></i>
+                        <span><strong class="text-white font-mono text-sm">v7.0</strong></span>
+                    </span>
+                    <span class="text-xs bg-[#00D26A]/10 text-[#008f47] px-3 py-1.5 rounded-full font-bold border border-[#00D26A]/30 flex items-center gap-1.5 shadow-xs" title="سعر الصرف المعتمد">
                         <i class="fa-solid fa-money-bill-transfer text-[#00D26A]"></i> 1$ = {{ exchange_rate|format_currency }} ل.ل
                     </span>
 
+                    <!-- Quick Whish Badge (Visible to all) -->
+                    <a href="{{ url_for('treasury_view') }}" class="text-xs bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] px-3 py-1.5 rounded-full font-black border border-[#00B5FF]/30 flex items-center gap-1.5 shadow-xs transition" title="رصيد بطاقة Whish الإلكترونية المنفصلة">
+                        <i class="fa-solid fa-credit-card text-[#00B5FF]"></i>
+                        <span>ويش:</span>
+                        <span class="font-mono text-[#00B5FF] font-black" dir="ltr">{{ whish_balance|format_currency }} LBP ≈ {{ whish_balance|to_usd(exchange_rate) }}</span>
+                    </a>
+
                     {% if is_admin %}
                     <!-- Quick Street Cash Badge -->
-                    <a href="{{ url_for('couriers_list') }}" class="text-xs bg-[#FF7A00]/10 hover:bg-[#FF7A00]/20 text-[#D46500] px-3.5 py-1.5 rounded-full font-black border border-[#FF7A00]/30 flex items-center gap-1.5 shadow-xs transition" title="كاش مقبوض بالشارع مع السائقين">
+                    <a href="{{ url_for('couriers_list') }}" class="text-xs bg-[#FF7A00]/10 hover:bg-[#FF7A00]/20 text-[#D46500] px-3 py-1.5 rounded-full font-black border border-[#FF7A00]/30 flex items-center gap-1.5 shadow-xs transition" title="كاش مقبوض بالشارع مع السائقين">
                         <i class="fa-solid fa-motorcycle text-[#FF7A00]"></i>
                         <span>كاش الشارع:</span>
                         <span class="font-mono text-[#FF7A00] font-black">{{ street_cash|to_usd(exchange_rate) }}</span>
                     </a>
 
-                    <!-- Quick Whish Badge -->
-                    <a href="{{ url_for('treasury_view') }}" class="text-xs bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] px-3.5 py-1.5 rounded-full font-black border border-[#00B5FF]/30 flex items-center gap-1.5 shadow-xs transition" title="رصيد بطاقة Whish الإلكترونية المنفصلة">
-                        <i class="fa-solid fa-credit-card text-[#00B5FF]"></i>
-                        <span>ويش:</span>
-                        <span class="font-mono text-[#00B5FF] font-black">{{ whish_balance|to_usd(exchange_rate) }}</span>
-                    </a>
-
                     <!-- Active Role Badge & Switcher -->
-                    <span class="text-xs bg-[#1E1B54] text-white px-3.5 py-1.5 rounded-full font-black border border-[#1E1B54]/40 flex items-center gap-1.5 shadow-xs">
+                    <span class="text-xs bg-[#1E1B54] text-white px-3 py-1.5 rounded-full font-black border border-[#1E1B54]/40 flex items-center gap-1.5 shadow-xs">
                         <span>👑 المدير العام</span>
                     </span>
-                    <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسكير وقفل النظام بالكامل لتسليمه للموظف">
+                    <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسكير وقفل النظام بالكامل لتسليمه للموظف">
                         <i class="fa-solid fa-power-off text-rose-600"></i>
-                        <span>تسجيل خروج / تسكير 🔒</span>
+                        <span>تسكير 🔒</span>
                     </a>
                     {% else %}
-                        <span>🎧 وضع الموظف (استقبال)</span>
+                    <span class="text-xs bg-[#1E1B54] text-cyan-300 px-3 py-1.5 rounded-full font-bold border border-[#1E1B54]/40 flex items-center gap-1.5 shadow-xs">
+                        <i class="fa-solid fa-headset text-cyan-400"></i>
+                        <span>وضع الموظف (استقبال)</span>
                     </span>
-                    <button type="button" onclick="openModal('adminUnlockModal')" class="text-xs bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-xs">
-                        <i class="fa-solid fa-key"></i>
-                        <span>دخول المدير</span>
-                    </button>
+                    <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسجيل الخروج">
+                        <i class="fa-solid fa-power-off text-rose-600"></i>
+                        <span>تسجيل خروج 🔒</span>
+                    </a>
                     {% endif %}
                 </div>
 
                 <!-- Global Live Search Bar -->
-                <div class="relative flex-1 max-w-md mx-2">
+                <div class="relative flex-1 max-w-sm mx-1">
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
                         <input type="text" id="globalLiveSearch" placeholder="بحث شامل سريع (أوردر، زبون، هاتف، متجر، سائق)..." 
@@ -333,17 +427,61 @@
                     </div>
                 </div>
 
-                <!-- User Profile & Action Controls -->
+                <!-- Screen Zoom Controller & Action Controls -->
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] border border-[#00B5FF]/30 text-xs font-black px-3 py-2 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
-                        <i class="fa-brands fa-telegram text-[#00B5FF] text-sm"></i>
+                    <!-- Screen Zoom Controller (تحكم مقاس الشاشة والزوم للموظف) -->
+                    <div class="flex items-center bg-slate-100 border border-slate-200 rounded-xl px-2 py-1 gap-1.5 shadow-xs shrink-0 select-none" title="تعديل مقاس وحجم الشاشة تلقائياً لمنع التمرير يميناً ويساراً">
+                        <span class="text-[11px] font-bold text-slate-600 hidden xl:inline">🔍 المقاس:</span>
+                        <button type="button" onclick="adjustAppZoom(-0.05)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center border border-slate-200 transition active:scale-90 cursor-pointer" title="تصغير المحتوى لكشف مساحة أكبر (Ctrl + -)">
+                            <i class="fa-solid fa-minus text-[10px]"></i>
+                        </button>
+                        <span id="appZoomLabel" class="font-mono font-black text-indigo-950 text-xs min-w-[34px] text-center">80%</span>
+                        <button type="button" onclick="adjustAppZoom(0.05)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center border border-slate-200 transition active:scale-90 cursor-pointer" title="تكبير المحتوى (Ctrl + +)">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                        </button>
+                        <button type="button" onclick="resetAppZoomToFit()" class="px-2 h-6 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center gap-1 border border-indigo-200 transition active:scale-90 cursor-pointer" title="ضبط تلقائي كامل للمقاس ليناسب شاشتك (Ctrl + 0)">
+                            <i class="fa-solid fa-expand text-[9px]"></i>
+                            <span>تلقائي</span>
+                        </button>
+                    </div>
+
+                    <!-- Operational Alerts Notification Center -->
+                    <div class="relative">
+                        <button type="button" id="notifBellBtn" onclick="toggleNotificationDropdown()" class="relative inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-xs cursor-pointer" title="تنبيهات العمليات والرقابة الفورية">
+                            <i class="fa-solid fa-bell text-sm text-slate-600"></i>
+                            <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">0</span>
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div id="notifDropdown" class="hidden absolute top-full mt-2 left-0 w-80 md:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden text-right">
+                            <div class="p-3 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-bell-concierge text-amber-400"></i>
+                                    <span class="font-black text-xs">تنبيهات العمليات والرقابة الحية</span>
+                                </div>
+                                <span id="notifCountLabel" class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono font-bold">0 تنبيه</span>
+                            </div>
+                            <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-slate-100 p-1 text-xs">
+                                <div class="p-4 text-center text-slate-400 text-xs">جاري فحص حالة العمليات...</div>
+                            </div>
+                            <div class="p-2 bg-slate-50 border-t border-slate-100 text-center">
+                                <a href="/orders?status=new" class="text-[11px] font-black text-indigo-600 hover:text-indigo-800">متابعة شاشة العمليات ↗</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="/admin/system/health" class="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="فحص صحة النظام وتكاملات التليجرام والنسخ الاحتياطي والذكاء الاصطناعي">
+                        <i class="fa-solid fa-heart-pulse text-emerald-600 text-xs"></i>
+                        <span class="hidden md:inline">صحة النظام 🩺</span>
+                    </a>
+                    <a href="/admin/updates/dashboard" class="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="مركز إدارة التحديثات وتزامن أجهزة الموظفين">
+                        <i class="fa-solid fa-cloud-arrow-down text-sky-600 text-xs"></i>
+                        <span class="hidden md:inline">التحديثات 🔄</span>
+                    </a>
+                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] border border-[#00B5FF]/30 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
+                        <i class="fa-brands fa-telegram text-[#00B5FF] text-xs"></i>
                         <span class="hidden sm:inline">تقرير للمدير 📲</span>
                     </button>
-
-                    <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-md shadow-[#FF7A00]/25 transition">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>أوردر جديد</span>
-                    </a>
 
                     {% if logged_in %}
                     <div class="flex items-center gap-2 pr-2 border-r border-slate-200">
@@ -354,9 +492,9 @@
                             <div class="text-xs font-bold text-slate-800 leading-tight">{{ user_display_name or username }}</div>
                             <div class="text-[10px] text-slate-400">{{ 'مدير عام' if is_admin else 'موظف' }}</div>
                         </div>
-                        <a href="{{ url_for('logout') }}" onclick="return confirm('هل أنت متأكد من تسكير النظام وتسجيل الخروج؟');" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-xs shadow-rose-600/20 cursor-pointer" title="تسكير النظام وتسجيل الخروج">
+                        <a href="{{ url_for('logout') }}" onclick="return confirm('هل أنت متأكد من تسكير النظام وتسجيل الخروج؟');" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-xs shadow-rose-600/20 cursor-pointer" title="تسكير النظام وتسجيل الخروج">
                             <i class="fa-solid fa-power-off text-xs"></i>
-                            <span class="hidden sm:inline">تسكير النظام 🔒</span>
+                            <span class="hidden sm:inline">تسكير 🔒</span>
                         </a>
                     </div>
                     {% endif %}
@@ -365,10 +503,24 @@
 
             <!-- Flash Messages Notification Container -->
             <div class="px-6 lg:px-8 pt-4">
+                {% if session.get('must_change_password') %}
+                <div class="mb-4 p-4 rounded-2xl bg-amber-50 border-2 border-amber-500 text-amber-950 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <span class="p-2.5 rounded-xl bg-amber-500 text-white shadow"><i class="fa-solid fa-triangle-exclamation text-xl"></i></span>
+                        <div>
+                            <div class="font-black text-base text-amber-900">🚨 تنبيه أمان حرج: أنت تستخدم كلمة المرور الافتراضية للنظام!</div>
+                            <div class="text-xs text-amber-800 font-bold">لحماية أموال الخزائن وسجلات العمليات، يجب تعيين كلمة مرور جديدة ورمز PIN مخصص فوراً.</div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('settings_view') }}" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl font-black text-sm shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-key"></i> تغيير كلمة المرور والـ PIN الآن
+                    </a>
+                </div>
+                {% endif %}
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <div class="mb-4 p-4 rounded-2xl text-sm font-bold flex items-center justify-between shadow-lg transition-all duration-300
+                            <div class="mb-4 p-4 rounded-2xl text-base font-bold flex items-center justify-between shadow-lg transition-all duration-300
                                 {% if category == 'success' %} bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-emerald-600/20 border border-emerald-500/30
                                 {% elif category == 'danger' %} bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-rose-600/20 border border-rose-500/30
                                 {% elif category == 'info' %} bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-sky-600/20 border border-sky-500/30
@@ -389,7 +541,103 @@
             </div>
 
     <!-- Page Content Body -->
-            <div class="p-6 lg:p-8 flex-1">
+            <div class="p-2 sm:p-3.5 lg:p-5 flex-1 w-full max-w-full">
+                
+    <!-- ================= UNIVERSAL TABLET QUICK TOUCH RIBBON ================= -->
+    <div class="mb-3 no-print">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl p-2 border border-slate-200/90 shadow-sm">
+            <div class="flex items-center gap-2 overflow-x-auto touch-scroll-x py-0.5 px-0.5 select-none">
+                
+                <!-- 1. Dashboard -->
+                <a href="{{ url_for('dashboard') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-blue-500/25 ring-2 ring-blue-400/40' if active_page == 'dashboard' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'dashboard' else 'bg-blue-100 text-blue-700' }}">
+                        <i class="fa-solid fa-house"></i>
+                    </span>
+                    <span>الرئيسية</span>
+                </a>
+
+                <!-- 2. New Order (Super Quick Touch) -->
+                <a href="{{ url_for('orders_list') }}?open_new=1" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-4 py-3.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-md shadow-orange-500/30 ring-2 ring-orange-400/40">
+                    <span class="w-7 h-7 rounded-lg bg-white/25 text-white flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-plus"></i>
+                    </span>
+                    <span>أوردر جديد 📦</span>
+                </a>
+
+                <!-- 2.5 Quick Barcode Scanner (Scan & Dispatch) -->
+                <a href="{{ url_for('orders_list') }}?open_scanner=1" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white shadow-md shadow-purple-500/25 ring-2 ring-purple-400/40" title="ماسح الباركود السريع للإسناد وتوزيع الشحنات (F2)">
+                    <span class="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-barcode"></i>
+                    </span>
+                    <span>ماسح الباركود ⚡</span>
+                </a>
+
+                <!-- 3. Orders -->
+                <a href="{{ url_for('orders_list') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-sky-500 to-cyan-600 text-white shadow-sky-500/25 ring-2 ring-cyan-400/40' if active_page == 'orders' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'orders' else 'bg-cyan-100 text-cyan-700' }}">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </span>
+                    <span>الطلبيات</span>
+                </a>
+
+                <!-- 4. Couriers -->
+                <a href="{{ url_for('couriers_list') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-amber-600/25 ring-2 ring-amber-400/40' if active_page == 'couriers' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'couriers' else 'bg-amber-100 text-amber-700' }}">
+                        <i class="fa-solid fa-motorcycle"></i>
+                    </span>
+                    <span>السائقين والكاش</span>
+                </a>
+
+                <!-- 5. Merchants -->
+                <a href="{{ url_for('merchants_list') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-emerald-600/25 ring-2 ring-emerald-400/40' if active_page == 'merchants' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'merchants' else 'bg-emerald-100 text-emerald-700' }}">
+                        <i class="fa-solid fa-store"></i>
+                    </span>
+                    <span>المحلات والتجار</span>
+                </a>
+
+                {% if is_admin or has_permission('treasury_view') %}
+                <!-- 6. Treasury & Whish (Admin / Finance) -->
+                <a href="{{ url_for('treasury_view') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-4 py-3.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-purple-700 to-indigo-800 text-white shadow-purple-600/25 ring-2 ring-purple-400/40' if active_page == 'treasury' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'treasury' else 'bg-purple-100 text-purple-700' }}">
+                        <i class="fa-solid fa-vault"></i>
+                    </span>
+                    <span>الخزنة و Whish 💰</span>
+                </a>
+                {% else %}
+                <!-- 6. Customer Directory (Employee) -->
+                <a href="{{ url_for('customers_list') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white shadow-purple-600/25' if active_page == 'customers' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'customers' else 'bg-purple-100 text-purple-700' }}">
+                        <i class="fa-solid fa-address-book"></i>
+                    </span>
+                    <span>دليل الزبائن 👥</span>
+                </a>
+                {% endif %}
+
+                {% if is_admin or has_permission('reports_view') %}
+                <!-- 7. Settlements -->
+                <a href="{{ url_for('settlements_list') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-slate-800/25 ring-2 ring-slate-400/40' if active_page == 'settlements' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'settlements' else 'bg-slate-200 text-slate-700' }}">
+                        <i class="fa-solid fa-receipt"></i>
+                    </span>
+                    <span>التسويات والسندات</span>
+                </a>
+                {% endif %}
+
+                {% if is_admin %}
+                <!-- 9. Daily Closing / Reports -->
+                <a href="{{ url_for('reports_view') }}" class="tablet-touch-btn shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black transition shadow-xs {{ 'bg-gradient-to-r from-rose-600 to-pink-700 text-white shadow-rose-600/25' if active_page == 'reports' else 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200' }}">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-sm {{ 'bg-white/20 text-white' if active_page == 'reports' else 'bg-rose-100 text-rose-700' }}">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </span>
+                    <span>التقارير والأرباح</span>
+                </a>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
                 {% block content %}{% endblock %}
             </div>
         </main>
@@ -409,6 +657,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('unlock_admin') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">أدخل كلمة سر المدير:</label>
                     <input type="password" name="pin" required placeholder="••••••••" autofocus class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-black tracking-widest text-center focus:ring-2 focus:ring-red-500 font-mono">
@@ -430,12 +679,32 @@
     <!-- Scripts -->
     <script>
         function openModal(id) {
+            if (id === 'newOrderModal') {
+                if (typeof window.openWizardModal === 'function') {
+                    window.openWizardModal('newOrderModal');
+                    return;
+                }
+            }
             const el = document.getElementById(id);
-            if (el) el.classList.remove('hidden');
+            if (el) {
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+                el.style.display = 'flex';
+            }
         }
         function closeModal(id) {
+            if (id === 'newOrderModal') {
+                if (typeof window.closeOrderModal === 'function') {
+                    window.closeOrderModal();
+                    return;
+                }
+            }
             const el = document.getElementById(id);
-            if (el) el.classList.add('hidden');
+            if (el) {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+                el.style.display = 'none';
+            }
         }
 
         const sidebar = document.getElementById('sidebar');
@@ -547,6 +816,7 @@
                     liveToast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
                 }, duration);
             }
+            window.showToast = function(msg, type, duration) { /* Silent execution without popup banners */ };
 
             let pendingRefresh = false;
 
@@ -625,7 +895,295 @@
                 }
             });
         })();
+        window.CSRF_TOKEN = "{{ csrf_token() }}";
+
+        window.triggerTelegramDailyReport = async function(btn) {
+            if (!btn) btn = event?.target;
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+            }
+            try {
+                const res = await fetch('/api/telegram/send-report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': window.CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ csrf_token: window.CSRF_TOKEN })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ' + (data.message || 'تم إرسال التقرير المالي والتشغيلي بنجاح إلى التيليجرام!'));
+                } else {
+                    alert('⚠️ لم يتم الإرسال: ' + (data.message || 'يرجى إدخال Bot Token و Chat ID في صفحة الإعدادات أولاً.'));
+                }
+            } catch (err) {
+                alert('❌ تعذر الاتصال بخادم التليجرام: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        };
+
+        // ================= Global OmniSearch & Notifications =================
+        const searchInput = document.getElementById('globalLiveSearch');
+        const searchResults = document.getElementById('globalSearchResults');
+        const clearBtn = document.getElementById('clearGlobalSearchBtn');
+        let searchDebounceTimer;
+
+        if (searchInput && searchResults) {
+            searchInput.addEventListener('input', function() {
+                const val = this.value.trim();
+                if (clearBtn) clearBtn.classList.toggle('hidden', val.length === 0);
+                clearTimeout(searchDebounceTimer);
+                if (val.length < 2) {
+                    searchResults.classList.add('hidden');
+                    searchResults.innerHTML = '';
+                    return;
+                }
+                searchDebounceTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch('/api/search/global?q=' + encodeURIComponent(val));
+                        const data = await res.json();
+                        if (data.results && data.results.length > 0) {
+                            searchResults.innerHTML = data.results.map(r => `
+                                <a href="${r.url}" class="block p-3 hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 text-right">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700">${r.category}</span>
+                                        <span class="text-xs font-bold text-slate-800">${r.title}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-1">${r.subtitle}</div>
+                                </a>
+                            `).join('');
+                            searchResults.classList.remove('hidden');
+                        } else {
+                            searchResults.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">لا توجد نتائج مطابقة لبحثك</div>';
+                            searchResults.classList.remove('hidden');
+                        }
+                    } catch(err) {
+                        console.error('Search error:', err);
+                    }
+                }, 200);
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    clearBtn.classList.add('hidden');
+                    searchResults.classList.add('hidden');
+                    searchResults.innerHTML = '';
+                    searchInput.focus();
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            });
+        }
+
+        window.toggleNotificationDropdown = function() {
+            const dd = document.getElementById('notifDropdown');
+            if (dd) {
+                dd.classList.toggle('hidden');
+                if (!dd.classList.contains('hidden')) {
+                    fetchNotifications();
+                }
+            }
+        };
+
+        async function fetchNotifications() {
+            try {
+                const res = await fetch('/api/system/notifications');
+                const data = await res.json();
+                const badge = document.getElementById('notifBadge');
+                const countLbl = document.getElementById('notifCountLabel');
+                const list = document.getElementById('notifList');
+
+                if (data.success) {
+                    const count = data.count || 0;
+                    if (badge) {
+                        badge.textContent = count;
+                        badge.classList.toggle('hidden', count === 0);
+                    }
+                    if (countLbl) {
+                        countLbl.textContent = `${count} تنبيه`;
+                    }
+                    if (list) {
+                        if (data.alerts && data.alerts.length > 0) {
+                            list.innerHTML = data.alerts.map(a => {
+                                const borderClr = a.type === 'danger' ? 'border-rose-500' : (a.type === 'warning' ? 'border-amber-500' : 'border-blue-500');
+                                const bgClr = a.type === 'danger' ? 'bg-rose-50/60' : (a.type === 'warning' ? 'bg-amber-50/60' : 'bg-blue-50/60');
+                                return `
+                                    <a href="${a.url}" class="block p-3 ${bgClr} hover:opacity-90 transition border-r-4 ${borderClr} text-right">
+                                        <div class="flex items-center gap-2 font-bold text-xs text-slate-800">
+                                            <i class="${a.icon}"></i>
+                                            <span>${a.title}</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">${a.desc}</p>
+                                    </a>
+                                `;
+                            }).join('');
+                        } else {
+                            list.innerHTML = '<div class="p-6 text-center text-emerald-600 font-bold text-xs"><i class="fa-solid fa-circle-check text-xl mb-1 block"></i> كافة العمليات منتظمة ولا توجد أي تأخيرات!</div>';
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('Notification poll error:', e);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = document.getElementById('notifBellBtn');
+            const dd = document.getElementById('notifDropdown');
+            if (btn && dd && !btn.contains(e.target) && !dd.contains(e.target)) {
+                dd.classList.add('hidden');
+            }
+        });
+
+        fetchNotifications();
+        setInterval(fetchNotifications, 60000);
+    </script>
+
+    <!-- ================= STARGATE DYNAMIC SCREEN AUTO-FIT & ZOOM ENGINE ================= -->
+    <script>
+    (function() {
+        let currentZoom = 0.82;
+
+        function computeOptimalZoom() {
+            // Check if employee has manually saved their preference
+            const saved = localStorage.getItem('stargate_ui_zoom');
+            if (saved) {
+                const val = parseFloat(saved);
+                if (!isNaN(val) && val >= 0.50 && val <= 1.50) {
+                    return val;
+                }
+            }
+
+            // Screen & Window dimension based calculation
+            const screenW = window.screen.width || window.innerWidth;
+            const screenH = window.screen.height || window.innerHeight;
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+
+            const w = Math.min(screenW, winW);
+            const h = Math.min(screenH, winH);
+
+            // Target layout fits comfortably without horizontal scroll
+            if (w <= 1100 || h <= 640) {
+                return 0.72; // Ultra-compact screen / small laptop
+            } else if (w <= 1366 || h <= 768) {
+                return 0.80; // Standard 1366x768 laptop or 1080p @ 150% scaling
+            } else if (w <= 1536 || h <= 864) {
+                return 0.85; // 1080p @ 125% scaling (typical 15.6" laptop)
+            } else if (w <= 1680 || h <= 950) {
+                return 0.90; // Medium widescreen display
+            } else {
+                return 0.95; // Large FHD / 2K monitor
+            }
+        }
+
+        function applyZoom(zoomFactor, save) {
+            zoomFactor = Math.round(Math.min(1.30, Math.max(0.55, zoomFactor)) * 100) / 100;
+            currentZoom = zoomFactor;
+
+            // In Chromium / Edge WebView2, setting zoom on document.body or html applies smooth layout zoom
+            document.body.style.zoom = zoomFactor;
+
+            const lbl = document.getElementById('appZoomLabel');
+            if (lbl) {
+                lbl.textContent = Math.round(zoomFactor * 100) + '%';
+            }
+
+            if (save) {
+                localStorage.setItem('stargate_ui_zoom', zoomFactor.toString());
+            }
+        }
+
+        window.adjustAppZoom = function(delta) {
+            applyZoom(currentZoom + delta, true);
+        };
+
+        window.resetAppZoomToFit = function() {
+            localStorage.removeItem('stargate_ui_zoom');
+            const optimal = computeOptimalZoom();
+            applyZoom(optimal, false);
+            const lbl = document.getElementById('appZoomLabel');
+            if (lbl) {
+                lbl.classList.add('text-emerald-600');
+                setTimeout(() => lbl.classList.remove('text-emerald-600'), 600);
+            }
+        };
+
+        // Desktop Sidebar Toggle
+        window.toggleDesktopSidebar = function() {
+            const sb = document.getElementById('sidebar');
+            if (!sb) return;
+            sb.classList.toggle('desktop-sidebar-hidden');
+            const isHidden = sb.classList.contains('desktop-sidebar-hidden');
+            localStorage.setItem('stargate_desktop_sb_hidden', isHidden ? '1' : '0');
+        };
+
+        // Restore sidebar state
+        const savedSbState = localStorage.getItem('stargate_desktop_sb_hidden');
+        if (savedSbState === '1') {
+            const sb = document.getElementById('sidebar');
+            if (sb) sb.classList.add('desktop-sidebar-hidden');
+        }
+
+        // Global Keyboard Zoom Shortcuts: Ctrl + Minus, Ctrl + Plus, Ctrl + 0
+        window.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === '-' || e.key === 'Subtract') {
+                    e.preventDefault();
+                    adjustAppZoom(-0.05);
+                } else if (e.key === '=' || e.key === '+' || e.key === 'Add') {
+                    e.preventDefault();
+                    adjustAppZoom(0.05);
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    resetAppZoomToFit();
+                }
+            }
+        });
+
+        // Initialize immediately
+        function initAppScale() {
+            const target = computeOptimalZoom();
+            applyZoom(target, false);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAppScale);
+        } else {
+            initAppScale();
+        }
+
+        // Auto-recalculate on window resize only if user hasn't set manual preference
+        window.addEventListener('resize', function() {
+            if (!localStorage.getItem('stargate_ui_zoom')) {
+                const target = computeOptimalZoom();
+                applyZoom(target, false);
+            }
+        });
+    })();
     </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
+
+

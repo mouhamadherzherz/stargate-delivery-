@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white text-xl shadow-lg shadow-rose-500/20">
+                <i class="fa-solid fa-satellite-dish"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-xl font-black text-slate-800">المراقبة الذكية للأخطاء (Error Telemetry)</h2>
+                    <span class="bg-rose-100 text-rose-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-rose-200">مراقبة حية</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">تسجيل فوري لكافة الاستثناءات البرمجية والأعطال الطارئة مع تتبع المسار والإشعار اللحظي.</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <form method="POST" action="{{ url_for('clear_telemetry_errors') }}" onsubmit="return confirm('هل أنت متأكد من مسح جميع سجلات الأخطاء؟');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>مسح السجلات</span>
+                </button>
+            </form>
+            <a href="/admin/system/health" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-heart-pulse"></i>
+                <span>فحص صحة النظام 🩺</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Error Logs Table -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <span class="text-xs font-black text-slate-700">إجمالي الأخطاء المسجلة حديثاً ({{ errors|length }})</span>
+            <span class="text-[11px] text-slate-400">تُخزن بالتزامن في data/stargate_system.log</span>
+        </div>
+
+        {% if errors %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                    <tr>
+                        <th class="p-3.5">#</th>
+                        <th class="p-3.5">الوقت والتاريخ</th>
+                        <th class="p-3.5">المسار (Route)</th>
+                        <th class="p-3.5">المستخدم</th>
+                        <th class="p-3.5">نوع الخطأ</th>
+                        <th class="p-3.5">نص الاستثناء</th>
+                        <th class="p-3.5 text-center">التتبع البرمجي</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for err in errors %}
+                    <tr class="hover:bg-rose-50/30 transition">
+                        <td class="p-3.5 font-mono text-slate-400">{{ err.id }}</td>
+                        <td class="p-3.5 font-mono text-slate-500 whitespace-nowrap">{{ err.created_at }}</td>
+                        <td class="p-3.5 font-mono font-bold text-indigo-700">{{ err.method }} {{ err.path }}</td>
+                        <td class="p-3.5"><span class="px-2 py-0.5 rounded-md bg-slate-100 font-bold text-slate-700">{{ err.user_name or 'system' }}</span></td>
+                        <td class="p-3.5"><span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-black font-mono text-[11px]">{{ err.error_type }}</span></td>
+                        <td class="p-3.5 max-w-xs truncate text-slate-600 font-mono text-[11px]" title="{{ err.error_message }}">{{ err.error_message }}</td>
+                        <td class="p-3.5 text-center">
+                            <button type="button" onclick="showTracebackModal(`{{ err.id }}`, `{{ err.error_type }}`, `{{ err.traceback|replace('`', '\\`')|replace('$', '\\$') }}`)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold transition">
+                                عرض التفاصيل 🔍
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-12 text-center text-emerald-600">
+            <i class="fa-solid fa-circle-check text-4xl mb-2 block"></i>
+            <h3 class="font-black text-base">سجل الأخطاء نظيف تماماً!</h3>
+            <p class="text-xs text-slate-400 mt-1">لم يتم تسجيل أي استثناءات برمجية حاسمة مؤخراً.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Traceback Modal -->
+<div id="traceModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-sm font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-bug text-rose-600"></i>
+                <span id="modalErrorTitle">تفاصيل التتبع البرمجي (Traceback)</span>
+            </h3>
+            <button onclick="document.getElementById('traceModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <pre id="modalTraceContent" class="bg-slate-950 text-emerald-400 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-96 leading-relaxed text-left" dir="ltr"></pre>
+        <div class="text-left">
+            <button onclick="document.getElementById('traceModal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
+                إغلاق
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTracebackModal(id, type, trace) {
+    document.getElementById('modalErrorTitle').textContent = `خطأ #${id}: ${type}`;
+    document.getElementById('modalTraceContent').textContent = trace || 'لا يوجد تفاصيل إضافية مسجلة.';
+    document.getElementById('traceModal').classList.remove('hidden');
+}
+</script>
+{% endblock %}

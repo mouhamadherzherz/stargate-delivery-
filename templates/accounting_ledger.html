@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}دفتر اليومية والأستاذ العام (Multi-Ledger ERP) | {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-600/30">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-xl font-black text-white">دفتر اليومية المالي الشامل (General Ledger)</h1>
+                    <span class="px-3 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        مقيّد بالنظام المحاسبي المزدوج ⚖️
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">فصل وتتبع مسار الأموال: خزينة الشركة، عهد السائقين بالشارع، ومستحقات التجار</p>
+            </div>
+        </div>
+
+        <!-- Date & Fund Filters -->
+        <form method="GET" action="{{ url_for('accounting_ledger') }}" class="flex flex-wrap items-center gap-2">
+            <input type="date" name="date" value="{{ date_filter }}" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            <select name="fund" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                <option value="">-- كل الصناديق والذمم --</option>
+                <option value="treasury_vault" {{ 'selected' if fund_filter == 'treasury_vault' }}>خزينة المكتب الرئيسية</option>
+                <option value="courier_custody" {{ 'selected' if fund_filter == 'courier_custody' }}>عهد السائقين بالشارع</option>
+                <option value="merchant_payable" {{ 'selected' if fund_filter == 'merchant_payable' }}>أمانات ومستحقات التجار</option>
+                <option value="whish_wallet" {{ 'selected' if fund_filter == 'whish_wallet' }}>محفظة ويش موني</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-xs font-bold shadow-md hover:from-emerald-700 transition">
+                فلترة 🔍
+            </button>
+        </form>
+    </div>
+
+    <!-- Multi-Ledger Balances Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Main Treasury Vault -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between text-xs text-slate-400 font-bold mb-2">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-vault text-cyan-400"></i> رصيد خزائن المكتب الفعلية:</span>
+                <span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full">الخزينة المركزية</span>
+            </div>
+            <div class="text-2xl font-black text-white font-mono">
+                {{ (total_treasury_vault or 0)|format_currency }} <span class="text-xs font-normal text-slate-400">ل.ل</span>
+            </div>
+            <div class="text-xs text-slate-500 font-mono mt-1">
+                ≈ {{ (total_treasury_vault or 0)|to_usd(exchange_rate) }}
+            </div>
+        </div>
+
+        <!-- Couriers Street Custody -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between text-xs text-slate-400 font-bold mb-2">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-motorcycle text-amber-400"></i> كاش بعهدة السائقين (بالشارع):</span>
+                <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">مع الكباتن</span>
+            </div>
+            <div class="text-2xl font-black text-amber-400 font-mono">
+                {{ (total_courier_custody or 0)|format_currency }} <span class="text-xs font-normal text-slate-400">ل.ل</span>
+            </div>
+            <div class="text-xs text-slate-500 font-mono mt-1">
+                ≈ {{ (total_courier_custody or 0)|to_usd(exchange_rate) }}
+            </div>
+        </div>
+
+        <!-- Net Total Operating Liquidity -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between text-xs text-slate-400 font-bold mb-2">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-coins text-emerald-400"></i> إجمالي السيولة النقدية الشاملة:</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">الخزينة + السائقين</span>
+            </div>
+            <div class="text-2xl font-black text-emerald-400 font-mono">
+                {{ ((total_treasury_vault or 0) + (total_courier_custody or 0))|format_currency }} <span class="text-xs font-normal text-slate-400">ل.ل</span>
+            </div>
+            <div class="text-xs text-slate-500 font-mono mt-1">
+                ≈ {{ ((total_treasury_vault or 0) + (total_courier_custody or 0))|to_usd(exchange_rate) }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Journal Entries Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <h2 class="text-base font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-receipt text-cyan-400"></i>
+                <span>قيود اليومية والعمليات المالية المسجلة ({{ entries|length }} قيد)</span>
+            </h2>
+            <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-print"></i>
+                <span>طباعة دفتر اليومية</span>
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+                <thead>
+                    <tr class="bg-slate-800/60 text-slate-400 border-b border-slate-800">
+                        <th class="py-3 px-3 font-bold">كود القيد (TXN)</th>
+                        <th class="py-3 px-3 font-bold">التاريخ والوقت</th>
+                        <th class="py-3 px-3 font-bold">نوع العملية</th>
+                        <th class="py-3 px-3 font-bold">الصندوق / الذمة</th>
+                        <th class="py-3 px-3 font-bold">المبلغ المقبوض</th>
+                        <th class="py-3 px-4 font-bold">البيان والشرح</th>
+                        <th class="py-3 px-3 font-bold">المسؤول</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for e in entries %}
+                    <tr class="hover:bg-slate-800/30 transition font-sans">
+                        <td class="py-3 px-3 font-mono font-bold text-cyan-400">{{ e.txn_code }}</td>
+                        <td class="py-3 px-3 text-slate-400 font-mono text-[11px]">{{ e.created_at }}</td>
+                        <td class="py-3 px-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                {{ e.entry_type }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold 
+                                {{ 'bg-amber-500/20 text-amber-300 border border-amber-500/30' if e.fund_category == 'courier_custody' else 
+                                   'bg-purple-500/20 text-purple-300 border border-purple-500/30' if e.fund_category == 'merchant_payable' else 
+                                   'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' }}">
+                                {{ e.fund_category }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-3 font-mono font-bold text-white text-sm">
+                            {{ (e.amount or 0)|format_currency }} ل.ل
+                        </td>
+                        <td class="py-3 px-4 text-slate-300">{{ e.description or '-' }}</td>
+                        <td class="py-3 px-3 text-slate-400 font-bold">{{ e.created_by or 'النظام' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-12 text-slate-500 text-sm">
+                            لا توجد قيود يومية مسجلة لهذا التاريخ بعد
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

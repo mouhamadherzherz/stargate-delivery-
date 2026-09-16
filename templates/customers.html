@@ -22,6 +22,26 @@
         </div>
     </div>
 
+    <!-- Quick Add Customer Bar -->
+    <div class="bg-gradient-to-r from-red-50 via-rose-50 to-amber-50 p-4 rounded-3xl border border-red-200 shadow-sm">
+        <form method="POST" action="{{ url_for('add_customer_route') }}" class="flex flex-col md:flex-row items-center gap-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">⚡</span>
+                <span class="text-xs font-black text-slate-800 whitespace-nowrap">إضافة سريعة لدليل الزبائن:</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 flex-1 w-full">
+                <input type="text" name="name" required placeholder="اسم الزبون *" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
+                <input type="text" name="phone" required placeholder="رقم الهاتف (واتساب) *" dir="ltr" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-left font-mono focus:ring-2 focus:ring-red-500">
+                <input type="text" name="city" value="بيروت" placeholder="المدينة / المنطقة" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
+                <input type="text" name="address" placeholder="العنوان التفصيلي" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
+            </div>
+            <button type="submit" class="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white font-black px-5 py-2 rounded-xl text-xs shadow-sm transition whitespace-nowrap cursor-pointer">
+                + حفظ الزبون 👥
+            </button>
+        </form>
+    </div>
+
     <!-- Search Bar -->
     <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
         <form method="GET" action="{{ url_for('customers_list') }}" class="flex items-center gap-3">
@@ -75,7 +95,7 @@
                         <td class="py-3.5 px-6 font-mono font-bold text-slate-800" dir="ltr">
                             <div class="flex items-center gap-1.5 justify-end">
                                 <span>{{ c.phone }}</span>
-                                <a href="whatsapp://send?phone={{ c.phone|clean_phone_for_whatsapp }}" class="text-emerald-600 hover:text-emerald-700 p-1" title="محادثة واتساب">
+                                <a href="https://wa.me/{{ c.phone|clean_phone_for_whatsapp }}" target="_blank" class="text-emerald-600 hover:text-emerald-700 p-1" title="محادثة واتساب">
                                     <i class="fa-brands fa-whatsapp text-sm"></i>
                                 </a>
                             </div>
@@ -105,6 +125,7 @@
                                 <!-- Delete Customer (Admin Only) -->
                                 {% if is_admin %}
                                 <form method="POST" action="{{ url_for('delete_customer_route', customer_id=c.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا الزبون من الدليل؟');" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200" title="حذف الزبون">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
@@ -142,6 +163,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('add_customer_route') }}" class="space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">اسم الزبون الكامل <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" required placeholder="مثال: جهاد حرب" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500">
@@ -189,6 +211,7 @@
         </div>
 
         <form id="editCustomerForm" method="POST" action="" class="space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">اسم الزبون الكامل <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" id="editCustomerName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500">

@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-[#1E1B54] to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-white/10">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#00B5FF] to-[#FF7A00] flex items-center justify-center text-white text-2xl shadow-lg shadow-cyan-500/20">
+                <i class="fa-solid fa-book-open-reader"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-2xl font-black text-white">دليل التشغيل وإدارة النظام (Stargate Experts Knowledge Base)</h2>
+                    <span class="bg-[#00B5FF]/20 text-[#00B5FF] border border-[#00B5FF]/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">دليل شامل v7.0</span>
+                </div>
+                <p class="text-xs text-slate-300 mt-1">المرجع المعتمد لتدريب الموظفين، إدارة العمليات، تسويات الخزينة، وربط الشبكة المحلية.</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="/" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition border border-white/15 flex items-center gap-1.5">
+                <i class="fa-solid fa-house"></i>
+                <span>الرئيسية</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex items-center gap-2 overflow-x-auto touch-scroll-x bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+        <button onclick="switchGuideTab('orders_tab')" id="btn_orders_tab" class="guide-tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 bg-[#1E1B54] text-white shadow-sm">
+            <i class="fa-solid fa-box"></i>
+            <span>دورة حياة الطلب</span>
+        </button>
+        <button onclick="switchGuideTab('treasury_tab')" id="btn_treasury_tab" class="guide-tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
+            <i class="fa-solid fa-vault"></i>
+            <span>الخزينة ومطابقة الكاش</span>
+        </button>
+        <button onclick="switchGuideTab('settlements_tab')" id="btn_settlements_tab" class="guide-tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
+            <i class="fa-solid fa-hand-holding-dollar"></i>
+            <span>تسويات المتاجر والسائقين</span>
+        </button>
+        <button onclick="switchGuideTab('network_tab')" id="btn_network_tab" class="guide-tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
+            <i class="fa-solid fa-network-wired"></i>
+            <span>ربط الشبكة ومحطات الموظفين</span>
+        </button>
+        <button onclick="switchGuideTab('faq_tab')" id="btn_faq_tab" class="guide-tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
+            <i class="fa-solid fa-circle-question"></i>
+            <span>الأسئلة الشائعة والحلول</span>
+        </button>
+    </div>
+
+        <!-- ═══════════════ MASTER BLUEPRINT BANNER (دليل العمل والتشغيل المعتمد) ═══════════════ -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-8 text-white shadow-2xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-indigo-800/60 pb-5">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-blue-600 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-indigo-500/25">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                        <span>دليل العمل والتشغيل الفوري (Master Blueprint)</span>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">المعايير المؤسسية</span>
+                    </h2>
+                    <p class="text-xs text-indigo-200 mt-1">الخطة القيادية والتشغيلية المعتمدة لضمان أقصى إنتاجية وصفر أخطاء في منظومة العمل.</p>
+                </div>
+            </div>
+            <span class="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs font-black">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>نظام مؤتمت 100%</span>
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Management Column -->
+            <div class="bg-slate-950/60 border border-indigo-500/30 rounded-2xl p-5 space-y-3.5">
+                <div class="flex items-center gap-2 text-amber-400 font-black text-sm border-b border-slate-800 pb-2">
+                    <i class="fa-solid fa-user-tie text-base"></i>
+                    <span>توجيهات الإدارة والتشغيل الاحترافي:</span>
+                </div>
+                <ul class="text-xs text-slate-300 space-y-2.5 leading-relaxed font-medium">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-tags text-sky-400 mt-0.5"></i>
+                        <span><strong>مصفوفة المنتجات والتسعير:</strong> افتح شاشة <a href="/products" class="text-sky-300 underline font-bold">المنتجات والتسعير</a> لتسجيل كافة البضائع مع تحديد سعر التكلفة، سعر الجملة، وسعر المفرق بدقة.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-brands fa-telegram text-sky-400 mt-0.5"></i>
+                        <span><strong>المتابعة اللحظية عبر تيليجرام:</strong> اعتمد على تقارير <code>telegram_reporter.py</code> اللحظية واليومية لمتابعة إجمالي المبيعات، أرباح المنتجات، والسيولة النقدية وأنت في أي مكان.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-vault text-amber-400 mt-0.5"></i>
+                        <span><strong>مطابقة الخزينة اليومية:</strong> راقب رصيد الخزائن النقدية ودفتر اليومية المالي للتأكد من انعدام أي عجز نقدي بنهاية كل وردية.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Staff Column -->
+            <div class="bg-slate-950/60 border border-indigo-500/30 rounded-2xl p-5 space-y-3.5">
+                <div class="flex items-center gap-2 text-sky-400 font-black text-sm border-b border-slate-800 pb-2">
+                    <i class="fa-solid fa-users text-base"></i>
+                    <span>تعليمات طاقم العمل والموظفين:</span>
+                </div>
+                <ul class="text-xs text-slate-300 space-y-2.5 leading-relaxed font-medium">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-desktop text-emerald-400 mt-0.5"></i>
+                        <span><strong>نقطة التشغيل الموحدة:</strong> استخدموا حصراً مركز التحكم الموحد <code>STARGATE_CONTROL_CENTER.bat</code> لتشغيل وإدارة المنظومة.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-barcode text-emerald-400 mt-0.5"></i>
+                        <span><strong>المسح بالباركود المباشر:</strong> في شاشة الطلبات، استخدموا قارئ الباركود؛ يقوم النظام فورياً بإدراج الصنف وحساب سعره المركزي المعتمد وقفل الأسعار لمنع الأخطاء.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-boxes-packing text-indigo-400 mt-0.5"></i>
+                        <span><strong>أتمتة المخزون والخزينة:</strong> بمجرد حفظ الفاتورة، يُخصم المخزون آلياً ويدخل المبلغ في الخزينة دون الحاجة لأي تسجيل يدوي مزدوج.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- TAB 1: ORDERS LIFECYCLE -->
+    <div id="orders_tab" class="guide-content-section space-y-6">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-diagram-project text-blue-600"></i>
+                <span>مخطط دورة حياة الطلبية (Order Lifecycle Flow)</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span class="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-sm flex items-center justify-center mx-auto mb-2">1</span>
+                    <h4 class="font-bold text-xs text-slate-800">تسجيل الطلب</h4>
+                    <p class="text-[11px] text-slate-500 mt-1">إدخال المتجر، المستلم، الهاتف، والعنوان مع حساب عمولة التوصيل آلياً.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span class="w-8 h-8 rounded-full bg-amber-500 text-white font-black text-sm flex items-center justify-center mx-auto mb-2">2</span>
+                    <h4 class="font-bold text-xs text-slate-800">إسناد السائق (Dispatch)</h4>
+                    <p class="text-[11px] text-slate-500 mt-1">توجيه الشحنة لسائق محدد؛ يظهر الطرد فوراً في تطبيق السائق على الهاتف.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span class="w-8 h-8 rounded-full bg-indigo-600 text-white font-black text-sm flex items-center justify-center mx-auto mb-2">3</span>
+                    <h4 class="font-bold text-xs text-slate-800">خروج للتوصيل والتتبع</h4>
+                    <p class="text-[11px] text-slate-500 mt-1">يستطيع الزبون تتبع الشحنة برابط التتبع، مع حجب العنوان التفصيلي للخصوصية.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span class="w-8 h-8 rounded-full bg-emerald-600 text-white font-black text-sm flex items-center justify-center mx-auto mb-2">4</span>
+                    <h4 class="font-bold text-xs text-slate-800">التسليم والتحصيل</h4>
+                    <p class="text-[11px] text-slate-500 mt-1">تتحول قيمة الطلب إلى عهدة السائق النقدية فوراً وتُسجل القيود المالية تلقائياً.</p>
+                </div>
+            </div>
+
+            <div class="bg-blue-50/60 p-4 rounded-2xl border border-blue-200 text-xs text-blue-900 leading-relaxed">
+                <span class="font-black block mb-1">💡 نصيحة هامة للموظفين:</span>
+                عند كتابة محتويات الطرد في خانة <strong>"محتوى الطرد"</strong>، يقوم النظام تلقائياً بمزامنتها في كل من <code>items_detail</code> و <code>item_description</code> لضمان ظهورها بشكل مثالي في كافة بوالص الشحن وكشوفات الحسابات.
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: TREASURY & CASH -->
+    <div id="treasury_tab" class="guide-content-section hidden space-y-6">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-scale-balanced text-emerald-600"></i>
+                <span>مطابقة الكاش الفعلي وإقفال اليومية (Daily Reconciliation)</span>
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                تعتمد المنظومة على نظام القيد المالي المزدوج الصارم. في نهاية كل وردية عمل، يقوم أمين الصندوق بعدّ النقود الموجودة في الدرج فعلياً وإدخالها في خانة <strong>"الكاش الفعلي المعدود بالدرج"</strong>.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
+                    <h4 class="font-bold text-xs text-emerald-900 flex items-center gap-1.5"><i class="fa-solid fa-check"></i> المطابقة التامة (0 ل.ل)</h4>
+                    <p class="text-[11px] text-emerald-800 mt-1">الكاش الموجود بالدرج مطابق 100% لكافة عمليات الصرف والقبض المسجلة.</p>
+                </div>
+                <div class="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                    <h4 class="font-bold text-xs text-amber-900 flex items-center gap-1.5"><i class="fa-solid fa-arrow-trend-up"></i> الفارق الإيجابي (زيادة)</h4>
+                    <p class="text-[11px] text-amber-800 mt-1">المبلغ الفعلي أكبر من المحسوب، يتطلب فحص إيداعات غير مسجلة.</p>
+                </div>
+                <div class="p-4 bg-rose-50 rounded-2xl border border-rose-200">
+                    <h4 class="font-bold text-xs text-rose-900 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> العجز المالي (نقص)</h4>
+                    <p class="text-[11px] text-rose-800 mt-1">المبلغ الفعلي أقل من المفترض، ويظهر فوراً في تقرير التيليجرام للمدير العام.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: SETTLEMENTS -->
+    <div id="settlements_tab" class="guide-content-section hidden space-y-6">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-hand-holding-dollar text-purple-600"></i>
+                <span>تسويات المتاجر وتصفية عهدة السائقين</span>
+            </h3>
+            <ul class="space-y-3 text-xs text-slate-700 leading-relaxed">
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                    <span><strong>كشف حساب التاجر A4:</strong> يمكن طباعته أو تصديره إلى ملف Excel بنقرة واحدة عبر زر <code>تصدير Excel 📊</code> في صفحة التاجر.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                    <span><strong>صرف المستحقات:</strong> يتم الضغط على "صرف المستحقات 💵"، واختيار الخزينة المسحوب منها؛ ويتم تسجيل القيد وتحديث رصيد المتجر فوراً.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                    <span><strong>تصفية عهدة السائق:</strong> عند استلام المبالغ المحصلة من السائق، يتم تحويلها من عهدة السائق إلى خزينة الشركة الرئيسية لإنزال رصيده.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- TAB 4: NETWORK & NODES -->
+    <div id="network_tab" class="guide-content-section hidden space-y-6">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-wifi text-sky-600"></i>
+                <span>ربط محطات الموظفين والهواتف على الشبكة المحلية (LAN Node Setup)</span>
+            </h3>
+            <div class="space-y-4 text-xs text-slate-700">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span class="font-bold text-slate-900 block mb-1">الخطوة 1: التأكد من اتصال كافة الأجهزة بنفس الراوتر</span>
+                    <p class="text-slate-600 text-[11px]">يجب أن يكون جهاز السيرفر الرئيسي وأجهزة الموظفين وهواتف السائقين متصلين بنفس شبكة الـ Wi-Fi أو الكيبل.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span class="font-bold text-slate-900 block mb-1">الخطوة 2: الدخول عبر عنوان الآي بي الداخلي والمنفذ 8085</span>
+                    <p class="text-slate-600 text-[11px]">يتم فتح المتصفح على أي جهاز وكتابة عنوان السيرفر، مثال: <code>http://192.168.9.114:8085</code></p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span class="font-bold text-slate-900 block mb-1">الخطوة 3: تشغيل مركز التحكم الموحد</span>
+                    <p class="text-slate-600 text-[11px]">يمكن للموظف النقر المزدوج على <code>STARGATE_CONTROL_CENTER.bat</code> واختيار الخيار [2] للاتصال المباشر بالسيرفر.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: FAQ & TROUBLESHOOTING -->
+    <div id="faq_tab" class="guide-content-section hidden space-y-6">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-circle-question text-amber-500"></i>
+                <span>الأسئلة الشائعة وحلول المشكلات التقنية</span>
+            </h3>
+            
+            <div class="space-y-3 text-xs">
+                <details class="p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                    <summary class="font-bold text-slate-800">نسيت رمز PIN للمدير أو كلمة المرور، كيف أستعيدهما؟</summary>
+                    <p class="text-slate-600 mt-2 leading-relaxed">
+                        افتح الرابط <code>/recover-admin</code>، وأدخل رمز الاستعادة المخصص أو رمز PIN الأصلي، وستتمكن فوراً من تعيين كلمة مرور جديدة دون فقدان أي بيانات.
+                    </p>
+                </details>
+
+                <details class="p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                    <summary class="font-bold text-slate-800">أين تُحفظ النسخ الاحتياطية وهل تُحذف تلقائياً؟</summary>
+                    <p class="text-slate-600 mt-2 leading-relaxed">
+                        تُحفظ النسخ في مجلد <code>data/backups/</code>، ويقوم محرك <code>backup_lifecycle_manager.py</code> تلقائياً بالإبقاء على أحدث 3 نسخ فقط وحذف أي نسخة يتجاوز عمرها 48 ساعة لمنع امتلاء القرص الصلب.
+                    </p>
+                </details>
+
+                <details class="p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                    <summary class="font-bold text-slate-800">كيف أفحص الأخطاء البرمجية اللحظية للنظام؟</summary>
+                    <p class="text-slate-600 mt-2 leading-relaxed">
+                        توجه إلى مسار <code>/admin/telemetry/errors</code> من حساب المدير العام للاطلاع على كافة الاستثناءات مع تفاصيل الـ Traceback الكاملة وتنبيهات التيليجرام الفورية.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchGuideTab(tabId) {
+    document.querySelectorAll('.guide-content-section').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.guide-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-[#1E1B54]', 'text-white', 'shadow-sm');
+        btn.classList.add('text-slate-600');
+    });
+    
+    const activeSection = document.getElementById(tabId);
+    if (activeSection) activeSection.classList.remove('hidden');
+    
+    const activeBtn = document.getElementById('btn_' + tabId);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-slate-600');
+        activeBtn.classList.add('bg-[#1E1B54]', 'text-white', 'shadow-sm');
+    }
+}
+</script>
+{% endblock %}

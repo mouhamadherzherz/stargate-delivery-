@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تطبيق السائق | {{ company_name }}</title>
+    <!-- Local Offline Tailwind CSS Engine -->
+    <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <style>
+        body { font-family: 'Cairo', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .touch-btn:active { transform: scale(0.96); }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
+
+    {% if not courier %}
+    <!-- COURIER PIN LOGIN SCREEN -->
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-3xl mx-auto shadow-lg shadow-orange-500/30">
+                <i class="fa-solid fa-motorcycle text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-white">تطبيق كابتن الدليفري 🛵</h1>
+                <p class="text-xs text-slate-400 mt-1">أدخل الرمز السري (PIN) الخاص بك للمتابعة</p>
+            </div>
+
+            {% if error %}
+            <div class="p-3 bg-rose-500/20 border border-rose-500/40 rounded-xl text-xs font-bold text-rose-300">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('courier_app_login') }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5 text-right">اختر اسم السائق:</label>
+                    <select name="courier_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-white focus:ring-2 focus:ring-amber-500">
+                        <option value="">-- اختر اسمك --</option>
+                        {% for c in couriers %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5 text-right">الرمز السري (PIN):</label>
+                    <input type="password" name="pin" pattern="[0-9]*" inputmode="numeric" required placeholder="••••" maxlength="8"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl font-mono tracking-widest text-amber-400 focus:ring-2 focus:ring-amber-500">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-orange-500/25 transition touch-btn text-sm">
+                    دخول لتسجيل الورديّة ⚡
+                </button>
+            </form>
+            <div class="pt-2 border-t border-slate-700/60 text-[11px] text-slate-500">
+                STARGATE EXPERTS Delivery Ecosystem
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- COURIER ACTIVE DASHBOARD -->
+    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 px-4 py-3.5 sticky top-0 z-30 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white font-black text-lg shadow-md">
+                <i class="fa-solid fa-motorcycle"></i>
+            </div>
+            <div>
+                <h2 class="text-sm font-black text-white leading-tight">{{ courier.name }}</h2>
+                <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    شغال أونلاين بالشارع
+                </span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('courier_app_logout') }}" onclick="return confirm('هل تريد تسجيل الخروج؟');" class="p-2 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold flex items-center gap-1">
+                <i class="fa-solid fa-power-off"></i>
+                <span class="text-[10px]">خروج</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- LIVE EARNINGS & CUSTODY STATS CARDS -->
+    <div class="p-4 space-y-3">
+        <!-- BOLD PROMINENT CASH CUSTODY BANNER -->
+        <div class="bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 p-4 sm:p-5 rounded-3xl shadow-xl border-2 border-amber-300 flex items-center justify-between">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">💵</span>
+                    <span class="text-xs font-black uppercase tracking-wider text-amber-950">الكاش في جيبك الآن (العهدة النقدية):</span>
+                </div>
+                <div class="text-2xl sm:text-3xl font-black font-mono mt-1 text-slate-950">
+                    {{ (courier.current_cash_custody or 0)|format_currency }} <span class="text-xs font-sans font-bold">ل.ل</span>
+                </div>
+                <div class="text-[11px] font-bold text-amber-900 mt-0.5">
+                    المعادل بالدولار: <strong class="font-mono text-slate-950">≈ {{ (courier.current_cash_custody or 0)|to_usd(exchange_rate) }}</strong>
+                </div>
+            </div>
+            <div class="text-left bg-black/10 backdrop-blur-sm p-3 rounded-2xl border border-black/10">
+                <span class="text-[10px] text-amber-950 font-bold block">عمولاتي اليوم:</span>
+                <span class="text-lg font-black text-emerald-950 font-mono block">
+                    {{ (today_commissions or 0)|format_currency }} ل.ل
+                </span>
+                <span class="text-[10px] text-amber-900 font-bold block mt-0.5">{{ delivered_today_count }} طلب منجز ✅</span>
+            </div>
+        </div>
+
+        <!-- MY ACTIVE ASSIGNED ORDERS SECTION -->
+        <div class="pt-2">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-black text-white flex items-center gap-1.5">
+                    <i class="fa-solid fa-box-open text-amber-400"></i>
+                    <span>الطلبات المخصصة لك حالياً:</span>
+                </h3>
+                <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-black font-mono">
+                    {{ active_orders|length }} طلبات نشطة
+                </span>
+            </div>
+
+            {% if active_orders %}
+            <div class="space-y-3.5">
+                {% for o in active_orders %}
+                <div class="bg-slate-800 border-2 {{ 'border-amber-500' if o.status == 'in_transit' else 'border-slate-700' }} rounded-2xl p-4 shadow-lg space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-700/80 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-slate-700 text-amber-400 font-mono font-black text-xs flex items-center justify-center">#{{ o.id }}</span>
+                            <span class="text-xs font-mono font-bold text-slate-300">{{ o.tracking_number }}</span>
+                        </div>
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full {{ 'bg-amber-500 text-slate-950 font-black' if o.status == 'in_transit' else 'bg-blue-500/20 text-blue-300 border border-blue-500/30' }}">
+                            {{ '🛵 عالطريق للتسليم' if o.status == 'in_transit' else 'جاهز للاستلام' }}
+                        </span>
+                    </div>
+
+                    <!-- Pickup / Merchant Details -->
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50 space-y-1 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400 font-bold flex items-center gap-1"><i class="fa-solid fa-store text-purple-400"></i> المحل:</span>
+                            <span class="font-black text-white">{{ o.merchant_name or 'المتجر' }}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 flex items-center justify-between">
+                            <span>العنوان: {{ o.merchant_address or 'بيروت' }}</span>
+                            {% if o.merchant_phone %}
+                            <a href="tel:{{ o.merchant_phone }}" class="text-emerald-400 font-bold hover:underline">
+                                <i class="fa-solid fa-phone"></i> {{ o.merchant_phone }}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Recipient & Delivery Details -->
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400 font-bold">الزبون المستلم:</span>
+                            <span class="font-black text-white text-sm">{{ o.recipient_name }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400 font-bold">العنوان:</span>
+                            <span class="font-bold text-amber-300 text-right">{{ o.recipient_city }} — {{ o.recipient_address }}</span>
+                        </div>
+                        {% if o.items_detail or o.item_description %}
+                        <div class="p-2 bg-slate-900/80 rounded-lg border border-slate-700/50 text-[11px] text-slate-300">
+                            <strong>البضاعة:</strong> {{ o.items_detail or o.item_description }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Cash Collection Sum -->
+                    <div class="p-2.5 bg-emerald-950/40 border border-emerald-500/40 rounded-xl flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-200">المبلغ المطلوب قبضه كاش:</span>
+                        <span class="text-base font-black text-emerald-400 font-mono">
+                            {{ ((o.order_price or 0) + (o.delivery_fee or 0))|format_currency }} ل.ل
+                        </span>
+                    </div>
+
+                    <!-- 3 Giant Fast Action Buttons for Driver: Direct Phone, WhatsApp with Greeting & COD, Google Maps -->
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <!-- 1. Direct Phone Call -->
+                        <a href="tel:{{ o.recipient_phone }}" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 px-2 rounded-2xl text-center flex flex-col items-center justify-center gap-1 touch-btn shadow-md text-xs transition">
+                            <i class="fa-solid fa-phone text-base"></i>
+                            <span>اتصال هاتف</span>
+                        </a>
+
+                        <!-- 2. WhatsApp with pre-filled greeting & price -->
+                        <a href="https://wa.me/{{ o.recipient_phone|clean_phone_for_whatsapp if o.recipient_phone else '' }}?text={{ ('مرحباً، معك كابتن شركة Stargate، أنا في طريقي إليك ومعي طردك بقيمة ' ~ (((o.order_price or 0) + (o.delivery_fee or 0))|format_currency) ~ ' ل.ل.')|urlencode }}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 px-2 rounded-2xl text-center flex flex-col items-center justify-center gap-1 touch-btn shadow-md text-xs transition">
+                            <i class="fa-brands fa-whatsapp text-lg text-white"></i>
+                            <span>واتساب فوري</span>
+                        </a>
+
+                        <!-- 3. Google Maps Navigation -->
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ (o.recipient_city ~ ' ' ~ o.recipient_address)|urlencode }}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-black py-3 px-2 rounded-2xl text-center flex flex-col items-center justify-center gap-1 touch-btn shadow-md text-xs transition">
+                            <i class="fa-solid fa-location-arrow text-base"></i>
+                            <span>خرائط Google</span>
+                        </a>
+                    </div>
+
+                    <!-- Advanced Status Changer (محدد الحالات اللوجستية المتقدم) -->
+                    <div class="pt-2 border-t border-slate-700/60 space-y-2">
+                        {% if o.status == 'assigned' %}
+                        <form method="POST" action="{{ url_for('courier_app_update_order', order_id=o.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" name="status" value="in_transit" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-3 rounded-xl shadow-md transition touch-btn text-xs flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-motorcycle text-base"></i>
+                                <span>استلمت الطلب وخرجت للتوصيل 🛵</span>
+                            </button>
+                        </form>
+                        {% elif o.status == 'in_transit' %}
+                        <!-- 4 Operational Status Buttons -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <!-- 1. تم التسليم -->
+                            <button type="button" onclick="toggleDriverAction('deliv_{{ o.id }}')" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-2.5 rounded-xl shadow transition touch-btn text-xs flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>تم التسليم ✅</span>
+                            </button>
+                            <!-- 2. تسليم جزئي -->
+                            <button type="button" onclick="toggleDriverAction('part_{{ o.id }}')" class="bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 border border-blue-500/40 font-bold py-2.5 rounded-xl transition touch-btn text-xs flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-boxes-packing"></i>
+                                <span>تسليم جزئي 📦</span>
+                            </button>
+                            <!-- 3. مرتجع -->
+                            <button type="button" onclick="toggleDriverAction('ret_{{ o.id }}')" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/40 font-bold py-2.5 rounded-xl transition touch-btn text-xs flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                                <span>مرتجع ❌</span>
+                            </button>
+                            <!-- 4. مؤجل -->
+                            <button type="button" onclick="toggleDriverAction('post_{{ o.id }}')" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 font-bold py-2.5 rounded-xl transition touch-btn text-xs flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-clock"></i>
+                                <span>تأجيل ⏳</span>
+                            </button>
+                        </div>
+
+                        <!-- 1. Sub-Form: تم التسليم -->
+                        <div id="deliv_{{ o.id }}" class="hidden bg-slate-900 p-3 rounded-xl border border-emerald-500/50 space-y-2">
+                            <form method="POST" action="{{ url_for('courier_app_update_order', order_id=o.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="status" value="delivered">
+                                <label class="block text-[11px] font-bold text-slate-300">المبلغ المحصل الفعلي (ل.ل):</label>
+                                <input type="number" step="any" name="custom_collected" value="{{ (o.order_price or 0) + (o.delivery_fee or 0) }}" class="w-full bg-slate-800 border border-emerald-500/60 rounded-lg px-3 py-2 text-white font-mono font-black text-sm text-center">
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-lg text-xs mt-1 transition shadow">
+                                    تأكيد التسليم والتحصيل الفوري 💵
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 2. Sub-Form: تسليم جزئي -->
+                        <div id="part_{{ o.id }}" class="hidden bg-slate-900 p-3 rounded-xl border border-blue-500/50 space-y-2">
+                            <form method="POST" action="{{ url_for('courier_app_update_order', order_id=o.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="status" value="partial_delivery">
+                                <label class="block text-[11px] font-bold text-slate-300">المبلغ المدفوع فعلياً (ل.ل):</label>
+                                <input type="number" step="any" name="custom_collected" required placeholder="المبلغ الذي دفعه الزبون" class="w-full bg-slate-800 border border-blue-500/60 rounded-lg px-3 py-2 text-white font-mono font-black text-sm text-center">
+                                <label class="block text-[11px] font-bold text-slate-300">بيان البضاعة المرجعة:</label>
+                                <input type="text" name="notes" placeholder="مثال: أرجع قطعة واحدة واحتفظ بالباقي" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-xs">
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded-lg text-xs mt-1 transition shadow">
+                                    تأكيد التسليم الجزئي 📦
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 3. Sub-Form: مرتجع -->
+                        <div id="ret_{{ o.id }}" class="hidden bg-slate-900 p-3 rounded-xl border border-rose-500/50 space-y-2">
+                            <form method="POST" action="{{ url_for('courier_app_update_order', order_id=o.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="status" value="returned">
+                                <label class="block text-[11px] font-bold text-slate-300">رسم التوصيل/المرتجع المحصل إن وُجد (ل.ل):</label>
+                                <input type="number" step="any" name="custom_collected" value="{{ o.return_fee or 0 }}" class="w-full bg-slate-800 border border-rose-500/60 rounded-lg px-3 py-2 text-white font-mono font-black text-sm text-center" placeholder="0 إذا لم يدفع شيئاً">
+                                <label class="block text-[11px] font-bold text-slate-300">سبب الرفض / المرتجع:</label>
+                                <select name="notes" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-2.5 py-2 text-white text-xs">
+                                    <option value="الزبون رفض الاستلام">الزبون رفض الاستلام</option>
+                                    <option value="البضاعة غير مطابقة">البضاعة غير مطابقة</option>
+                                    <option value="الزبون مسافر أو غير متواجد">الزبون مسافر أو غير متواجد</option>
+                                    <option value="إلغاء الطلب من الزبون">إلغاء الطلب من الزبون</option>
+                                </select>
+                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-2 rounded-lg text-xs mt-1 transition shadow">
+                                    تأكيد المرتجع ❌
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 4. Sub-Form: مؤجل -->
+                        <div id="post_{{ o.id }}" class="hidden bg-slate-900 p-3 rounded-xl border border-amber-500/50 space-y-2">
+                            <form method="POST" action="{{ url_for('courier_app_update_order', order_id=o.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="status" value="postponed">
+                                <label class="block text-[11px] font-bold text-slate-300">تاريخ التأجيل الجديد:</label>
+                                <input type="date" name="scheduled_date" class="w-full bg-slate-800 border border-amber-500/60 rounded-lg px-3 py-2 text-white text-xs text-center">
+                                <label class="block text-[11px] font-bold text-slate-300">سبب التأجيل:</label>
+                                <select name="notes" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-2.5 py-2 text-white text-xs">
+                                    <option value="لم يرد على الهاتف">لم يرد على الهاتف</option>
+                                    <option value="طلب التأجيل ليوم آخر">طلب التأجيل ليوم آخر</option>
+                                    <option value="العنوان غير متوفر / مغلق">العنوان غير متوفر / مغلق</option>
+                                    <option value="الزبون غير جاهز بالمبلغ">الزبون غير جاهز بالمبلغ</option>
+                                </select>
+                                <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-2 rounded-lg text-xs mt-1 transition shadow">
+                                    تأكيد تأجيل المشوار ⏳
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-8 text-center space-y-2">
+                <i class="fa-solid fa-circle-check text-4xl text-emerald-400"></i>
+                <h4 class="text-sm font-black text-white">لا توجد طلبات جارية لك الآن!</h4>
+                <p class="text-xs text-slate-400">أنت جاهز لاستلام طلبيات جديدة من الكول سنتر.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- FIXED BOTTOM REFRESH BAR -->
+    <div class="fixed bottom-0 left-0 right-0 bg-slate-800/95 backdrop-blur-md border-t border-slate-700 p-2.5 flex items-center justify-around z-30">
+        <button onclick="window.location.reload();" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition touch-btn">
+            <i class="fa-solid fa-rotate"></i>
+            <span>تحديث الشاشة 🔄</span>
+        </button>
+        <div class="text-[11px] text-slate-400 font-mono">
+            STARGATE DRIVER v8.0
+        </div>
+    </div>
+    {% endif %}
+
+</body>
+</html>
+
+
+<script>
+function toggleDriverAction(elemId) {
+    const el = document.getElementById(elemId);
+    if (!el) return;
+    const isHidden = el.classList.contains('hidden');
+    // Hide all sub forms in the card
+    const parent = el.parentElement;
+    parent.querySelectorAll('[id^="deliv_"], [id^="part_"], [id^="ret_"], [id^="post_"]').forEach(sub => {
+        sub.classList.add('hidden');
+    });
+    if (isHidden) {
+        el.classList.remove('hidden');
+    }
+}
+</script>

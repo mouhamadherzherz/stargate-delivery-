@@ -12,6 +12,10 @@
             </h2>
             <p class="text-sm text-slate-500 mt-1">متابعة كاش الأوردرات مع الشباب بالشارع وتسكير اليومية وتوريد المصاري للصندوق.</p>
         </div>
+        <button onclick="openModal('courierAppLinkModal')" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black px-4 py-2.5 rounded-xl border border-slate-700 shadow-sm transition text-xs">
+            <i class="fa-solid fa-mobile-screen-button text-amber-400 text-sm"></i>
+            <span>رابط تطبيق السائقين 📱</span>
+        </button>
         {% if is_admin %}
         <button onclick="openModal('newCourierModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] hover:to-[#C55F00] text-white font-black px-5 py-2.5 rounded-xl shadow-md shadow-[#FF7A00]/20 transition">
             <i class="fa-solid fa-user-plus"></i>
@@ -41,6 +45,24 @@
         </div>
     </div>
 
+    
+    <!-- Quick Touch Filter Pills for Couriers -->
+    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto touch-scroll-x select-none">
+        <span class="text-xs font-black text-slate-500 shrink-0 ml-1">
+            <i class="fa-solid fa-hand-pointer text-amber-500"></i> فلترة سريعة:
+        </span>
+        <button type="button" onclick="setCourierQuickFilter('all')" id="btnFilterAll" class="tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black bg-[#1E1B54] text-white shadow-xs">
+            🔘 جميع السائقين
+        </button>
+        <button type="button" onclick="setCourierQuickFilter('active')" id="btnFilterActive" class="tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100">
+            🟢 الشغالين حالياً
+        </button>
+        <button type="button" onclick="setCourierQuickFilter('with_cash')" id="btnFilterCash" class="tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100">
+            💰 عليهم كاش للتسكير
+        </button>
+    </div>
+
+
     <!-- Couriers Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="couriersGrid">
         {% for c in couriers %}
@@ -54,19 +76,42 @@
                 <div class="flex items-start justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-xl font-bold">
-                            {% if c.vehicle_type == 'car' %}
-                                <i class="fa-solid fa-car-side"></i>
+                            {% if c.vehicle_type == 'car' or c.vehicle_type == 'taxi_car' %}
+                                <i class="fa-solid fa-car-side text-indigo-600" title="سائق تاكسي (سيارة)"></i>
+                            {% elif c.vehicle_type == 'taxi_moto' %}
+                                <i class="fa-solid fa-motorcycle text-amber-600" title="سائق تاكسي (سكوتر)"></i>
                             {% elif c.vehicle_type == 'van' %}
-                                <i class="fa-solid fa-van-shuttle"></i>
+                                <i class="fa-solid fa-van-shuttle text-blue-600" title="فان شحن"></i>
                             {% else %}
-                                <i class="fa-solid fa-motorcycle"></i>
+                                <i class="fa-solid fa-motorcycle text-amber-600" title="سائق دليفري (موتو)"></i>
                             {% endif %}
                         </div>
                         <div>
-                            <h3 class="font-bold text-slate-800 text-base leading-tight">{{ c.name }}</h3>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <h3 class="font-bold text-slate-800 text-base leading-tight">{{ c.name }}</h3>
+                                {% if c.vehicle_type == 'car' or c.vehicle_type == 'taxi_car' %}
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-200">🚗 تاكسي سيارة</span>
+                                {% elif c.vehicle_type == 'taxi_moto' %}
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">🛵 تاكسي سكوتر</span>
+                                {% elif c.vehicle_type == 'van' %}
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 border border-blue-200">🚐 فان بضائع</span>
+                                {% else %}
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">🛵 دليفري محلات</span>
+                                {% endif %}
+                            </div>
                             <a href="tel:{{ c.phone }}" class="text-xs text-slate-400 hover:text-red-600 font-mono flex items-center gap-1 mt-0.5" dir="ltr">
                                 <i class="fa-solid fa-phone text-[10px]"></i> {{ c.phone }}
                             </a>
+                            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-mono font-bold" title="رمز الـ PIN المعتمد للسائق لتسجيل الدخول بالتطبيق">
+                                    <i class="fa-solid fa-key text-[9px] text-amber-600"></i>
+                                    <span>PIN: {{ c.pin or c.pin_code or 'لم يحدد بعد' }}</span>
+                                </span>
+                                <a href="https://wa.me/{{ c.phone|replace('+', '')|replace(' ', '') }}?text={{ ('مرحباً ' + c.name + '، تفضل رابط تطبيق السائقين لمتابعة الأوردرات وتوريد الكاش: http://192.168.9.114:8085/courier/app  رمز الـ PIN الخاص بك: ' + (c.pin or c.pin_code or 'أدخل رمزك الجديد عند أول دخول'))|urlencode }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold transition" title="إرسال رابط التطبيق ورمز الـ PIN للسائق بالواتساب مباشرة">
+                                    <i class="fa-brands fa-whatsapp text-emerald-600"></i>
+                                    <span>إرسال التطبيق</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ 'bg-emerald-100 text-emerald-800' if c.status == 'active' else 'bg-slate-100 text-slate-600' }}">
@@ -94,27 +139,43 @@
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
+            <!-- Action Buttons (Touch Tablet POS Style) -->
+            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2.5">
                 <div class="flex items-center gap-2">
                     {% if has_permission('couriers_settle') %}
-                    <button onclick="openSettlementModal('{{ c.id }}', '{{ c.name }}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5" title="تصفية حساب واستلام الكاش المورد">
-                        <i class="fa-solid fa-receipt"></i>
-                        <span>تسكير اليومية واستلام الكاش</span>
+                    <button onclick="openSettlementModal('{{ c.id }}', '{{ c.name }}')" class="tablet-touch-btn flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-2.5 px-3.5 rounded-2xl text-xs transition shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 cursor-pointer" title="تصفية حساب واستلام الكاش المورد">
+                        <i class="fa-solid fa-receipt text-sm"></i>
+                        <span>تسكير اليومية واستلام الكاش 💵</span>
                     </button>
                     {% endif %}
-                    <a href="{{ url_for('couriers_list', courier_id=c.id) }}" target="_blank" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="عرض وطباعة كشف حساب السائق وتفاصيل الكاش">
-                        <i class="fa-solid fa-file-lines"></i>
+                    <a href="{{ url_for('courier_statement_view', courier_id=c.id) }}" class="tablet-touch-btn py-2.5 px-3.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-2xs" title="عرض وطباعة كشف حساب السائق وتفاصيل الكاش">
+                        <i class="fa-solid fa-print text-sky-600"></i>
                         <span>كشف الحساب 🖨️</span>
                     </a>
                 </div>
+                {% if c.current_cash_custody and c.current_cash_custody > 0 %}
+                <button type="button" onclick="openHandoverModal('{{ c.id }}', '{{ c.name|replace("'", "\\'") }}', {{ c.current_cash_custody }})" class="tablet-touch-btn w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 px-3 rounded-2xl text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 cursor-pointer" title="استلام كاش العهدة بالكامل وتصفير حسابه">
+                    <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                    <span>استلام وتصفير العهدة ({{ c.current_cash_custody|format_currency }} ل.ل) ⚡</span>
+                </button>
+                {% endif %}
                 <div class="flex items-center gap-2">
                     <a href="{{ url_for('orders_list') }}?courier_id={{ c.id }}" class="flex-1 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="عرض كل أوردرات الشب">
                         <i class="fa-solid fa-list-ul"></i>
-                        <span>كل طلبات السائق</span>
+                        <span>الطلبات</span>
                     </a>
                     {% if is_admin %}
+                    <button onclick="openPayCourierSalaryModal('{{ c.id }}', '{{ c.name|replace("'", "\'") }}', {{ c.salary or 0 }})" class="flex-1 py-1.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="صرف راتب أو مكافأة للسائق">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                        <span>صرف راتب 💵</span>
+                    </button>
+                    {% endif %}
+                    {% if is_admin %}
+                    <button type="button" onclick="openEditCourierModal('{{ c.id }}', '{{ c.name|replace("'", "\\'") }}', '{{ c.phone }}', '{{ c.vehicle_type }}', '{{ c.commission_value }}', '{{ c.status }}', '{{ c.salary or 0 }}', '{{ c.salary_type or "monthly" }}', '{{ c.pin or c.pin_code or "" }}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-xl transition border border-blue-200 text-xs font-bold" title="تعديل بيانات السائق والرمز السري PIN">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
                     <form method="POST" action="{{ url_for('delete_courier', courier_id=c.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا السائق؟');" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200 text-xs font-bold" title="حذف السائق">
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -141,6 +202,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('add_courier') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" required placeholder="مثال: شربل خليل" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 font-bold">
@@ -151,13 +213,28 @@
                 <input type="text" name="phone" required placeholder="03xxxxxx أو 70xxxxxx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 text-left font-mono" dir="ltr">
             </div>
 
+            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1">
+                <label class="block text-xs font-black text-amber-900 mb-1 flex items-center justify-between">
+                    <span>رمز الدخول لتطبيق السائق (PIN - محمي ومخفي) 🔑</span>
+                    <span class="text-[10px] text-amber-700">4 إلى 6 أرقام</span>
+                </label>
+                <div class="relative">
+                    <input type="password" name="pin" id="addCourierPin" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" style="-webkit-text-security: disc;" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-sm font-mono tracking-widest text-amber-900 font-bold focus:ring-2 focus:ring-amber-500 text-center">
+                    <button type="button" onclick="toggleInputVisibility('addCourierPin', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-700 hover:text-amber-900 transition">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-amber-700">مشفر ومخفي عن الأنظار لمنع التلصص.</p>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">نوع المركبة</label>
-                    <select name="vehicle_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
-                        <option value="motorcycle">دراجة نارية</option>
-                        <option value="car">سيارة صالون</option>
-                        <option value="van">سيارة حمل / فان</option>
+                    <select name="vehicle_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                        <option value="motorcycle">🛵 دراجة نارية (دليفري محلات وطلبيات)</option>
+                        <option value="car">🚗 سيارة تاكسي ركاب (سائق تاكسي)</option>
+                        <option value="taxi_moto">🏍️ سكوتر / دراجة تاكسي (تاكسي ركاب سريع)</option>
+                        <option value="van">🚐 فان بضائع / شحن ثقيل</option>
                     </select>
                 </div>
                 <div>
@@ -198,6 +275,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('settle_courier') }}" class="mt-6 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="courier_id" id="settlementCourierId">
 
             <!-- Orders Table to select -->
@@ -284,6 +362,228 @@
     </div>
 </div>
 
+
+<!-- PAY COURIER SALARY MODAL -->
+<div id="payCourierSalaryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-hand-holding-dollar text-emerald-600"></i>
+                <span>صرف راتب / مكافأة سائق</span>
+            </h3>
+            <button onclick="closeModal('payCourierSalaryModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="payCourierSalaryForm" method="POST" action="" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div class="text-xs text-slate-400 font-bold">السائق المستلم:</div>
+                <div id="pay_courier_name" class="text-sm font-black text-slate-800 mt-0.5"></div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">خصم من الخزينة / الصندوق:</label>
+                <select name="treasury_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500">
+                    {% for tr in treasuries %}
+                    <option value="{{ tr.id }}">{{ tr.name }} (الرصيد: {{ tr.balance|format_currency }} ل.ل)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ المصروف (ل.ل):</label>
+                <input type="number" step="any" id="pay_courier_amount" name="amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">عن شهر / فترة:</label>
+                <input type="text" name="period" value="{{ now.strftime('%Y-%m') }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات أو تفاصيل إضافية:</label>
+                <input type="text" name="notes" placeholder="مثال: راتب الشهر الأساسي أو مكافأة إضافية" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('payCourierSalaryModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
+                <button type="submit" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-600/20 transition">تأكيد الصرف والخصم 💵</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openPayCourierSalaryModal(courierId, courierName, salary) {
+    document.getElementById('payCourierSalaryForm').action = `/couriers/${courierId}/pay-salary`;
+    document.getElementById('pay_courier_name').textContent = courierName;
+    document.getElementById('pay_courier_amount').value = salary > 0 ? salary : '';
+    openModal('payCourierSalaryModal');
+}
+</script>
+
+
+<!-- MODAL: EDIT COURIER & PIN -->
+<div id="editCourierModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-blue-600"></i> تعديل بيانات السائق والـ PIN
+            </h3>
+            <button onclick="closeModal('editCourierModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="editCourierForm" method="POST" action="" class="mt-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل <span class="text-rose-500">*</span></label>
+                <input type="text" id="editCourierName" name="name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 font-bold">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف (واتساب) <span class="text-rose-500">*</span></label>
+                <input type="text" id="editCourierPhone" name="phone" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 text-left font-mono" dir="ltr">
+            </div>
+
+            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1">
+                <label class="block text-xs font-black text-amber-900 mb-1 flex items-center justify-between">
+                    <span>تغيير أو تحديد رمز الـ PIN للسائق (مخفي ومحمي) 🔑</span>
+                    <span class="text-[10px] text-amber-700">اتركه فارغاً للإبقاء</span>
+                </label>
+                <div class="relative">
+                    <input type="password" id="editCourierPin" name="pin" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" style="-webkit-text-security: disc;" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-sm font-mono tracking-widest text-amber-900 font-bold focus:ring-2 focus:ring-amber-500 text-center">
+                    <button type="button" onclick="toggleInputVisibility('editCourierPin', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-700 hover:text-amber-900 transition">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-amber-700">اتركه فارغاً للإبقاء على الرمز الحالي، أو اكتب رمزاً جديداً لتغييره فوراً.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نوع المركبة</label>
+                    <select id="editCourierVehicle" name="vehicle_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                        <option value="motorcycle">🛵 دراجة نارية</option>
+                        <option value="car">🚗 سيارة تاكسي</option>
+                        <option value="taxi_moto">🏍️ سكوتر تاكسي</option>
+                        <option value="van">🚐 فان بضائع</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">حالة السائق</label>
+                    <select id="editCourierStatus" name="status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                        <option value="active">شغّال نشط</option>
+                        <option value="inactive">موقّف مؤقتاً</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">عمولة التوصيل</label>
+                    <input type="number" step="any" id="editCourierCommission" name="commission_value" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الراتب الثابت</label>
+                    <input type="number" step="any" id="editCourierSalary" name="salary" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('editCourierModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition">إلغاء</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-sm transition">حفظ التعديلات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: DRIVER APP ACCESS INFO -->
+<div id="courierAppLinkModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-lg font-black">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-800">تطبيق السائقين عبر الهاتف المحمول</h3>
+                    <p class="text-[11px] text-slate-400">طريقة تشغيل وتثبيت التطبيق على هواتف شباب الدليفري</p>
+                </div>
+            </div>
+            <button onclick="closeModal('courierAppLinkModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <div class="p-3.5 bg-slate-900 text-slate-100 rounded-2xl space-y-2">
+                <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-link"></i> رابط تطبيق السائق (للهواتف المتصلة بالواي فاي / الراوتر):
+                </span>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="courierAppLanUrlInput" readonly value="http://192.168.9.114:8085/courier/app" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white text-left font-bold" dir="ltr">
+                    <button onclick="copyLanUrl()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-2 rounded-xl text-xs transition flex items-center gap-1">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>نسخ</span>
+                    </button>
+                </div>
+                <p id="copyFeedback" class="text-[10px] text-emerald-400 font-bold hidden">تم نسخ الرابط بنجاح!</p>
+            </div>
+
+            <div class="space-y-2 text-xs text-slate-600 leading-relaxed font-medium">
+                <div class="flex items-start gap-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+                    <span>يفتح السائق الرابط من متصفح هاتفه (Chrome على أندرويد أو Safari على آيفون).</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+                    <span>يختار اسمه من القائمة ويكتب <strong>رمز الـ PIN</strong> الخاص به للدخول.</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+                    <span><strong>تثبيت كتطبيق:</strong> من خيارات المتصفح يضغط السائق على <em>"إضافة إلى الشاشة الرئيسية (Add to Home Screen)"</em> ليتحول التطبيق لأيقونة هاتف تفتح بكبسة واحدة.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end">
+            <button type="button" onclick="closeModal('courierAppLinkModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2 rounded-xl text-xs transition">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEditCourierModal(id, name, phone, vehicle, comm, status, salary, salaryType, pin) {
+    document.getElementById('editCourierForm').action = '/couriers/' + id + '/edit';
+    document.getElementById('editCourierName').value = name;
+    document.getElementById('editCourierPhone').value = phone;
+    document.getElementById('editCourierVehicle').value = vehicle;
+    document.getElementById('editCourierStatus').value = status;
+    document.getElementById('editCourierCommission').value = comm;
+    document.getElementById('editCourierSalary').value = salary;
+    document.getElementById('editCourierPin').value = pin;
+    openModal('editCourierModal');
+}
+
+function copyLanUrl() {
+    const input = document.getElementById('courierAppLanUrlInput');
+    if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+            const fb = document.getElementById('copyFeedback');
+            if (fb) {
+                fb.classList.remove('hidden');
+                setTimeout(() => fb.classList.add('hidden'), 2500);
+            }
+        });
+    }
+}
+</script>
+
 {% endblock %}
 
 {% block scripts %}
@@ -330,21 +630,50 @@
         let html = '';
         loadedOrders.forEach(o => {
             const isWhish = (o.payment_method === 'whish');
-            const colAmt = Number(o.collected_amount || 0);
+            const mpt = o.merchant_payment_type || (o.is_paid_to_merchant == 1 ? 'prepaid_by_customer' : 'deferred');
+            const isPaidByCourier = (mpt === 'paid_by_courier');
+            const isPrepaid = (mpt === 'prepaid_by_customer');
+            const isPaidByCompany = (mpt === 'paid_by_company');
+
+            let companyDue = 0;
+            if (isPaidByCourier || isPrepaid) {
+                companyDue = Number(o.delivery_fee || 0);
+            } else {
+                companyDue = Number(o.collected_amount || (Number(o.order_price || 0) + Number(o.delivery_fee || 0)));
+            }
+
             const commAmt = Number(o.courier_commission || 0);
+
+            let typeBadge = '';
+            if (isPaidByCourier) {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 block mt-0.5">🛵 مال السائق الخاص (يحتفظ بالبضاعة)</span>';
+            } else if (isPaidByCompany) {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-purple-100 text-purple-900 border border-purple-300 block mt-0.5">🏢 سلفة شركة (تسكير للشركة)</span>';
+            } else if (isPrepaid) {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 block mt-0.5">🟢 واصل سلفاً (تحصيل توصيل فقط)</span>';
+            } else {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200 block mt-0.5">📋 آجل لمستحقات التاجر</span>';
+            }
+
             html += `
                 <tr class="hover:bg-slate-50">
                     <td class="p-2.5 text-center">
                         <input type="checkbox" name="order_ids" value="${o.id}" checked onchange="calculateSettlementTotals()" class="order-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                     </td>
-                    <td class="p-2.5 font-mono font-bold text-blue-600">${o.tracking_number || '-'}</td>
+                    <td class="p-2.5 font-mono font-bold text-blue-600">
+                        ${o.tracking_number || '-'}
+                        ${typeBadge}
+                    </td>
                     <td class="p-2.5 font-bold">${o.merchant_name || '-'}</td>
                     <td class="p-2.5">
                         ${isWhish ? 
                             '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">💳 بطاقة Whish</span>' : 
                             '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">💵 كاش</span>'}
                     </td>
-                    <td class="p-2.5 font-bold ${isWhish ? 'text-slate-400 line-through' : 'text-emerald-600'}">${colAmt.toLocaleString()}</td>
+                    <td class="p-2.5 font-bold ${isWhish ? 'text-slate-400 line-through' : 'text-emerald-600'}">
+                        ${companyDue.toLocaleString()}
+                        ${(isPaidByCourier || isPrepaid) ? '<span class="text-[9px] text-slate-400 block font-normal">(توصيل فقط)</span>' : ''}
+                    </td>
                     <td class="p-2.5 font-bold text-amber-600">${commAmt.toLocaleString()}</td>
                     <td class="p-2.5">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
@@ -374,7 +703,12 @@
             if (order) {
                 const isWhish = (order.payment_method === 'whish');
                 if (!isWhish && order.status === 'delivered') {
-                    totalCashCollected += Number(order.collected_amount || 0);
+                    const mpt = order.merchant_payment_type || (order.is_paid_to_merchant == 1 ? 'prepaid_by_customer' : 'deferred');
+                    if (mpt === 'paid_by_courier' || mpt === 'prepaid_by_customer') {
+                        totalCashCollected += Number(order.delivery_fee || 0);
+                    } else {
+                        totalCashCollected += Number(order.collected_amount || (Number(order.order_price || 0) + Number(order.delivery_fee || 0)));
+                    }
                 }
                 if (order.status === 'delivered') {
                     totalCommissions += Number(order.courier_commission || 0);
@@ -460,4 +794,76 @@
         });
     }
 </script>
+
 {% endblock %}
+
+
+<!-- ===================== COURIER CASH HANDOVER MODAL ===================== -->
+<div id="handoverModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-500/30">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900">استلام وتصفير عهدة السائق</h3>
+                    <p class="text-xs text-slate-500" id="handoverCourierName">المندوب: ...</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('handoverModal')" class="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('courier_handover_cash') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="courier_id" id="handoverCourierId" value="">
+
+            <div>
+                <label class="block text-xs font-black text-slate-700 mb-1">المبلغ المستلم فعلياً (ل.ل):</label>
+                <input type="number" step="any" name="amount_received" id="handoverAmountInput" required
+                       class="w-full bg-slate-50 border-2 border-emerald-300 focus:border-emerald-600 rounded-xl px-4 py-2.5 text-lg font-black font-mono text-center text-emerald-900 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-black text-slate-700 mb-1">إيداع في أي خزينة / صندوق:</label>
+                <select name="treasury_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-black text-slate-800">
+                    {% for t in treasuries %}
+                    <option value="{{ t.id }}" {% if t.is_default == 1 %}selected{% endif %}>{{ t.name }} (الرصيد: {{ t.balance|format_currency }} ل.ل)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-amber-600 text-base shrink-0"></i>
+                <span>بمجرد الضغط، سيتم خصم هذا المبلغ من عهدة السائق وإيداعه في الخزينة المحددة فوراً.</span>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeModal('handoverModal')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">إلغاء</button>
+                <button type="submit" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-600/25">استلام وتصفير العهدة ✅</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openHandoverModal(courierId, courierName, custody) {
+    document.getElementById('handoverCourierId').value = courierId;
+    document.getElementById('handoverCourierName').textContent = 'المندوب: ' + courierName;
+    document.getElementById('handoverAmountInput').value = custody;
+    openModal('handoverModal');
+}
+
+function toggleInputVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        input.style.webkitTextSecurity = 'none';
+        if (icon) icon.className = 'fa-solid fa-eye-slash text-xs';
+    } else {
+        input.type = 'password';
+        input.style.webkitTextSecurity = 'disc';
+        if (icon) icon.className = 'fa-solid fa-eye text-xs';
+    }
+}
+</script>

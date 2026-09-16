@@ -101,8 +101,12 @@
                             <td class="py-3 px-4 text-slate-600">{{ o.courier_name or '-' }}</td>
                             <td class="py-3 px-4 font-bold text-slate-800">
                                 {{ o.order_price|format_currency }}
-                                {% if o.is_paid_to_merchant == 1 %}
-                                <span class="block text-[9px] text-blue-600 font-bold">(واصل للتاجر مسبقاً)</span>
+                                {% if o.merchant_payment_type == 'paid_by_company' %}
+                                <span class="block text-[9px] text-purple-700 font-bold">🏢 سلفة شركة (التسكير للشركة)</span>
+                                {% elif o.merchant_payment_type == 'paid_by_courier' %}
+                                <span class="block text-[9px] text-amber-700 font-bold">🛵 مسدد من مال السائق الخاص</span>
+                                {% elif o.merchant_payment_type == 'prepaid_by_customer' or o.is_paid_to_merchant == 1 %}
+                                <span class="block text-[9px] text-blue-600 font-bold">🟢 واصل للتاجر مسبقاً (Prepaid)</span>
                                 {% endif %}
                             </td>
                             <td class="py-3 px-4 font-semibold text-blue-600">{{ o.delivery_fee|format_currency }}</td>

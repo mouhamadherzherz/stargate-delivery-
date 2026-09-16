@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stargate Master | كود التفعيل</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="p-6 relative">
+    <!-- Background Effects -->
+    <div class="absolute top-0 right-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div class="absolute top-[20%] right-[30%] w-[40%] h-[40%] rounded-full bg-indigo-600/20 blur-[100px]"></div>
+    </div>
+
+    <div class="glass w-full max-w-2xl p-12 rounded-3xl relative z-10 text-center">
+        <div class="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-400">
+            <i class="fa-solid fa-circle-check text-5xl"></i>
+        </div>
+        
+        <h1 class="text-3xl font-black mb-2 text-white">تم توليد التفعيل بنجاح!</h1>
+        <p class="text-slate-400 mb-8 text-lg">
+            {% if customer_name %}
+            هذا الكود مخصص للزبون: <strong class="text-indigo-400">{{ customer_name }}</strong>
+            {% else %}
+            يرجى نسخ الكود أدناه وإرساله للزبون ليتمكن من الدخول للبرنامج.
+            {% endif %}
+        </p>
+
+        <div class="bg-slate-900/80 border-2 border-indigo-500/50 rounded-2xl p-6 mb-8 relative group">
+            <div class="text-4xl font-mono font-black tracking-[0.2em] text-indigo-400 break-all select-all" id="licenseCode">{{ code }}</div>
+        </div>
+
+        <div class="flex gap-4 justify-center">
+            <button onclick="copyCode()" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-4 px-8 rounded-xl shadow-lg transition-all transform hover:-translate-y-1 text-lg flex items-center justify-center gap-3">
+                <i class="fa-regular fa-copy"></i>
+                <span id="copyText">نسخ الكود 📋</span>
+            </button>
+            <a href="/sg_master/dashboard" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all text-lg flex items-center justify-center gap-3">
+                <i class="fa-solid fa-arrow-right"></i>
+                العودة للغرفة
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function copyCode() {
+            var codeText = document.getElementById("licenseCode").innerText;
+            navigator.clipboard.writeText(codeText).then(function() {
+                var btnText = document.getElementById("copyText");
+                btnText.innerHTML = "تم النسخ بنجاح! ✔️";
+                setTimeout(function() {
+                    btnText.innerHTML = "نسخ الكود 📋";
+                }, 3000);
+            });
+        }
+    </script>
+</body>
+</html>

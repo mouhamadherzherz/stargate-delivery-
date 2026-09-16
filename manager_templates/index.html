@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stargate Manager | لوحة التحكم المركزية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{--bg:#060b17;--card:#0e1628;--card2:#111e35;--border:rgba(99,102,241,0.15);--tp:#f0f4ff;--tm:#8b9cc8;--accent:#6366f1;--aglow:rgba(99,102,241,0.25);--green:#10b981;--gbg:rgba(16,185,129,0.12);--red:#ef4444;--rbg:rgba(239,68,68,0.12);--amber:#f59e0b;--abg:rgba(245,158,11,0.12)}
+        body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tp);min-height:100vh}
+        .header{background:linear-gradient(135deg,#0d1b3e,#0e1628,#0d1b3e);border-bottom:1px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+        .logo{display:flex;align-items:center;gap:14px}
+        .logo-icon{width:46px;height:46px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px rgba(99,102,241,.4)}
+        .logo h1{font-size:18px;font-weight:900}
+        .logo span{font-size:12px;color:var(--tm)}
+        .hactions{display:flex;gap:10px;align-items:center}
+        .btn{padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;text-decoration:none}
+        .btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 14px var(--aglow)}
+        .btn-primary:hover{background:#4f51e5;transform:translateY(-1px)}
+        .btn-ghost{background:transparent;color:var(--tm);border:1px solid var(--border)}
+        .btn-ghost:hover{color:#fff;border-color:var(--accent)}
+        .btn-green{background:var(--green);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.3)}
+        .btn-green:hover{background:#0ea572;transform:translateY(-1px)}
+        .btn-red{background:var(--red);color:#fff}
+        .btn-amber{background:var(--amber);color:#000;box-shadow:0 4px 14px rgba(245,158,11,.3)}
+        .btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+        .main{padding:28px 32px;max-width:1400px;margin:0 auto}
+        
+        .tabs{display:flex;gap:12px;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:12px}
+        .tab-btn{background:transparent;border:none;color:var(--tm);font-size:15px;font-weight:700;font-family:'Cairo';cursor:pointer;padding:8px 16px;border-radius:12px;transition:all .2s}
+        .tab-btn.active{background:var(--accent);color:#fff}
+        .tab-btn:hover:not(.active){background:rgba(255,255,255,0.05)}
+        
+        .tab-content{display:none}
+        .tab-content.active{display:block;animation:fade .3s ease}
+        @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        
+        .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:28px}
+        .stat-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;display:flex;align-items:center;gap:14px;transition:border-color .2s}
+        .stat-card:hover{border-color:var(--accent)}
+        .stat-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+        .stat-info h3{font-size:22px;font-weight:900}
+        .stat-info p{font-size:12px;color:var(--tm);margin-top:2px}
+        .toolbar{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+        .search-box{flex:1;min-width:220px;position:relative}
+        .search-box i{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--tm)}
+        .search-box input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:9px 40px 9px 14px;color:var(--tp);font-family:'Cairo',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+        .search-box input:focus{border-color:var(--accent)}
+        .filter-select{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:9px 14px;color:var(--tp);font-family:'Cairo',sans-serif;font-size:13px;outline:none;cursor:pointer}
+        .table-wrapper{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+        table{width:100%;border-collapse:collapse}
+        thead{background:linear-gradient(135deg,#0d1b3e,#111e35);border-bottom:1px solid var(--border)}
+        thead th{padding:14px 16px;text-align:right;font-size:12px;font-weight:700;color:var(--tm);white-space:nowrap}
+        tbody tr{border-bottom:1px solid rgba(99,102,241,0.06);transition:background .15s}
+        tbody tr:hover{background:rgba(99,102,241,0.05)}
+        tbody td{padding:14px 16px;font-size:13px;vertical-align:middle}
+        .sub-name{font-weight:700;color:var(--tp);display:flex;align-items:center;gap:10px}
+        .avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0}
+        .phone-link{color:var(--accent);text-decoration:none;font-weight:700;direction:ltr;display:inline-flex;align-items:center;gap:6px}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+        .b-active{background:var(--gbg);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+        .b-expiring{background:var(--abg);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+        .b-expired{background:var(--rbg);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+        .b-new{background:rgba(99,102,241,0.12);color:#a5b4fc;border:1px solid rgba(99,102,241,0.2)}
+        .days.ok{color:var(--green);font-weight:700}
+        .days.warn{color:var(--amber);font-weight:700}
+        .days.danger{color:var(--red);font-weight:700}
+        .guid-code{font-family:monospace;font-size:11px;color:var(--tm);background:rgba(0,0,0,.3);padding:3px 8px;border-radius:6px;cursor:pointer;display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .ag{display:flex;gap:6px;align-items:center}
+        .ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--tm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s}
+        .ib:hover{border-color:var(--accent);color:var(--accent)}
+        .ib.g:hover{border-color:var(--green);color:var(--green)}
+        .ib.r:hover{border-color:var(--red);color:var(--red)}
+        
+        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:1px solid rgba(99,102,241,.25);border-radius:24px;width:100%;max-width:520px;padding:28px;box-shadow:0 40px 80px rgba(0,0,0,.6);animation:su .2s ease}
+        @keyframes su{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+        .mhead h2{font-size:18px;font-weight:900}
+        .mclose{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--tm);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+        .mclose:hover{color:#fff;border-color:var(--red)}
+        .fg{margin-bottom:16px}
+        .fg label{display:block;font-size:12px;font-weight:700;color:var(--tm);margin-bottom:6px}
+        .fc{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--tp);font-family:'Cairo',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+        .fc:focus{border-color:var(--accent)}
+        .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .mfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+        .code-out{background:#000;border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:14px;font-family:'Consolas',monospace;font-size:11px;color:#10b981;word-break:break-all;position:relative;min-height:60px}
+        .copy-btn{position:absolute;top:8px;left:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;font-family:'Cairo';cursor:pointer}
+        
+        .toast{position:fixed;bottom:24px;left:24px;background:#10b981;color:#fff;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(16,185,129,.4);z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:10px}
+        .toast.show{transform:translateY(0);opacity:1}
+        .toast.err{background:var(--red)}
+        
+        /* OTA Update specific styles */
+        .ota-box{background:var(--bg);border:1px dashed var(--border);border-radius:16px;padding:32px;text-align:center;margin-bottom:20px}
+        .ota-icon{font-size:48px;color:var(--accent);margin-bottom:16px}
+        .ota-log{background:#000;border-radius:12px;padding:16px;font-family:monospace;font-size:12px;color:#a5b4fc;text-align:left;direction:ltr;height:200px;overflow-y:auto;margin-top:16px;display:none}
+        .ota-log.show{display:block}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">
+        <div class="logo-icon">🛸</div>
+        <div><h1>Stargate Manager</h1><span>لوحة التحكم المركزية - جهاز المدير فقط</span></div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('subs', this)"><i class="fa-solid fa-users"></i> إدارة المشتركين والرخص</button>
+        <button class="tab-btn" onclick="switchTab('ota', this)"><i class="fa-solid fa-cloud-arrow-up"></i> نشر التحديثات (OTA)</button>
+    </div>
+
+    <!-- TABS CONTENT: SUBSCRIBERS -->
+    <div id="subs-tab" class="tab-content active">
+        <div class="stats-bar">
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(99,102,241,.15);color:#a5b4fc;"><i class="fa-solid fa-users"></i></div><div class="stat-info"><h3 id="st">0</h3><p>إجمالي المشتركين</p></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:var(--gbg);color:var(--green);"><i class="fa-solid fa-circle-check"></i></div><div class="stat-info"><h3 id="sa">0</h3><p>اشتراك نشط</p></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:var(--abg);color:var(--amber);"><i class="fa-solid fa-clock"></i></div><div class="stat-info"><h3 id="se">0</h3><p>ينتهي قريباً</p></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:var(--rbg);color:var(--red);"><i class="fa-solid fa-ban"></i></div><div class="stat-info"><h3 id="sx">0</h3><p>منتهي / موقوف</p></div></div>
+        </div>
+        
+        <div class="toolbar">
+            <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="q" placeholder="ابحث..." oninput="filter()"></div>
+            <select class="filter-select" id="sf" onchange="filter()">
+                <option value="">كل الحالات</option><option value="active">نشط</option><option value="expiring">ينتهي قريباً</option><option value="expired">منتهي</option>
+            </select>
+            <button class="btn btn-ghost" onclick="loadSubs()"><i class="fa-solid fa-rotate"></i> تحديث</button>
+            <button class="btn btn-green" onclick="openAdd()"><i class="fa-solid fa-plus"></i> مشترك جديد</button>
+        </div>
+        
+        <div class="table-wrapper">
+            <table><thead><tr>
+                <th>#</th><th>المشترك</th><th>رقم الهاتف</th><th>المدينة</th>
+                <th>رقم الجهاز</th><th>الانتهاء</th><th>متبقي</th><th>الحالة</th><th>إجراءات</th>
+            </tr></thead><tbody id="tb"></tbody></table>
+        </div>
+    </div>
+
+    <!-- TABS CONTENT: OTA UPDATE -->
+    <div id="ota-tab" class="tab-content">
+        <div class="toolbar" style="margin-bottom:0">
+            <h3><i class="fa-solid fa-code-merge"></i> إصدار تحديث جديد للزبائن</h3>
+        </div>
+        <div class="table-wrapper" style="padding:28px">
+            <div class="ota-box">
+                <i class="fa-solid fa-box-open ota-icon"></i>
+                <h2>تجميع ورفع التحديث (OTA)</h2>
+                <p style="color:var(--tm);margin-top:8px;margin-bottom:24px">سيتم ضغط ملفات النظام الحالية (بدون قواعد البيانات) لتجهيزها للنشر للزبائن.</p>
+                <div style="display:inline-flex;gap:12px;align-items:center;margin-bottom:20px">
+                    <label style="font-weight:700">رقم الإصدار الجديد:</label>
+                    <input type="text" id="new_version" class="fc" value="2.1.0" style="width:120px;text-align:center">
+                </div><br>
+                <button class="btn btn-primary" onclick="packUpdate()" id="btnPack"><i class="fa-solid fa-file-zipper"></i> بناء وتجهيز التحديث</button>
+            </div>
+            
+            <div class="ota-log" id="otaLog"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="overlay" id="addModal">
+  <div class="modal">
+    <div class="mhead"><h2 id="mtitle">➕ إضافة مشترك</h2><button class="mclose" onclick="closeM('addModal')">✕</button></div>
+    <div class="fr">
+      <div class="fg"><label>الاسم *</label><input type="text" id="fn" class="fc"></div>
+      <div class="fg"><label>رقم الهاتف *</label><input type="text" id="fp" class="fc" dir="ltr"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>المدينة</label><input type="text" id="fc2" class="fc"></div>
+      <div class="fg"><label>عدد أيام الاشتراك</label><input type="number" id="fdays" class="fc" value="30"></div>
+    </div>
+    <div class="fg"><label>رقم الجهاز (GUID) - اترك UNIVERSAL للكل</label><input type="text" id="fguid" class="fc" value="UNIVERSAL" dir="ltr"></div>
+    <div class="fg"><label>ملاحظات</label><input type="text" id="fnotes" class="fc"></div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeM('addModal')">إلغاء</button>
+      <button class="btn btn-green" onclick="saveSub()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- License Modal -->
+<div class="overlay" id="licModal">
+  <div class="modal">
+    <div class="mhead"><h2>🔑 توليد كود التفعيل المشفّر</h2><button class="mclose" onclick="closeM('licModal')">✕</button></div>
+    <div class="fg"><label>المشترك</label><div class="fc" id="lname" style="font-weight:700"></div></div>
+    <div class="fr">
+      <div class="fg"><label>GUID</label><input type="text" id="lguid" class="fc" dir="ltr"></div>
+      <div class="fg"><label>مدة التفعيل باليوم</label><input type="number" id="ldays" class="fc" value="30"></div>
+    </div>
+    <div class="fg">
+      <label>كود التفعيل:</label>
+      <div class="code-out" id="codeOut"><span style="color:var(--tm)">اضغط توليد...</span><button class="copy-btn" onclick="copyCode()">نسخ</button></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-primary" onclick="genCode()"><i class="fa-solid fa-key"></i> توليد الكود</button>
+      <button class="btn btn-green" onclick="sendWA()"><i class="fa-brands fa-whatsapp"></i> إرسال واتساب</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i> <span id="tmsg"></span></div>
+
+<script>
+let subs=[],eid=null,lid=null;
+
+function switchTab(t, btn){
+    document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+    document.getElementById(t+'-tab').classList.add('active');
+    btn.classList.add('active');
+}
+
+async function loadSubs(){
+    const res = await fetch('/api/subscribers');
+    subs = await res.json();
+    render(subs);
+}
+
+function statusStr(s){
+    if(!s.expiry_date)return'new';
+    const d=Math.ceil((new Date(s.expiry_date)-new Date())/864e5);
+    if(d<0)return'expired';if(d<=7)return'expiring';return'active';
+}
+function daysLeft(s){
+    if(!s.expiry_date)return null;
+    return Math.ceil((new Date(s.expiry_date)-new Date())/864e5);
+}
+
+function render(data){
+    const tb=document.getElementById('tb');
+    if(!data.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--tm)">لا يوجد مشتركون</td></tr>`;return;}
+    
+    let sa=0, se=0, sx=0;
+    
+    tb.innerHTML = data.map((s,i)=>{
+        const st = statusStr(s);
+        const d = daysLeft(s);
+        
+        if(st==='active')sa++; else if(st==='expiring')se++; else if(st==='expired')sx++;
+        
+        let bdg = '';
+        if(st==='active')bdg='<span class="badge b-active">نشط</span>';
+        else if(st==='expiring')bdg='<span class="badge b-expiring">ينتهي قريباً</span>';
+        else if(st==='expired')bdg='<span class="badge b-expired">منتهي</span>';
+        else bdg='<span class="badge b-new">جديد</span>';
+        
+        return `<tr>
+            <td>${i+1}</td>
+            <td><div class="sub-name">${s.name}</div></td>
+            <td dir="ltr">${s.phone}</td>
+            <td>${s.city||'—'}</td>
+            <td><code class="guid-code" onclick="navigator.clipboard.writeText('${s.guid}')">${s.guid.substring(0,12)}...</code></td>
+            <td>${s.expiry_date||'—'}</td>
+            <td style="font-weight:700">${d!==null?d:'—'}</td>
+            <td>${bdg}</td>
+            <td><div class="ag">
+                <button class="ib g" onclick="openLic(${s.id})"><i class="fa-solid fa-key"></i></button>
+                <button class="ib" onclick="openEdit(${s.id})"><i class="fa-solid fa-pen"></i></button>
+                <button class="ib r" onclick="del(${s.id})"><i class="fa-solid fa-trash"></i></button>
+            </div></td>
+        </tr>`;
+    }).join('');
+    
+    document.getElementById('st').textContent=data.length;
+    document.getElementById('sa').textContent=sa;
+    document.getElementById('se').textContent=se;
+    document.getElementById('sx').textContent=sx;
+}
+
+function filter(){
+    const q=document.getElementById('q').value.toLowerCase();
+    const sf=document.getElementById('sf').value;
+    const f=subs.filter(s=>{
+        const mt=[s.name,s.phone,s.city].join(' ').toLowerCase().includes(q);
+        const ms=!sf||statusStr(s)===sf;
+        return mt&&ms;
+    });
+    render(f);
+}
+
+function openAdd(){
+    eid=null; document.getElementById('mtitle').textContent='➕ إضافة مشترك';
+    ['fn','fp','fc2','fnotes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fguid').value='UNIVERSAL';
+    document.getElementById('fdays').value='30';
+    document.getElementById('addModal').classList.add('active');
+}
+function openEdit(id){
+    const s = subs.find(x=>x.id===id);
+    eid=id; document.getElementById('mtitle').textContent='✏️ تعديل بيانات';
+    document.getElementById('fn').value=s.name;
+    document.getElementById('fp').value=s.phone;
+    document.getElementById('fc2').value=s.city;
+    document.getElementById('fguid').value=s.guid;
+    document.getElementById('fdays').value=s.plan_days;
+    document.getElementById('fnotes').value=s.notes;
+    document.getElementById('addModal').classList.add('active');
+}
+function closeM(id){document.getElementById(id).classList.remove('active')}
+
+async function saveSub(){
+    const d = {
+        name: document.getElementById('fn').value,
+        phone: document.getElementById('fp').value,
+        city: document.getElementById('fc2').value,
+        guid: document.getElementById('fguid').value || 'UNIVERSAL',
+        plan_days: parseInt(document.getElementById('fdays').value),
+        notes: document.getElementById('fnotes').value
+    };
+    if(!d.name || !d.phone) return alert('الاسم والهاتف مطلوبان');
+    
+    if(d.plan_days){
+        d.expiry_date = new Date(Date.now() + d.plan_days*864e5).toISOString().split('T')[0];
+    }
+    
+    const url = eid ? `/api/subscribers/${eid}` : '/api/subscribers';
+    const meth = eid ? 'PUT' : 'POST';
+    await fetch(url, {method:meth, headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)});
+    
+    closeM('addModal'); loadSubs(); showToast('تم الحفظ بنجاح');
+}
+
+async function del(id){
+    if(!confirm('حذف؟'))return;
+    await fetch(`/api/subscribers/${id}`, {method:'DELETE'});
+    loadSubs(); showToast('تم الحذف');
+}
+
+function openLic(id){
+    lid=id; const s=subs.find(x=>x.id===id);
+    document.getElementById('lname').textContent=s.name;
+    document.getElementById('lguid').value=s.guid;
+    document.getElementById('ldays').value=s.plan_days||30;
+    document.getElementById('codeOut').innerHTML='<span style="color:var(--tm)">اضغط توليد...</span><button class="copy-btn" onclick="copyCode()">نسخ</button>';
+    document.getElementById('licModal').classList.add('active');
+}
+
+async function genCode(){
+    const guid = document.getElementById('lguid').value;
+    const days = document.getElementById('ldays').value;
+    const res = await fetch('/api/generate_license', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({guid, days})
+    });
+    const data = await res.json();
+    document.getElementById('codeOut').innerHTML = data.code + '<button class="copy-btn" onclick="copyCode()">نسخ</button>';
+    showToast('تم توليد الكود الحقيقي المشفّر ✅');
+}
+
+function copyCode(){
+    navigator.clipboard.writeText(document.getElementById('codeOut').textContent.replace('نسخ',''));
+    showToast('تم النسخ');
+}
+
+function sendWA(){
+    const s = subs.find(x=>x.id===lid);
+    const code = document.getElementById('codeOut').textContent.replace('نسخ','');
+    const msg = `مرحباً ${s.name}،\n\nإليك كود التفعيل لبرنامج ستارجيت:\n\n${code}\n\nشكراً لثقتكم 🚀`;
+    const ph = s.phone.replace(/[^0-9]/g,'');
+    window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`);
+}
+
+async function packUpdate(){
+    const btn = document.getElementById('btnPack');
+    const log = document.getElementById('otaLog');
+    const v = document.getElementById('new_version').value;
+    
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التجميع والضغط...';
+    btn.disabled = true;
+    log.classList.add('show');
+    log.innerHTML = `> جاري ضغط الملفات وتجهيز التحديث إصدار v${v}...\n`;
+    
+    try {
+        const res = await fetch('/api/pack_update', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({version: v})
+        });
+        const data = await res.json();
+        if(data.status==='success'){
+            log.innerHTML += `> ✅ تم ضغط ملف التحديث بنجاح!\n> 📁 الملف الأول: ${data.zip_path}\n> 📄 الملف الثاني: ${data.version_file}\n\n> 🚀 **طريقة النشر:**\n> 1. ارفع هذين الملفين إلى رابط مباشر (مثل مساحة GitHub Releases أو خادمك).\n> 2. ضع رابط ملف version.json داخل config.py (UPDATE_URL) في البرنامج.\n> 3. كل أجهزة الزبائن ستتحدث تلقائياً!`;
+            showToast('تم إعداد التحديث بنجاح');
+        } else {
+            log.innerHTML += `> ❌ خطأ: ${data.message}`;
+        }
+    } catch(e) {
+        log.innerHTML += `> ❌ فشل الاتصال: ${e}`;
+    }
+    
+    btn.innerHTML = '<i class="fa-solid fa-file-zipper"></i> بناء وتجهيز التحديث';
+    btn.disabled = false;
+}
+
+function showToast(msg, err=false){
+    const t = document.getElementById('toast');
+    document.getElementById('tmsg').textContent = msg;
+    if(err) t.classList.add('err'); else t.classList.remove('err');
+    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+loadSubs();
+</script>
+</body>
+</html>

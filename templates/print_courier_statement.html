@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -57,7 +57,7 @@
             <div class="text-left" dir="ltr">
                 <div class="text-sm font-black text-slate-800 font-mono">{{ data.courier.name }}</div>
                 <div class="text-xs text-slate-500 font-mono font-bold">{{ data.courier.phone }}</div>
-                <div class="text-xs text-slate-400 mt-1 font-mono">تاريخ التقرير: {{ now_str }}</div>
+                <div class="text-xs text-slate-400 mt-1 font-mono">تاريخ التقرير: {{ now_str or now.strftime("%Y-%m-%d %H:%M") }}</div>
             </div>
         </div>
 
@@ -106,6 +106,7 @@
                             <th class="p-2.5">رقم التتبع</th>
                             <th class="p-2.5">المتجر</th>
                             <th class="p-2.5">الزبون والمدينة</th>
+                            <th class="p-2.5">طريقة الدفع</th>
                             <th class="p-2.5">الكاش المحصل</th>
                             <th class="p-2.5">عمولة السائق</th>
                             <th class="p-2.5">الصافي للمكتب</th>
@@ -119,9 +120,28 @@
                             <td class="p-2.5 font-mono font-bold text-blue-600">{{ o.tracking_number }}</td>
                             <td class="p-2.5 font-bold text-slate-800">{{ o.merchant_name }}</td>
                             <td class="p-2.5 text-slate-600">{{ o.recipient_name }} - {{ o.recipient_city }}</td>
-                            <td class="p-2.5 font-bold font-mono text-emerald-600">{{ o.collected_amount|format_currency }}</td>
+                            <td class="p-2.5 font-bold text-[10px]">
+                                {% if o.payment_method == 'whish' %}
+                                    <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">💳 ويش</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">💵 كاش</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-2.5 font-bold font-mono text-emerald-600">
+                                {% if o.payment_method == 'whish' %}
+                                    0
+                                {% else %}
+                                    {{ o.collected_amount|format_currency }}
+                                {% endif %}
+                            </td>
                             <td class="p-2.5 font-bold font-mono text-amber-600">{{ o.courier_commission|format_currency }}</td>
-                            <td class="p-2.5 font-bold font-mono text-slate-900">{{ (o.collected_amount - o.courier_commission)|format_currency }}</td>
+                            <td class="p-2.5 font-bold font-mono text-slate-900">
+                                {% if o.payment_method == 'whish' %}
+                                    <span class="text-rose-600" dir="ltr">-{{ o.courier_commission|format_currency }}</span>
+                                {% else %}
+                                    {{ (o.collected_amount - o.courier_commission)|format_currency }}
+                                {% endif %}
+                            </td>
                             <td class="p-2.5 text-center">
                                 {% if o.courier_arrived_at_hub == 1 %}
                                 <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-black text-[10px] border border-amber-300">
@@ -165,7 +185,8 @@
                             <th class="p-2.5">#</th>
                             <th class="p-2.5">رقم التتبع</th>
                             <th class="p-2.5">المتجر</th>
-                            <th class="p-2.5">المبلغ المستلم</th>
+                            <th class="p-2.5">طريقة الدفع</th>
+                            <th class="p-2.5">المبلغ المستلم كاش</th>
                             <th class="p-2.5">رقم سند التصفية</th>
                             <th class="p-2.5">الخزينة المورد إليها</th>
                             <th class="p-2.5">تاريخ التوريد</th>
@@ -177,7 +198,20 @@
                             <td class="p-2.5 text-slate-400 font-mono">{{ loop.index }}</td>
                             <td class="p-2.5 font-mono font-bold text-blue-600">{{ o.tracking_number }}</td>
                             <td class="p-2.5 font-bold text-slate-800">{{ o.merchant_name }}</td>
-                            <td class="p-2.5 font-bold font-mono text-emerald-700">{{ o.collected_amount|format_currency }}</td>
+                            <td class="p-2.5 font-bold text-[10px]">
+                                {% if o.payment_method == 'whish' %}
+                                    <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">💳 ويش</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">💵 كاش</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-2.5 font-bold font-mono text-emerald-700">
+                                {% if o.payment_method == 'whish' %}
+                                    0
+                                {% else %}
+                                    {{ o.collected_amount|format_currency }}
+                                {% endif %}
+                            </td>
                             <td class="p-2.5 font-mono font-bold text-slate-700">{{ o.settlement_number or '-' }}</td>
                             <td class="p-2.5 text-slate-600">{{ o.treasury_name or 'الخزينة الرئيسية' }}</td>
                             <td class="p-2.5 text-slate-400 font-mono text-[11px]">{{ o.settled_at|format_date }}</td>
@@ -252,3 +286,4 @@
 
 </body>
 </html>
+
