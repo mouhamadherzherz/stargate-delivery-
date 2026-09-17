@@ -12022,12 +12022,10 @@ def admin_updates():
                             zip_ref.extract(member, temp_dir)
                             
                     source_dir = temp_dir
-                    contents = os.listdir(temp_dir)
-                    if len(contents) == 1 and os.path.isdir(os.path.join(temp_dir, contents[0])):
-                        source_dir = os.path.join(temp_dir, contents[0])
-                        sub_contents = os.listdir(source_dir)
-                        if len(sub_contents) == 1 and sub_contents[0] == "Updates_Source":
-                            source_dir = os.path.join(source_dir, "Updates_Source")
+                    for root_cand, dirs_cand, files_cand in os.walk(temp_dir):
+                        if 'app.py' in files_cand:
+                            source_dir = root_cand
+                            break
                             
                     # Detect if running as frozen EXE or dev mode
                     if getattr(sys, 'frozen', False):

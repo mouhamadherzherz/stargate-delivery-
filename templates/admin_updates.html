@@ -74,10 +74,10 @@
                 </div>
             </div>
             
-            <form method="POST" onsubmit="return confirm('هل أنت متأكد من تثبيت التحديث؟ سيتم إعادة تشغيل النظام تلقائياً.');">
+            <form method="POST" onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').innerHTML = '<i class=\'fa-solid fa-spinner fa-spin\'></i> جاري تحميل وتثبيت التحديث وإعادة التشغيل...'; return confirm('هل أنت متأكد من تثبيت التحديث؟ سيتم أخذ نسخة احتياطية وتحديث النظام وإعادة تشغيله تلقائياً.');">
                 <input type="hidden" name="action" value="install">
                 <input type="hidden" name="download_url" value="{{ update_data.download_url }}">
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-lg">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-lg cursor-pointer">
                     <i class="fa-solid fa-download"></i>
                     تحميل وتثبيت التحديث الآن
                 </button>

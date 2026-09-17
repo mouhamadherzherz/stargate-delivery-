@@ -705,6 +705,7 @@
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">أدخل رمز مرور المدير (PIN) للتأكيد:</label>
                 <input type="password" name="admin_pin" id="wipeAdminPin" placeholder="أدخل رمز سر المدير للتأكيد..." value="" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-center text-sm font-mono font-bold focus:ring-2 focus:ring-rose-500">
+                <div id="wipeErrorMsg" class="hidden mt-2 p-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 text-center"></div>
             </div>
 
             <div class="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
@@ -726,6 +727,13 @@
 <script>
     function openWipeModal(mode) {
         document.getElementById('wipeModeInput').value = mode;
+        const errDiv = document.getElementById('wipeErrorMsg');
+        if (errDiv) {
+            errDiv.classList.add('hidden');
+            errDiv.innerText = '';
+        }
+        const pinInput = document.getElementById('wipeAdminPin');
+        if (pinInput) pinInput.value = '';
         const desc = document.getElementById('wipeModalDesc');
         if (mode === 'operational') {
             desc.textContent = 'سيتم حذف جميع الشحنات والطلبات وحركات الخزينة والتسويات، مع الحفاظ على أسماء التجار والمناديب وإعدادات الشركة.';
@@ -733,6 +741,7 @@
             desc.textContent = 'تحذير: سيتم مسح كافة البيانات 100% (الشحنات، التجار، المناديب، الخزائن، السندات) وإرجاع النظام لحالة الصفر التام!';
         }
         document.getElementById('wipeConfirmModal').classList.remove('hidden');
+        if (pinInput) setTimeout(() => pinInput.focus(), 100);
     }
 
     function closeWipeModal() {
@@ -743,6 +752,9 @@
         e.preventDefault();
         const form = e.target;
         const btn = document.getElementById('wipeSubmitBtn');
+        const errDiv = document.getElementById('wipeErrorMsg');
+        if (errDiv) errDiv.classList.add('hidden');
+
         const originalHtml = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري المسح والتصفير...</span>';
@@ -756,21 +768,32 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
-            const data = await res.json();
-            if (data.success) {
+            const data = await res.json().catch(() => null);
+            if (res.ok && data && data.success) {
                 btn.className = "bg-emerald-600 text-white font-black px-6 py-2.5 rounded-xl text-sm transition flex items-center gap-1.5";
                 btn.innerHTML = '<i class="fa-solid fa-circle-check text-sm"></i> <span>تم المسح والتصفير بنجاح!</span>';
                 setTimeout(() => {
                     window.location.href = '/settings';
                 }, 700);
             } else {
-                alert(data.message || 'فشل مسح البيانات، تأكد من رمز المرور.');
+                const msg = (data && data.message) ? data.message : 'فشل مسح البيانات، تأكد من رمز مرور المدير.';
+                if (errDiv) {
+                    errDiv.innerText = '❌ ' + msg;
+                    errDiv.classList.remove('hidden');
+                } else {
+                    alert(msg);
+                }
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }
         } catch (err) {
             console.error('Wipe form error:', err);
-            form.submit();
+            if (errDiv) {
+                errDiv.innerText = '❌ خطأ في الاتصال بالخادم: ' + err.message;
+                errDiv.classList.remove('hidden');
+            }
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
         }
     }
 
