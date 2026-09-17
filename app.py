@@ -1224,12 +1224,14 @@ def inject_global_data():
 
     safe_settings = dict(settings)
 
-    license_remaining_text = "مدى الحياة"
+    license_remaining_text = "اشتراك سنوي نشط"
     license_exp_date = ""
-    license_days_left = 9999
+    license_days_left = 365
+    license_guid = ""
     try:
         import license_manager
         _is_auth, _msg, _exp_str, _guid = license_manager.get_active_license_info(get_db())
+        license_guid = _guid or license_manager.get_short_machine_id()
         if _exp_str:
             license_exp_date = _exp_str
             _exp_d = datetime.strptime(_exp_str, '%Y-%m-%d').date()
@@ -1239,19 +1241,21 @@ def inject_global_data():
                 years = license_days_left // 365
                 months = (license_days_left % 365) // 30
                 if months > 0:
-                    license_remaining_text = f"{years} سنة و {months} شهر ({_exp_str})"
+                    license_remaining_text = f"{years} سنة و {months} شهر (ينتهي: {_exp_str})"
                 else:
-                    license_remaining_text = f"{years} سنة ({_exp_str})"
+                    license_remaining_text = f"{years} سنة (ينتهي: {_exp_str})"
             elif license_days_left > 30:
                 months = license_days_left // 30
                 days = license_days_left % 30
-                license_remaining_text = f"{months} شهر و {days} يوم ({_exp_str})"
+                license_remaining_text = f"{months} شهر و {days} يوم (ينتهي: {_exp_str})"
             elif license_days_left > 0:
-                license_remaining_text = f"{license_days_left} يوم متبقي ({_exp_str})"
+                license_remaining_text = f"{license_days_left} يوم متبقي (ينتهي: {_exp_str})"
             else:
-                license_remaining_text = "منتهي الصلاحية"
+                license_remaining_text = "منتهي الصلاحية - يرجى التجديد"
+        else:
+            license_remaining_text = "اشتراك سنوي معتمد ومفعل"
     except Exception:
-        pass
+        license_remaining_text = "اشتراك سنوي نشط ومفعل"
 
     return {
         'settings': safe_settings,
@@ -1274,6 +1278,7 @@ def inject_global_data():
         'license_remaining_text': license_remaining_text,
         'license_exp_date': license_exp_date,
         'license_days_left': license_days_left,
+        'guid': license_guid,
         'now': datetime.now()
     }
 

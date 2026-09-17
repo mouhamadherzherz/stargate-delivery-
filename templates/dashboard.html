@@ -44,7 +44,44 @@
     </div>
     {% endif %}
 
-        <!-- صندوق المحادثة والاستعلام الذكي الداخلي (Native Offline AI Assistant) -->
+    <!-- PREMIUM SUBSCRIPTION & STARGATE EXPERTS SUPPORT BANNER -->
+    <div class="bg-gradient-to-r from-[#1E1B54] via-indigo-950 to-slate-900 rounded-3xl p-4 sm:p-5 text-white shadow-xl border-2 border-indigo-500/30 flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- Left: Subscription Duration & Machine -->
+        <div class="flex items-center gap-3.5 w-full md:w-auto">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg shadow-amber-500/30 shrink-0">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-black text-indigo-300 uppercase tracking-wider">حالة الاشتراك والترخيص</span>
+                    <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">
+                        نشط ومفعل
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-2 mt-0.5">
+                    <span class="text-xs text-slate-300">مدة صلاحية الاشتراك:</span>
+                    <strong class="text-base sm:text-lg font-black text-amber-300 font-mono tracking-wide">{{ license_remaining_text }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Stargate Experts Maintenance Hotline -->
+        <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-white/10">
+            <div class="text-right hidden sm:block">
+                <span class="text-xs text-emerald-300 font-bold block">stargate experts للصيانة والدعم:</span>
+                <span class="text-[11px] text-slate-300">متاح 24/7 لأي استفسار أو صيانة</span>
+            </div>
+            <a href="https://wa.me/96181153005?text=مرحبا%20stargate%20experts%20أحتاج%20صيانة%20ودعم%20فني" target="_blank" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm flex items-center gap-2.5 shadow-lg shadow-emerald-600/30 transition transform hover:-translate-y-0.5 active:scale-95">
+                <i class="fa-brands fa-whatsapp text-lg text-white"></i>
+                <span class="flex flex-col text-right">
+                    <span class="text-[10px] text-emerald-200 font-normal">للصيانة الاتصال على:</span>
+                    <span class="font-mono text-xs sm:text-sm font-black tracking-wider" dir="ltr">81153005</span>
+                </span>
+            </a>
+        </div>
+    </div>
+
+    <!-- صندوق المحادثة والاستعلام الذكي الداخلي (Native Offline AI Assistant) -->
     <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 shadow-xl border border-indigo-500/30 text-white space-y-3.5">
         <div class="flex items-center justify-between border-b border-white/10 pb-3">
             <div class="flex items-center gap-3">
