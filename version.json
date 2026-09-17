@@ -1,0 +1,8 @@
+{
+    "changelog": "- حل مشكلة خطأ 500 عند مسح وتصفير البيانات وحذف الطلبات\n- تحسين وتأمين تسلسل المفاتيح الأجنبية لقاعدة البيانات\n- تحديث شامل لنظام التحديثات الهوائية والاتصال السحابي",
+    "version": "2.1.1",
+    "is_critical": true,
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/archive/refs/heads/development.zip",
+    "min_version": "2.0.0",
+    "release_date": "2026-09-17"
+}
