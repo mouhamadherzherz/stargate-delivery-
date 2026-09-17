@@ -252,6 +252,7 @@ def password_recovery():
     flash(f"كود فك القفل هو: {unlock_code}", "success")
     return redirect('/sg_master/dashboard')
 
+
 @sg_master_bp.route('/generate_update_zip', methods=['POST'])
 def generate_update_zip():
     if not is_master_logged_in():
@@ -305,3 +306,60 @@ def generate_update_zip():
     except Exception as e:
         flash(f"خطأ أثناء تجهيز التحديث: {str(e)}", "error")
         return redirect('/sg_master/dashboard')
+
+
+@sg_master_bp.route('/publish_update_firebase', methods=['POST'])
+def publish_update_firebase():
+    """
+    Publishes update metadata to Firebase Realtime Database with one click.
+    The ZIP download_url must be provided (hosted on Google Drive, Dropbox, etc.)
+    """
+    if not is_master_logged_in():
+        return redirect('/sg_master/')
+
+    new_version   = request.form.get('new_version', '').strip()
+    download_url  = request.form.get('download_url', '').strip()
+    changelog     = request.form.get('changelog', '').strip()
+
+    if not new_version or not download_url:
+        flash("يرجى إدخال رقم الإصدار ورابط التحميل.", "error")
+        return redirect('/sg_master/dashboard#tab-updates')
+
+    # Load Firebase URL from cloud_config.json
+    base_dir = current_app.config.get('BASE_DIR', os.path.dirname(os.path.abspath(__file__)))
+    cloud_config_path = os.path.join(base_dir, 'cloud_config.json')
+    firebase_url = ''
+    try:
+        with open(cloud_config_path, 'r', encoding='utf-8') as f:
+            firebase_url = json.load(f).get('firebase_url', '').rstrip('/')
+    except Exception:
+        pass
+
+    if not firebase_url:
+        flash("لم يتم تكوين Firebase URL في cloud_config.json.", "error")
+        return redirect('/sg_master/dashboard')
+
+    # Push to Firebase: PUT /updates/latest.json
+    import urllib.request as _ureq
+    payload = json.dumps({
+        "version":      new_version,
+        "download_url": download_url,
+        "changelog":    changelog,
+        "release_date": datetime.now().strftime('%Y-%m-%d'),
+        "published_by": "Stargate Master"
+    }).encode('utf-8')
+
+    try:
+        api_url = f"{firebase_url}/updates/latest.json"
+        req = _ureq.Request(api_url, data=payload, method='PUT',
+                            headers={'Content-Type': 'application/json',
+                                     'User-Agent': 'Stargate-Master/2.0'})
+        with _ureq.urlopen(req, timeout=10) as resp:
+            resp.read()
+
+        increment_stat('updates_packaged')
+        flash(f"✅ تم نشر الإصدار {new_version} على Firebase بنجاح! سيجد الزبائن التحديث فور ضغطهم 'البحث عن تحديثات'.", "success")
+    except Exception as e:
+        flash(f"❌ فشل نشر التحديث على Firebase: {str(e)}", "error")
+
+    return redirect('/sg_master/dashboard')

@@ -1086,6 +1086,27 @@
 
                                 </button>
 
+                                <!-- 💨 Hookah Return Button - Only for hookah orders -->
+                                {% if o.order_type == 'hookah' or o.requires_return == 1 %}
+                                <form method="POST" action="{{ url_for('toggle_hookah_return', order_id=o.id) }}" onsubmit="return confirm('{{ '✅ هل تأكدت من استرجاع الأرجيلة للمحل؟' if o.return_status != 'returned_to_hub' else '↩️ هل تريد إعادة حالة الأرجيلة إلى بانتظار الاسترجاع؟' }}')" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="p-2 rounded-xl transition border shadow-xs font-black text-xs
+                                            {% if o.return_status == 'returned_to_hub' %}
+                                                text-emerald-800 bg-emerald-100 hover:bg-amber-100 hover:text-amber-800 border-emerald-300 hover:border-amber-300
+                                            {% else %}
+                                                text-rose-800 bg-rose-50 hover:bg-rose-100 border-rose-300 animate-pulse
+                                            {% endif %}"
+                                        title="{{ '✅ تم استرجاع الأرجيلة - اضغط للتراجع' if o.return_status == 'returned_to_hub' else '💨 اضغط لتأكيد استرجاع الأرجيلة من الزبون إلى المحل' }}">
+                                        {% if o.return_status == 'returned_to_hub' %}
+                                            <i class="fa-solid fa-fire-flame-curved"></i>✅
+                                        {% else %}
+                                            <i class="fa-solid fa-fire-flame-curved"></i>↩️
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+
                                 <!-- Delete Order if not settled (Admin Only) -->
 
                                 {% if has_permission('orders_delete') and o.is_settled_with_courier == 0 and o.is_settled_with_merchant == 0 %}

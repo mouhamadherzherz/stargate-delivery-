@@ -1219,46 +1219,59 @@ def inject_global_data():
 
     is_admin = user_role in ('admin', 'super_admin')
 
-
-
     safe_settings = dict(settings)
 
-    
-
-
+    license_remaining_text = "مدى الحياة"
+    license_exp_date = ""
+    license_days_left = 9999
+    try:
+        import license_manager
+        _is_auth, _msg, _exp_str, _guid = license_manager.get_active_license_info(get_db())
+        if _exp_str:
+            license_exp_date = _exp_str
+            _exp_d = datetime.strptime(_exp_str, '%Y-%m-%d').date()
+            _today = datetime.now().date()
+            license_days_left = (_exp_d - _today).days
+            if license_days_left > 365:
+                years = license_days_left // 365
+                months = (license_days_left % 365) // 30
+                if months > 0:
+                    license_remaining_text = f"{years} سنة و {months} شهر ({_exp_str})"
+                else:
+                    license_remaining_text = f"{years} سنة ({_exp_str})"
+            elif license_days_left > 30:
+                months = license_days_left // 30
+                days = license_days_left % 30
+                license_remaining_text = f"{months} شهر و {days} يوم ({_exp_str})"
+            elif license_days_left > 0:
+                license_remaining_text = f"{license_days_left} يوم متبقي ({_exp_str})"
+            else:
+                license_remaining_text = "منتهي الصلاحية"
+    except Exception:
+        pass
 
     return {
-
         'settings': safe_settings,
-
         'currency': settings.get('currency', 'ل.ل'),
-
         'secondary_currency': settings.get('secondary_currency', '$'),
-
         'exchange_rate': rate,
-
         'company_name': settings.get('company_name', 'Stargate Delivery'),
-
         'user_role': user_role,
-
         'is_admin': is_admin,
-
         'logged_in': session.get('logged_in', False),
-
         'username': session.get('username', ''),
-
         'user_display_name': session.get('display_name', ''),
-
         'street_cash': street_cash,
-
         'whish_balance': whish_balance,
-
         'cash_in_vault': cash_in_vault,
-
         'has_permission': has_permission,
-
+        'support_phone': "81153005",
+        'support_phone_display': "81 153 005",
+        'support_message': "stargate experts للصيانة التواصل على رقم 81153005",
+        'license_remaining_text': license_remaining_text,
+        'license_exp_date': license_exp_date,
+        'license_days_left': license_days_left,
         'now': datetime.now()
-
     }
 
 
@@ -4786,39 +4799,34 @@ def delete_order(order_id):
     cursor = conn.cursor()
 
     try:
-
         cursor.execute("SELECT * FROM orders WHERE id = ?", (order_id,))
-
         row = cursor.fetchone()
-
         if row:
-
             if row['is_settled_with_merchant'] or row['is_settled_with_courier']:
-
                 flash("⚠️ لا يمكن حذف أوردر مسوّى ومصروف مسبقاً في سند تسوية!", "danger")
-
                 return redirect(url_for('orders_list'))
 
-                
-
             cursor.execute("DELETE FROM settlement_items WHERE order_id = ?", (order_id,))
+            cursor.execute("DELETE FROM order_status_history WHERE order_id = ?", (order_id,))
+            cursor.execute("DELETE FROM order_items WHERE order_id = ?", (order_id,))
 
             if row['status'] == 'delivered' and row['courier_id'] and (dict(row).get('payment_method', 'cash')) != 'whish':
-
                 collected = row['collected_amount'] or (row['order_price'] + row['delivery_fee'])
-
                 cursor.execute("UPDATE couriers SET current_cash_custody = MAX(0, current_cash_custody - ?) WHERE id = ?",
-
                                (collected, row['courier_id']))
 
-        log_audit(cursor, 'delete', 'order', order_id, f"حذف طلب #{row['tracking_number']} للزبون {row['recipient_name']} بقيمة {row['order_price']} ل.ل وأجرة {row['delivery_fee']} ل.ل وعمولة {row['courier_commission']} ل.ل")
+            log_audit(cursor, 'delete', 'order', order_id, f"حذف طلب #{row['tracking_number']} للزبون {row['recipient_name']} بقيمة {row['order_price']} ل.ل وأجرة {row['delivery_fee']} ل.ل وعمولة {row['courier_commission']} ل.ل")
 
+        cursor.execute("DELETE FROM settlement_items WHERE order_id = ?", (order_id,))
+        cursor.execute("DELETE FROM order_status_history WHERE order_id = ?", (order_id,))
+        cursor.execute("DELETE FROM order_items WHERE order_id = ?", (order_id,))
         cursor.execute("DELETE FROM orders WHERE id = ?", (order_id,))
-
         conn.commit()
-
         flash("تم حذف الأوردر بنجاح 🗑️", "info")
-
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Error deleting order {order_id}: {e}")
+        flash(f"حدث خطأ أثناء حذف الطلب: {str(e)}", "danger")
     finally:
         pass
 
@@ -8892,29 +8900,90 @@ def global_search():
 
 # ===================== BACKUP & RESET =====================
 
-@app.route('/backup/download')
-
+@app.route('/backup/download', methods=['GET', 'POST'])
 @admin_required
-
 def backup_db():
+    if request.method == 'POST':
+        return restore_db()
 
     if os.path.exists(DB_PATH):
-
         try:
-
             w_conn = sqlite3.connect(DB_PATH)
-
             w_conn.execute("PRAGMA wal_checkpoint(FULL)")
-
             w_conn.close()
-
         except Exception:
-
             pass
-
-        return send_file(DB_PATH, as_attachment=True, download_name=f"stargate_backup_{datetime.now().strftime('%Y%m%d')}.db")
+        return send_file(DB_PATH, as_attachment=True, download_name=f"stargate_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db")
 
     flash("قاعدة البيانات غير موجودة", "danger")
+    return redirect(url_for('settings_view'))
+
+
+@app.route('/backup/restore', methods=['POST'])
+@admin_required
+def restore_db():
+    if 'backup_file' not in request.files:
+        flash("لم يتم اختيار أي ملف للاستعادة!", "warning")
+        return redirect(url_for('settings_view'))
+
+    file = request.files['backup_file']
+    if not file or file.filename == '':
+        flash("الرجاء اختيار ملف قاعدة بيانات صالح (.db)", "warning")
+        return redirect(url_for('settings_view'))
+
+    if not (file.filename.lower().endswith('.db') or file.filename.lower().endswith('.sqlite') or file.filename.lower().endswith('.db.gz')):
+        flash("صيغة الملف غير مدعومة. يجب أن يكون ملف قاعدة بيانات بصيغة .db", "danger")
+        return redirect(url_for('settings_view'))
+
+    try:
+        backup_dir = os.path.join(DATA_DIR, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        # 1. Take safety snapshot of current DB before touching anything
+        if os.path.exists(DB_PATH):
+            fallback_path = os.path.join(backup_dir, f"stargate_pre_upload_backup_{timestamp}.db")
+            try:
+                with sqlite3.connect(DB_PATH, timeout=30.0) as src, sqlite3.connect(fallback_path) as dst:
+                    src.backup(dst)
+            except Exception as _b_err:
+                logger.warning(f"Fallback backup note: {_b_err}")
+
+        # 2. Save uploaded file to temp file
+        temp_upload_path = os.path.join(backup_dir, f"temp_upload_{timestamp}.db")
+        file.save(temp_upload_path)
+
+        # 3. Validate that the uploaded file is a valid SQLite DB
+        try:
+            with sqlite3.connect(temp_upload_path, timeout=10.0) as test_conn:
+                tables = [r[0] for r in test_conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+                if not tables:
+                    raise Exception("قاعدة البيانات المرفوعة فارغة تماماً ولا تحتوي على جداول.")
+        except Exception as valid_err:
+            if os.path.exists(temp_upload_path):
+                os.remove(temp_upload_path)
+            flash(f"فشل التحقق من صحة الملف: {str(valid_err)}", "danger")
+            return redirect(url_for('settings_view'))
+
+        # 4. Perform atomic restore into DB_PATH
+        with sqlite3.connect(temp_upload_path, timeout=30.0) as restore_src:
+            with sqlite3.connect(DB_PATH, timeout=30.0) as restore_dst:
+                restore_src.backup(restore_dst)
+                try:
+                    auto_migrate_db(restore_dst)
+                except Exception:
+                    pass
+
+        # Cleanup temp file
+        try:
+            os.remove(temp_upload_path)
+        except Exception:
+            pass
+
+        flash("🎉 تم استعادة واستيراد قاعدة البيانات بنجاح تام! تم تحديث كافة الطلبات والبيانات.", "success")
+    except Exception as e:
+        logger.error(f"[Restore DB Error] {e}")
+        flash(f"حدث خطأ أثناء استعادة البيانات: {str(e)}", "danger")
 
     return redirect(url_for('settings_view'))
 
@@ -8925,92 +8994,77 @@ def backup_db():
 @admin_required
 
 def reset_data():
-
     pin = request.form.get('admin_pin', '').strip()
-
     if not verify_admin_pin(pin):
-
+        if is_api_request():
+            return jsonify({'success': False, 'message': 'رمز المرور غير صحيح!'}), 400
         flash("رمز المرور غير صحيح!", "danger")
-
         return redirect(url_for('settings_view'))
 
     conn = get_db()
-
     cursor = conn.cursor()
 
-    reset_type = request.form.get('reset_type', 'shipments_only').strip()
+    # Support both 'reset_type' and 'wipe_mode' from frontend forms
+    raw_mode = (request.form.get('wipe_mode') or request.form.get('reset_type') or 'operational').strip()
+    is_factory_reset = raw_mode in ('factory_reset', 'all')
 
-    if reset_type == 'factory_reset':
-
-        # Factory reset: delete everything
-
-        cursor.execute("DELETE FROM orders")
-
-        cursor.execute("DELETE FROM settlements")
-
+    try:
+        # Delete dependent tables in order to avoid foreign key violations
+        cursor.execute("DELETE FROM order_status_history")
+        cursor.execute("DELETE FROM order_items")
         cursor.execute("DELETE FROM settlement_items")
-
+        cursor.execute("DELETE FROM orders")
+        cursor.execute("DELETE FROM settlements")
         cursor.execute("DELETE FROM treasury_transactions")
-
-        cursor.execute("DELETE FROM merchants")
-
-        cursor.execute("DELETE FROM couriers")
-
-        cursor.execute("DELETE FROM customers")
-
-        cursor.execute("DELETE FROM call_center_agents")
-
+        cursor.execute("DELETE FROM journal_entries")
+        cursor.execute("DELETE FROM ratings")
         cursor.execute("DELETE FROM audit_log")
 
-        try:
+        if is_factory_reset:
+            # Full factory reset: delete entities, master data, and reset balances
+            cursor.execute("DELETE FROM salary_payments")
+            cursor.execute("DELETE FROM products")
+            cursor.execute("DELETE FROM customers")
+            cursor.execute("DELETE FROM merchants")
+            cursor.execute("DELETE FROM couriers")
+            cursor.execute("DELETE FROM call_center_agents")
+            cursor.execute("DELETE FROM service_providers")
+            cursor.execute("DELETE FROM saved_areas")
 
-            cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('orders','settlements','settlement_items','treasury_transactions','merchants','couriers','customers','call_center_agents','audit_log')")
+            try:
+                cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('orders','settlements','settlement_items','treasury_transactions','order_status_history','order_items','ratings','journal_entries','salary_payments','products','customers','merchants','couriers','call_center_agents','service_providers','saved_areas','audit_log')")
+            except Exception:
+                pass
 
-        except Exception:
+            cursor.execute("UPDATE treasuries SET balance = 0.0")
+            conn.commit()
+            success_msg = "تم ضبط المصنع الكامل: حذفت جميع البيانات والشحنات وأعيد النظام لحالة الصفر التام بنجاح."
+        else:
+            # Operational wipe only: keep merchants, couriers, customers, products, employees
+            try:
+                cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('orders','settlements','settlement_items','treasury_transactions','order_status_history','order_items','ratings','journal_entries','audit_log')")
+            except Exception:
+                pass
 
-            pass
+            cursor.execute("UPDATE couriers SET current_cash_custody = 0.0")
+            cursor.execute("UPDATE treasuries SET balance = 0.0")
+            conn.commit()
+            success_msg = "تم مسح الشحنات والحركات المالية بنجاح مع الإبقاء على بيانات التجار والمناديب."
 
-        cursor.execute("UPDATE treasuries SET balance = 0.0")
+        if is_api_request():
+            return jsonify({'success': True, 'message': success_msg})
 
-        conn.commit()
+        flash(success_msg, "success")
+        return redirect(url_for('settings_view'))
 
-
-        flash("تم ضبط المصنع الكامل: حذفت جميع البيانات.", "success")
-
-    else:
-
-        # Shipments only: keep merchants, couriers, customers, employees
-
-        cursor.execute("DELETE FROM orders")
-
-        cursor.execute("DELETE FROM settlements")
-
-        cursor.execute("DELETE FROM settlement_items")
-
-        cursor.execute("DELETE FROM treasury_transactions")
-
-        cursor.execute("DELETE FROM audit_log")
-
-        try:
-
-            cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('orders','settlements','settlement_items','treasury_transactions','audit_log')")
-
-        except Exception:
-
-            pass
-
-        cursor.execute("UPDATE couriers SET current_cash_custody = 0.0")
-
-        cursor.execute("UPDATE treasuries SET balance = 0.0")
-
-        conn.commit()
-
-
-        flash("تم مسح الشحنات والحركات المالية مع الابقاء على بيانات التجار والسائقين.", "success")
-
-    flash("تم تصفير جميع البيانات والمتاجر بنجاح وبداية نظام نظيف تماماً", "success")
-
-    return redirect(url_for('settings_view'))
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Error resetting data: {e}")
+        err_msg = f"حدث خطأ أثناء مسح البيانات: {str(e)}"
+        if is_api_request():
+            return jsonify({'success': False, 'message': err_msg}), 500
+        flash(err_msg, "danger")
+        return redirect(url_for('settings_view'))
 
 
 
@@ -11874,18 +11928,43 @@ def ai_ask_assistant():
     return jsonify({'answer': answer})
 @app.route('/admin/updates', methods=['GET', 'POST'])
 def admin_updates():
-    if 'employee_id' not in session or session.get('role') != 'admin':
-        return redirect(url_for('login'))
+    if not session.get('logged_in') or session.get('user_role') not in ('admin', 'super_admin'):
+        return redirect(url_for('login_page'))
         
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT update_url FROM settings WHERE id = 1")
-    row = cur.fetchone()
-    current_url = row['update_url'] if row and row['update_url'] else ""
+    current_url = ""
+    try:
+        cur.execute("SELECT update_url FROM settings WHERE id = 1")
+        row = cur.fetchone()
+        if row:
+            try:
+                current_url = row['update_url'] if row['update_url'] else ""
+            except (KeyError, IndexError):
+                current_url = ""
+    except Exception as _e_url:
+        logger.warning(f"[Updates] Note on settings update_url: {_e_url}")
+        try:
+            cur.execute("ALTER TABLE settings ADD COLUMN update_url TEXT DEFAULT ''")
+            conn.commit()
+        except Exception:
+            pass
     
     import ota_updater
-    current_version = ota_updater.CURRENT_VERSION
+    current_version = getattr(ota_updater, 'CURRENT_VERSION', '2.0.0')
     
+    # Load Firebase URL (same one used by Kill Switch)
+    firebase_url = ""
+    try:
+        import sys as _sys
+        _base = getattr(_sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        _ccpath = os.path.join(_base, 'cloud_config.json')
+        if os.path.exists(_ccpath):
+            with open(_ccpath, 'r', encoding='utf-8') as _f:
+                firebase_url = json.load(_f).get('firebase_url', '')
+    except Exception:
+        pass
+
     update_available = False
     update_data = None
     update_msg = ""
@@ -11901,14 +11980,15 @@ def admin_updates():
             return redirect(url_for('admin_updates'))
             
         elif action == 'check':
-            if current_url:
-                update_available, update_data, update_msg = ota_updater.check_for_updates(current_url)
-                if update_available:
-                    flash("يوجد تحديث جديد متاح!", "info")
-                else:
-                    flash(update_msg, "success" if "أحدث إصدار" in update_msg else "warning")
+            # Use Firebase as primary (same as Kill Switch), fallback to URL
+            update_available, update_data, update_msg = ota_updater.check_for_updates(
+                current_url, firebase_url=firebase_url
+            )
+            if update_available:
+                flash("يوجد تحديث جديد متاح!", "info")
             else:
-                flash("يرجى إدخال رابط التحديث أولاً.", "warning")
+                flash(update_msg, "success" if "أحدث إصدار" in update_msg else "warning")
+
                 
         elif action == 'install_local':
             if 'update_file' not in request.files:
@@ -11927,6 +12007,7 @@ def admin_updates():
                 try:
                     # Trigger the batch script to extract and restart (same as OTA)
                     import ota_updater
+                    import shutil, zipfile
                     
                     temp_dir = os.path.join(BASE_DIR, "update_temp")
                     print("Extracting local update...")
@@ -11993,7 +12074,16 @@ del "%~f0"
                 flash("يرجى إدخال رابط خادم التحديثات أولاً.", "warning")
                 
         elif action == 'install':
-            download_url = request.form.get('download_url')
+            download_url = request.form.get('download_url', '').strip()
+            if not download_url or 'github.com/stargate' in download_url:
+                try:
+                    import ota_updater
+                    _ok, _udata, _ = ota_updater.check_for_updates('', firebase_url=firebase_url)
+                    if _udata and _udata.get('download_url'):
+                        download_url = _udata.get('download_url')
+                except Exception:
+                    pass
+
             if download_url:
                 try:
                     ota_updater.download_and_install_update(download_url, BASE_DIR)
@@ -12002,11 +12092,24 @@ del "%~f0"
                     flash(f"فشل التحديث: {str(e)}", "danger")
                     
     return render_template('admin_updates.html', 
+                           active_page='updates',
                            current_version=current_version, 
                            update_url=current_url,
                            update_available=update_available,
                            update_data=update_data,
                            update_msg=update_msg)
+
+@app.route('/download/latest-update.zip')
+def download_latest_update():
+    zip_candidates = [
+        os.path.join(BASE_DIR, 'Stargate_Update.zip'),
+        r'F:\StargateDelivery_Latest_Full.zip',
+        os.path.join(BASE_DIR, 'dist', 'StargateDelivery_Fixed.zip')
+    ]
+    for z in zip_candidates:
+        if os.path.exists(z):
+            return send_file(z, as_attachment=True, download_name='Stargate_Update.zip')
+    return "ملف التحديث غير متوفر حالياً على الخادم", 404
 # ============================================================
 # Stargate Master Control Room (Hidden Room)
 # ============================================================

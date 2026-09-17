@@ -259,6 +259,22 @@ def upgrade_007(conn):
     _safe_add_column(cur, "orders", "is_pos_order", "INTEGER DEFAULT 0")
 
 
+def upgrade_008(conn):
+    """rev: 008_ota_and_hookah_returns | OTA Updates and Hookah Return tracking"""
+    cur = conn.cursor()
+    # 1. OTA update URL setting
+    _safe_add_column(cur, "settings", "update_url", "TEXT DEFAULT ''")
+    
+    # 2. Hookah Return tracking columns
+    _safe_add_column(cur, "orders", "requires_return", "INTEGER DEFAULT 0")
+    _safe_add_column(cur, "orders", "return_status", "TEXT DEFAULT 'pending'")
+    _safe_add_column(cur, "orders", "return_courier_id", "INTEGER DEFAULT NULL")
+    _safe_add_column(cur, "orders", "return_collected_at", "TIMESTAMP DEFAULT NULL")
+    _safe_add_column(cur, "orders", "fee_payer", "TEXT DEFAULT 'customer'")
+    _safe_add_column(cur, "orders", "collected_amount_expected", "REAL DEFAULT 0.0")
+
+
+
 def _calculate_checksum(func):
     """حساب البصمة الرقمية SHA-256 لكود الترحيل للتحقق من عدم التلاعب."""
     code = inspect.getsource(func).strip()
@@ -316,6 +332,13 @@ REVISIONS = [
         "upgrade": upgrade_007,
         "checksum": _calculate_checksum(upgrade_007)
     },
+    {
+        "rev": "008",
+        "name": "008_ota_and_hookah_returns",
+        "down_rev": "007",
+        "upgrade": upgrade_008,
+        "checksum": _calculate_checksum(upgrade_008)
+    }
 ]
 
 

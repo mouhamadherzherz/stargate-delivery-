@@ -300,22 +300,68 @@
                 <h1 class="text-3xl font-black mb-2 text-emerald-400">تجهيز التحديثات (Release Builder)</h1>
                 <p class="text-slate-400 mb-10">نظام ذكي لجمع وتغليف الأكواد الجديدة كملف تحديث لإرسالها للزبائن.</p>
 
-                <div class="glass p-10 rounded-3xl text-center max-w-2xl border-t-4 border-emerald-500">
-                    <div class="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-400">
-                        <i class="fa-solid fa-file-zipper text-4xl"></i>
-                    </div>
-                    <h2 class="text-2xl font-black text-white mb-4">بناء حزمة التحديث (Update.zip)</h2>
-                    <p class="text-slate-400 mb-8 leading-relaxed">
-                        سيقوم النظام تلقائياً بجمع ملفاتك البرمجية المعدلة، وإزالة أي ملفات مؤقتة أو قواعد بيانات، وتجهيز ملف نظيف جاهز للرفع في لوحة تحكم الزبون.
-                    </p>
+                <div class="grid grid-cols-1 gap-8 max-w-4xl">
 
-                    <form action="/sg_master/generate_update_zip" method="POST" onsubmit="return confirm('هل أنت متأكد من تجميع التحديث الآن؟')">
-                        <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 text-xl">
-                            <i class="fa-solid fa-cloud-arrow-down"></i> تجميع وتحميل التحديث الآن
-                        </button>
-                    </form>
+                    <!-- Step 1: Build ZIP -->
+                    <div class="glass p-8 rounded-3xl border-t-4 border-emerald-500">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 font-black text-xl">1</div>
+                            <div>
+                                <h2 class="text-xl font-black text-white">بناء حزمة التحديث (Update.zip)</h2>
+                                <p class="text-slate-400 text-sm">اضغط لتجميع الملفات وتحميل ZIP على جهازك</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 mb-6 text-sm leading-relaxed">
+                            سيقوم النظام تلقائياً بجمع ملفاتك البرمجية المعدلة، وإزالة أي ملفات مؤقتة أو قواعد بيانات، وتجهيز ملف نظيف جاهز للرفع.
+                        </p>
+                        <form action="/sg_master/generate_update_zip" method="POST" onsubmit="return confirm('هل أنت متأكد من تجميع التحديث الآن؟')">
+                            <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 text-lg">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> تجميع وتحميل التحديث الآن
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: Publish to Firebase -->
+                    <div class="glass p-8 rounded-3xl border-t-4 border-orange-500">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center text-orange-400 font-black text-xl">2</div>
+                            <div>
+                                <h2 class="text-xl font-black text-white">🔥 نشر التحديث على Firebase</h2>
+                                <p class="text-slate-400 text-sm">ارفع الـ ZIP على Google Drive ثم أدخل الرابط هنا</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 mb-6 text-sm leading-relaxed">
+                            بعد رفع ملف ZIP على Google Drive أو Dropbox، أدخل الرابط المباشر هنا. سيُعلم الزبائن بالتحديث فور ضغطهم "البحث عن تحديثات" في برنامجهم.
+                        </p>
+                        <form action="/sg_master/publish_update_firebase" method="POST" class="space-y-4" onsubmit="return confirm('هل تريد نشر هذا التحديث على Firebase الآن؟ سيراه جميع الزبائن فوراً!')">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-slate-300 font-bold mb-2 text-sm">رقم الإصدار الجديد</label>
+                                    <input type="text" name="new_version" required placeholder="مثال: 2.0.1"
+                                           class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-mono text-center transition">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-300 font-bold mb-2 text-sm">رابط تحميل الـ ZIP</label>
+                                    <input type="url" name="download_url" required placeholder="https://drive.google.com/..."
+                                           class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-mono text-sm transition">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-bold mb-2 text-sm">ملاحظات التحديث (Changelog)</label>
+                                <textarea name="changelog" rows="3" placeholder="- تم إضافة زر استرجاع الأرجيلة&#10;- إصلاح خطأ في صفحة التحديثات"
+                                          class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm transition resize-none"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-orange-600 to-red-500 hover:from-orange-500 hover:to-red-400 text-white font-black py-4 rounded-xl shadow-lg shadow-orange-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 text-lg">
+                                <i class="fa-brands fa-google"></i>
+                                <i class="fa-solid fa-fire"></i>
+                                نشر التحديث على Firebase الآن 🚀
+                            </button>
+                        </form>
+                    </div>
+
                 </div>
             </div>
+
 
             <!-- Tab: Settings -->
             <div id="tab-settings" class="tab-content">
