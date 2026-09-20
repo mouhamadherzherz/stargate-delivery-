@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from datetime import datetime
 
-CURRENT_VERSION = "2.0.0"
+CURRENT_VERSION = "3.0.0"
 DEFAULT_UPDATE_URL = ""  # سيتم ضبطه من غرفة العمليات
 
 def _version_tuple(v):
@@ -62,12 +62,15 @@ def check_for_updates(update_url, firebase_url=None):
     # Try Firebase first (already integrated, fastest)
     if firebase_url:
         ok, data, msg = check_for_updates_firebase(firebase_url)
-        if data is not None:  # Got a real response from Firebase
+        if ok and data is not None:
             return ok, data, msg
-    
-    # Fallback: custom URL (e.g. GitHub raw)
-    if not update_url:
-        return False, None, "لم يتم تكوين رابط خادم التحديثات."
+        elif data is not None and not ok and "أحدث إصدار" in msg:
+            return ok, data, msg
+
+    # Fallback to update_url, or official GitHub raw repository if empty
+    target_url = (update_url or '').strip()
+    if not target_url:
+        target_url = "https://raw.githubusercontent.com/mouhamadherzherz/stargate-delivery-/development/version.json"
         
     try:
         import ssl
@@ -75,7 +78,7 @@ def check_for_updates(update_url, firebase_url=None):
         ssl_ctx.check_hostname = False
         ssl_ctx.verify_mode = ssl.CERT_NONE
 
-        req = urllib.request.Request(update_url, headers={'User-Agent': 'Stargate-OTA/2.0'})
+        req = urllib.request.Request(target_url, headers={'User-Agent': 'Stargate-OTA/2.0'})
         with urllib.request.urlopen(req, timeout=10, context=ssl_ctx) as response:
             data = json.loads(response.read().decode('utf-8'))
             

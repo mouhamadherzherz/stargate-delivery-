@@ -1,8 +1,9 @@
 {
-    "changelog": "- حل مشكلة خطأ 500 عند مسح وتصفير البيانات وحذف الطلبات\n- تحسين وتأمين تسلسل المفاتيح الأجنبية لقاعدة البيانات\n- تحديث شامل لنظام التحديثات الهوائية والاتصال السحابي",
-    "version": "2.1.1",
+    "version": "3.0.0",
+    "release_date": "2026-09-20",
     "is_critical": true,
-    "download_url": "https://codeload.github.com/mouhamadherzherz/stargate-delivery-/zip/refs/heads/development",
     "min_version": "2.0.0",
-    "release_date": "2026-09-17"
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.0.0/Stargate_Update.zip",
+    "changelog": "• ترقية معمارية شاملة: تفكيك النظام إلى موديولات مؤسساتية مستقلة (Modular Blueprints)\n• تسريع هائل للأداء والاستجابة وتنظيف كامل للملفات الزائدة\n• ترقية وتحديث محرك حالات الطلبات وتزامن الصناديق وحركة السائقين\n• تحسين وتأمين صفحة التحديثات ودعم التحديث السحابي والمحلي بسلاسة",
+    "published_by": "Stargate Master Enterprise"
 }

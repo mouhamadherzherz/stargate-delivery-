@@ -16,6 +16,9 @@ a = Analysis(
         (f'{BASE}/templates', 'templates'),
         # ── ملفات CSS/JS/صور ──
         (f'{BASE}/static',    'static'),
+        # ── Core & Routes Blueprints ──
+        (f'{BASE}/core',      'core'),
+        (f'{BASE}/routes',    'routes'),
         # ── Database Template ──
         (f'{BASE}/data/stargate_empty.db', 'data'),
         # ── Cloud Config ──
@@ -40,6 +43,12 @@ a = Analysis(
         'flask', 'flask.templating', 'flask.json', 'jinja2', 'jinja2.ext',
         'werkzeug', 'werkzeug.security', 'werkzeug.serving',
         'waitress',
+        # Core & Blueprints
+        'core', 'core.extensions', 'core.ai_engine', 'core.database', 'core.security',
+        'routes', 'routes.auth', 'routes.orders', 'routes.couriers', 'routes.merchants',
+        'routes.treasury', 'routes.reports', 'routes.admin', 'routes.api',
+        'routes.products', 'routes.employees', 'routes.customers',
+        'routes.service_providers', 'routes.misc',
         # Crypto & Security
         'cryptography', 'cryptography.fernet', 'cryptography.hazmat.primitives',
         'cryptography.hazmat.backends',

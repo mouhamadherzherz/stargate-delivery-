@@ -1,116 +1,250 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-4xl">
-    <div class="flex items-center gap-4 mb-8 border-b border-slate-700/50 pb-6">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <i class="fa-solid fa-cloud-arrow-down text-2xl text-white"></i>
-        </div>
-        <div>
-            <h1 class="text-3xl font-black text-slate-100 mb-1">نظام التحديثات الهوائية (OTA)</h1>
-            <p class="text-slate-400 text-sm">البحث عن التحديثات وتثبيتها برمجياً وبشكل تلقائي</p>
-        </div>
-    </div>
-
-    <!-- Current Version -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-slate-700/50 flex items-center justify-center text-slate-300">
-                <i class="fa-solid fa-code-branch text-xl"></i>
-            </div>
-            <div>
-                <div class="text-sm text-slate-400 mb-1">الإصدار الحالي:</div>
-                <div class="text-2xl font-black text-white font-mono">{{ current_version }}</div>
-            </div>
-        </div>
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+    
+    <!-- Header Banner -->
+    <div class="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/20 rounded-3xl p-8 mb-8 shadow-2xl">
+        <div class="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
         
-        <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50 hidden">
-            <form method="POST" class="flex flex-col gap-3">
-                <input type="hidden" name="action" value="save_url">
-                <label class="text-sm font-bold text-slate-300">رابط خادم التحديثات (JSON URL):</label>
-                <div class="flex gap-2">
-                    <input type="url" name="update_url" value="{{ update_url }}" placeholder="https://..." 
-                           class="flex-1 bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 text-sm font-mono" required>
-                    <button type="submit" class="bg-slate-700 hover:bg-slate-600 text-white px-4 rounded-xl transition">
-                        حفظ
-                    </button>
-                </div>
-                <p class="text-[11px] text-slate-500">* رابط ملف version.json الذي يرفعه المالك للمشتركين.</p>
-            </form>
-        </div>
-    </div>
-
-    <!-- Check for Updates -->
-    <div class="bg-slate-800/80 rounded-3xl border border-slate-700 overflow-hidden shadow-xl mb-8">
-        <div class="p-8 text-center border-b border-slate-700/50 bg-slate-800/50">
-            <i class="fa-solid fa-satellite-dish text-5xl text-slate-500 mb-4"></i>
-            <h2 class="text-xl font-bold text-slate-200 mb-2">التحقق من التحديثات</h2>
-            <p class="text-slate-400 text-sm mb-6">يقوم النظام بالاتصال بالخادم السحابي للبحث عن أي إصدارات جديدة من برنامج Stargate.</p>
-            
-            <form method="POST">
-                <input type="hidden" name="action" value="check">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition flex items-center gap-2 mx-auto">
-                    <i class="fa-solid fa-arrows-rotate"></i>
-                    بحث عن تحديث الآن
-                </button>
-            </form>
-        </div>
-        
-        {% if update_available and update_data %}
-        <div class="p-8 bg-gradient-to-br from-indigo-900/40 to-purple-900/40">
-            <div class="flex items-start gap-4 mb-6">
-                <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                    <i class="fa-solid fa-sparkles text-xl"></i>
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-5">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+                    <i class="fa-solid fa-cloud-arrow-down text-3xl text-white"></i>
                 </div>
                 <div>
-                    <h3 class="text-xl font-black text-emerald-400 mb-1">تحديث جديد متوفر!</h3>
-                    <div class="text-sm font-bold text-slate-300">الإصدار {{ update_data.version }} <span class="text-slate-500 font-normal px-2">|</span> {{ update_data.release_date }}</div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <h1 class="text-3xl font-black text-white">مركز تحديثات النظام (OTA)</h1>
+                        <span class="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-bold flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            سحابي ومحلي نشط
+                        </span>
+                    </div>
+                    <p class="text-slate-400 text-sm">البحث عن التحديثات وتثبيتها برمجياً وبشكل تلقائي وآمن دون المساس ببياناتك المحفوظة</p>
                 </div>
             </div>
-            
-            <div class="bg-slate-900/50 rounded-xl p-4 mb-6 border border-slate-700/50">
-                <h4 class="text-sm font-bold text-slate-400 mb-2">ما الجديد في هذا التحديث؟</h4>
-                <div class="text-slate-200 text-sm leading-relaxed whitespace-pre-line">
-                    {{ update_data.changelog }}
+            <div class="flex items-center gap-4 bg-slate-800/80 border border-slate-700/80 rounded-2xl px-5 py-3 shadow-inner">
+                <div class="text-right">
+                    <div class="text-xs text-slate-400 font-bold">إصدار النظام الحالي</div>
+                    <div class="text-2xl font-black text-white font-mono flex items-center gap-2">
+                        <span>v{{ current_version }}</span>
+                    </div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-code-branch"></i>
                 </div>
             </div>
-            
-            <form method="POST" onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').innerHTML = '<i class=\'fa-solid fa-spinner fa-spin\'></i> جاري تحميل وتثبيت التحديث وإعادة التشغيل...'; return confirm('هل أنت متأكد من تثبيت التحديث؟ سيتم أخذ نسخة احتياطية وتحديث النظام وإعادة تشغيله تلقائياً.');">
-                <input type="hidden" name="action" value="install">
-                <input type="hidden" name="download_url" value="{{ update_data.download_url }}">
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-lg cursor-pointer">
-                    <i class="fa-solid fa-download"></i>
-                    تحميل وتثبيت التحديث الآن
-                </button>
-                <p class="text-center text-xs text-slate-500 mt-3">* سيتم أخذ نسخة احتياطية من قواعد البيانات تلقائياً قبل التحديث لحماية بياناتك.</p>
-            </form>
         </div>
-        {% endif %}
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         
-        <!-- Local Update Section -->
-        <div class="p-8 border-t border-slate-700/50 bg-slate-900/30 mt-4">
-            <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-folder-open text-blue-400"></i>
-                التحديث اليدوي (Offline Update)
-            </h3>
-            <p class="text-sm text-slate-400 mb-4">
-                إذا قام الدعم الفني أو المدير بإرسال ملف تحديث <code>.zip</code> لك، يمكنك رفعه وتثبيته مباشرة من هنا.
-            </p>
-            <form method="POST" enctype="multipart/form-data" class="flex flex-col gap-4">
-                <input type="hidden" name="action" value="install_local">
-                
-                <div class="relative border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:bg-slate-800/50 transition">
-                    <input type="file" name="update_file" accept=".zip" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
-                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
-                    <p class="text-sm font-bold text-slate-300">اضغط هنا لاختيار ملف التحديث (Update.zip)</p>
+        <!-- Left 2 Cols: Online & Update Info -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Online OTA Card -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-xl relative overflow-hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                            <i class="fa-solid fa-satellite-dish text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-white">البحث السحابي عن التحديثات</h2>
+                            <p class="text-slate-400 text-xs">فحص خوادم Stargate السحابية للتأكد من توفر إصدار أحدث</p>
+                        </div>
+                    </div>
                 </div>
-                
-                <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition flex items-center justify-center gap-2" onclick="return confirm('هل أنت متأكد من تثبيت هذا التحديث؟ سيتم إعادة تشغيل النظام.');">
-                    <i class="fa-solid fa-wrench"></i>
-                    تثبيت التحديث المحلي
-                </button>
-            </form>
+
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 mb-6 text-center">
+                    <p class="text-slate-300 text-sm mb-5 leading-relaxed">
+                        يتم التحقق تلقائياً من خادم التحديثات السحابي المتصل بالشبكة، وتنزيل حزمة الملفات الجديدة بنقرة زر مع أخذ نسخة احتياطية فورية.
+                    </p>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="check">
+                        <button type="submit" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-indigo-500/25 transition flex items-center justify-center gap-3 mx-auto cursor-pointer text-base active:scale-95">
+                            <i class="fa-solid fa-arrows-rotate text-lg"></i>
+                            <span>فحص التحديثات الآن</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Update Available Section -->
+                {% if update_available and update_data %}
+                <div class="bg-gradient-to-br from-indigo-950/70 via-purple-950/50 to-slate-900/90 border-2 border-emerald-500/40 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-2xl shadow-lg shadow-emerald-500/20">
+                            <i class="fa-solid fa-sparkles"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-xl font-black text-emerald-400">تحديث جديد متوفر للترقية!</h3>
+                                <span class="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-xs font-mono font-bold rounded-lg">v{{ update_data.version }}</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1">تاريخ الإصدار: <span class="text-slate-300 font-mono">{{ update_data.release_date }}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-4 mb-5">
+                        <div class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-indigo-400"></i>
+                            <span>مميزات وإصلاحات هذا الإصدار:</span>
+                        </div>
+                        <div class="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-medium pr-2 border-r-2 border-indigo-500/50">
+                            {{ update_data.changelog }}
+                        </div>
+                    </div>
+
+                    <form method="POST" onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').innerHTML = '<i class=\'fa-solid fa-spinner fa-spin ml-2\'></i> جاري تثبيت التحديث وتحديث النظام...';">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="install">
+                        <input type="hidden" name="download_url" value="{{ update_data.download_url }}">
+                        <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-4 rounded-xl shadow-xl shadow-emerald-600/30 transition flex items-center justify-center gap-3 text-lg cursor-pointer active:scale-98">
+                            <i class="fa-solid fa-circle-down text-xl"></i>
+                            <span>تثبيت التحديث وإعادة التشغيل تلقائياً</span>
+                        </button>
+                    </form>
+                    <p class="text-center text-[11px] text-slate-400 mt-3">
+                        <i class="fa-solid fa-shield-check text-emerald-400 ml-1"></i> يتم أخذ نسخة احتياطية آمنة لقاعدة البيانات والبيانات المشتركة قبل بدء التثبيت.
+                    </p>
+                </div>
+                {% elif update_msg %}
+                <div class="bg-slate-950/40 border border-slate-800 rounded-xl p-4 text-center">
+                    <p class="text-sm font-bold {{ 'text-emerald-400' if 'أحدث' in update_msg else 'text-amber-400' }}">
+                        {{ update_msg }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Offline Local Update Card -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-xl">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                        <i class="fa-solid fa-file-zipper text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">التحديث اليدوي (ملف ZIP أوفلاين)</h2>
+                        <p class="text-slate-400 text-xs">تثبيت ملف التحديث المباشر عند استلامه عبر فلاشة USB أو عبر الواتساب من الدعم الفني</p>
+                    </div>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="return confirmUpdate(this);">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="install_local">
+                    
+                    <div class="relative border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-8 text-center bg-slate-950/40 hover:bg-slate-900/60 transition group cursor-pointer">
+                        <input type="file" name="update_file" id="update_file_input" accept=".zip" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required onchange="handleFileSelected(this)">
+                        <div id="upload_placeholder">
+                            <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-500 group-hover:text-indigo-400 transition mb-3"></i>
+                            <p class="text-sm font-bold text-slate-200 group-hover:text-white mb-1">اضغط لاختيار ملف التحديث (Stargate_Update.zip) أو اسحبه هنا</p>
+                            <p class="text-xs text-slate-500">يقبل ملفات ZIP الصادرة من إدارة النظام الرسمية</p>
+                        </div>
+                        <div id="file_info" class="hidden flex items-center justify-center gap-3 text-emerald-400 font-bold">
+                            <i class="fa-solid fa-file-circle-check text-2xl"></i>
+                            <span id="file_name" class="text-sm font-mono text-white"></span>
+                            <span id="file_size" class="text-xs text-slate-400 font-mono"></span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="submit_local_btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-blue-500/25 transition flex items-center justify-center gap-2 cursor-pointer text-base">
+                        <i class="fa-solid fa-wrench"></i>
+                        <span>تثبيت التحديث المحلي الآن</span>
+                    </button>
+                </form>
+            </div>
         </div>
+
+        <!-- Right Col: Server Settings & Instructions -->
+        <div class="space-y-6">
+            
+            <!-- Safety Guarantee Card -->
+            <div class="bg-gradient-to-br from-emerald-950/40 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 shadow-xl">
+                <div class="flex items-center gap-3 mb-4 text-emerald-400">
+                    <i class="fa-solid fa-shield-check text-2xl"></i>
+                    <h3 class="text-base font-bold text-white">ضمان سلامة البيانات</h3>
+                </div>
+                <ul class="text-xs text-slate-300 space-y-3 leading-relaxed">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                        <span>لا يتم المساس بقاعدة البيانات أو سجلات الطلبات والتجار والحسابات مطلقاً.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                        <span>يتم إنشاء نسخة احتياطية مشفرة وتلقائية قبل استبدال أي ملف كود.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                        <span>تحديث وترقية الجداول تلقائياً (Auto-Migrations) لضمان التوافق.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Server URL Settings Card -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="fa-solid fa-server text-indigo-400 text-lg"></i>
+                    <h3 class="text-base font-bold text-white">إعدادات خادم التحديث السحابي</h3>
+                </div>
+                <form method="POST" class="space-y-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="save_url">
+                    <label class="text-xs font-bold text-slate-400 block">رابط مسار version.json المخصص:</label>
+                    <input type="url" name="update_url" value="{{ update_url }}" placeholder="https://raw.githubusercontent.com/.../version.json" 
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 text-xs font-mono">
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold py-2.5 rounded-xl border border-slate-700 transition cursor-pointer text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        حفظ الرابط
+                    </button>
+                    <p class="text-[11px] text-slate-500 leading-normal">
+                        * يتيح للشركات المشتركة توجيه التحديثات إلى خادم خاص أو تركها على الخادم الافتراضي الرسمي.
+                    </p>
+                </form>
+            </div>
+
+            <!-- Download Official Package Link -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 text-center shadow-xl">
+                <i class="fa-solid fa-download text-2xl text-purple-400 mb-2"></i>
+                <h4 class="text-sm font-bold text-white mb-1">تحميل حزمة التحديث المباشرة</h4>
+                <p class="text-xs text-slate-400 mb-4">يمكنك تنزيل ملف ZIP الخاص بالتحديث الحالي لحفظه على فلاشة USB ونقله لأي جهاز موظف</p>
+                <a href="{{ url_for('misc_bp.download_latest_update') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold transition w-full">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                    تنزيل Stargate_Update.zip
+                </a>
+            </div>
+
+        </div>
+
     </div>
 
 </div>
+
+<script>
+function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('upload_placeholder').classList.add('hidden');
+        document.getElementById('file_info').classList.remove('hidden');
+        document.getElementById('file_name').innerText = file.name;
+        document.getElementById('file_size').innerText = '(' + (file.size / (1024 * 1024)).toFixed(2) + ' MB)';
+    }
+}
+
+function confirmUpdate(form) {
+    const fileInput = document.getElementById('update_file_input');
+    if (!fileInput.files || !fileInput.files[0]) {
+        alert('يرجى اختيار ملف التحديث .zip أولاً');
+        return false;
+    }
+    if (!confirm('هل أنت متأكد من تثبيت هذا التحديث؟\nسيتم أخذ نسخة احتياطية آمنة واستبدال ملفات الكود وإعادة تشغيل النظام تلقائياً.')) {
+        return false;
+    }
+    const btn = document.getElementById('submit_local_btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري رفع التحديث وتطبيقه...';
+    return true;
+}
+</script>
 {% endblock %}

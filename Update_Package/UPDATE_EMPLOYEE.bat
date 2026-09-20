@@ -55,7 +55,13 @@ if exist "migration_engine.py" (
 
 :: 5. تشغيل البرنامج مجدداً
 echo [5/5] جاري إعادة تشغيل النظام...
-start "" START_EMPLOYEE_NETWORK.bat
+if exist "START_EMPLOYEE_NETWORK.bat" (
+    start "" START_EMPLOYEE_NETWORK.bat
+) else if exist "START_SERVER.bat" (
+    start "" START_SERVER.bat
+) else (
+    start "" python app.py
+)
 
 echo.
 color 0a
