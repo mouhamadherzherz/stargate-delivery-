@@ -61,7 +61,7 @@ def orders_list():
 
     status_filter = request.args.get('status')
 
-    search_query = request.args.get('q')
+    search_query = (request.args.get('q') or request.args.get('search') or '').strip()
 
     merchant_filter = request.args.get('merchant_id')
 

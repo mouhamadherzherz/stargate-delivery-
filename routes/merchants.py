@@ -58,7 +58,7 @@ def merchants_list():
 
     category_filter = request.args.get('category')
 
-    search_q = request.args.get('q', '').strip()
+    search_q = (request.args.get('q') or request.args.get('search') or '').strip()
 
     conn = get_db()
 

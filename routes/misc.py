@@ -301,11 +301,8 @@ def reset_data():
 # --- /subscribers_dashboard -> subscribers_dashboard ---
 @misc_bp.route('/subscribers_dashboard')
 def subscribers_dashboard():
-    """لوحة إدارة المشتركين - متاحة فقط من جهاز المدير"""
-    import node_lock
-    if not node_lock.is_developer_machine(BASE_DIR):
-        abort(403)
-    return render_template('subscribers_dashboard.html')
+    """لوحة إدارة المشتركين - توجيه إلى غرفة العمليات الرئيسية"""
+    return redirect('/sg_master/')
 
 
 

@@ -56,7 +56,7 @@ customers_bp = Blueprint('customers_bp', __name__)
 
 def customers_list():
 
-    q = request.args.get('q', '').strip()
+    q = (request.args.get('q') or request.args.get('search') or '').strip()
 
     conn = get_db()
 

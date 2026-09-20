@@ -1699,13 +1699,47 @@
     }
 
     function filterCommands(query) {
-        query = (query || '').trim().toLowerCase();
-        visibleCommands = STARGATE_COMMANDS.filter(cmd => {
-            if (!query) return true;
-            return cmd.title.toLowerCase().includes(query) ||
-                   cmd.subtitle.toLowerCase().includes(query) ||
-                   (cmd.group && cmd.group.toLowerCase().includes(query));
+        const raw = (query || '').trim();
+        const q = raw.toLowerCase();
+        let matched = STARGATE_COMMANDS.filter(cmd => {
+            if (!q) return true;
+            return cmd.title.toLowerCase().includes(q) ||
+                   cmd.subtitle.toLowerCase().includes(q) ||
+                   (cmd.group && cmd.group.toLowerCase().includes(q));
         });
+
+        if (raw.length > 0) {
+            const dynamicActions = [
+                { 
+                    title: `بحث فوري عن الأوردر / الباركود "${raw}"`, 
+                    subtitle: 'الانتقال المباشر لجدول الشحنات ومطابقة رقم الطرد', 
+                    url: '/orders?q=' + encodeURIComponent(raw), 
+                    icon: 'fa-magnifying-glass', 
+                    badge: 'بحث فوري', 
+                    group: 'شحنات' 
+                },
+                { 
+                    title: `بحث في دليل الزبائن عن "${raw}"`, 
+                    subtitle: 'عرض ملف الزبون، العناوين، وسجل الطلبات السابقة', 
+                    url: '/customers?q=' + encodeURIComponent(raw), 
+                    icon: 'fa-address-book', 
+                    badge: 'زبائن', 
+                    group: 'دليل' 
+                },
+                { 
+                    title: `بحث في سجل المتاجر والبيجات عن "${raw}"`, 
+                    subtitle: 'البحث عن المتجر، رصيد الكاش، والطلبيات المسجلة', 
+                    url: '/merchants?q=' + encodeURIComponent(raw), 
+                    icon: 'fa-store', 
+                    badge: 'تجار', 
+                    group: 'متاجر' 
+                }
+            ];
+            visibleCommands = [...dynamicActions, ...matched];
+        } else {
+            visibleCommands = matched;
+        }
+
         currentCmdIndex = 0;
         renderCommands();
     }
