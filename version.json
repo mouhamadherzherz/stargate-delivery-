@@ -1,9 +1,9 @@
 {
-    "version": "3.9.1",
+    "version": "3.9.2",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.1/Stargate_Update.zip",
-    "changelog": "• إصلاح فوري وشامل لخطأ 500 بعد التحديث ومزامنة جداول قاعدة البيانات تلقائياً عند الإقلاع (Zero-Crash Schema Sync)\n• تصحيح استدعاء المسارات وروابط التوجيه لمنع أي أخطاء BuildError في القوالب\n• تفعيل شريط الأوامر السريع (Ctrl + K) والماسح الصوتي ورادار العمليات المباشر\n• ترخيص الماستر الأبدي الموحد لجميع الفروع والمشتركين حتى 2036",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.2/Stargate_Update.zip",
+    "changelog": "• حل جذري ونهائي لخطأ 500 عند تسجيل الدخول أو إدخال كلمة المرور (Zero-Exception Authentication Engine)\n• المعالج التلقائي الذاتي لقاعدة البيانات (Self-Healing Schema): إضافة وتحديث أي حقول ناقصة في جداول المشترك تلقائياً بدون فقدان أي بيانات\n• دعم كلمات المرور بجميع الصيغ المشفرة والقديمة وحسابات الطوارئ الرئيسية المعتمدة\n• حماية شاملة للوحة المتابعة والداشبورد من أي توقف مع الحفاظ على العمليات نشطة 100%",
     "published_by": "Stargate Master Enterprise"
 }

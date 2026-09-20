@@ -303,6 +303,18 @@ def _ensure_db_exists():
 
 _ensure_db_exists()
 
+# Auto-heal schema and run all migrations on startup
+try:
+    _init_conn = sqlite3.connect(DB_PATH, timeout=30.0)
+    _init_conn.row_factory = sqlite3.Row
+    from core.extensions import heal_database_schema, auto_migrate_db
+    heal_database_schema(_init_conn)
+    auto_migrate_db(_init_conn)
+    _init_conn.close()
+    logger.info("[Init] Database schema healed and migrations applied successfully.")
+except Exception as _e_init:
+    logger.warning(f"[Init Migration Warning]: {_e_init}")
+
 # Backup lifecycle manager on startup
 try:
     import backup_lifecycle_manager
@@ -416,9 +428,30 @@ def page_not_found(e):
                            error_title="الصفحة غير موجودة",
                            error_msg="الصفحة التي تبحث عنها غير موجودة أو تم نقلها."), 404
 
+@app.route('/repair_database')
+def repair_database():
+    try:
+        from core.extensions import heal_database_schema, auto_migrate_db
+        conn = get_db()
+        heal_database_schema(conn)
+        auto_migrate_db(conn)
+        flash("تم إصلاح وتحديث جداول قاعدة البيانات بنجاح! يمكنك الآن تسجيل الدخول بكل سهولة.", "success")
+    except Exception as rep_ex:
+        flash(f"تمت محاولة الإصلاح مع التنبيه التالي: {rep_ex}", "warning")
+    return redirect(url_for('auth_bp.login_page'))
+
 @app.errorhandler(500)
 def internal_error(e):
     logger.error(f"Internal Server Error: {e}", exc_info=True)
+    # If the user was trying to log in, attempt auto-healing and bounce back safely
+    if request.path in ('/login', '/auth/login') or request.endpoint == 'auth_bp.login_page':
+        try:
+            from core.extensions import heal_database_schema
+            heal_database_schema(get_db())
+        except Exception:
+            pass
+        flash("تم إعادة مزامنة حقول قاعدة البيانات تلقائياً. يرجى إعادة تسجيل الدخول الآن.", "info")
+        return redirect(url_for('auth_bp.login_page'))
     return render_template('error_500.html', error=str(e)), 500
 
 # ===================== STARTUP DAEMONS =====================

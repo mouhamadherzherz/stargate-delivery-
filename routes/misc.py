@@ -55,39 +55,51 @@ misc_bp = Blueprint('misc_bp', __name__)
 @misc_bp.route('/')
 @misc_bp.route('/dashboard')
 @login_required
-
 def dashboard():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        stats = get_common_stats(cursor)
+        try:
+            cursor.execute("""
+            SELECT o.*, m.name as merchant_name, m.store_name, c.name as courier_name
+            FROM orders o
+            LEFT JOIN merchants m ON o.merchant_id = m.id
+            LEFT JOIN couriers c ON o.courier_id = c.id
+            ORDER BY o.id DESC LIMIT 10
+            """)
+            recent_orders = [dict(r) for r in cursor.fetchall()]
+        except Exception as o_ex:
+            logger.warning(f"[dashboard recent_orders]: {o_ex}")
+            recent_orders = []
 
-    conn = get_db()
+        try:
+            risk_flags = smart_ai_engine.get_risk_radar(conn)
+        except Exception:
+            risk_flags = []
 
-    cursor = conn.cursor()
+        try:
+            top_courier = smart_ai_engine.get_courier_top(conn)
+        except Exception:
+            top_courier = None
 
-    stats = get_common_stats(cursor)
-
-    cursor.execute("""
-
-    SELECT o.*, m.name as merchant_name, m.store_name, c.name as courier_name
-
-    FROM orders o
-
-    LEFT JOIN merchants m ON o.merchant_id = m.id
-
-    LEFT JOIN couriers c ON o.courier_id = c.id
-
-    ORDER BY o.id DESC LIMIT 10
-
-    """)
-
-    recent_orders = [dict(r) for r in cursor.fetchall()]
-
-    risk_flags = smart_ai_engine.get_risk_radar(conn)
-
-    top_courier = smart_ai_engine.get_courier_top(conn)
-
-
-    return render_template('dashboard.html', stats=stats, recent_orders=recent_orders,
-
-                           risk_flags=risk_flags, top_courier=top_courier, active_page='dashboard')
+        return render_template('dashboard.html', stats=stats, recent_orders=recent_orders,
+                               risk_flags=risk_flags, top_courier=top_courier, active_page='dashboard')
+    except Exception as e:
+        logger.error(f"[dashboard error]: {e}", exc_info=True)
+        empty_stats = {
+            'total_orders': 0, 'today_orders_count': 0, 'delivered_orders': 0, 'out_orders': 0,
+            'active_in_transit_count': 0, 'today_returned_count': 0, 'returned_orders': 0,
+            'treasury_cash': 0.0, 'courier_custody': 0.0, 'merchant_debt': 0.0,
+            'exact_delivery_rev': 0.0, 'exact_driver_comm': 0.0, 'company_profit': 0.0,
+            'today_delivery_revenue': 0.0, 'today_driver_cost': 0.0, 'today_net_revenue': 0.0,
+            'month_expenses': 0.0, 'month_gross_profit': 0.0, 'month_net_profit': 0.0,
+            'total_expenses': 0.0, 'cash_treasury': 0.0, 'whish_treasury': 0.0,
+            'owner_vault_balance': 0.0, 'today_delivered_count': 0,
+            'chart_days': '[]', 'chart_delivered': '[]', 'chart_revenue': '[]'
+        }
+        return render_template('dashboard.html', stats=empty_stats, recent_orders=[],
+                               risk_flags=[], top_courier=None, active_page='dashboard')
 
 
 
