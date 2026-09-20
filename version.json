@@ -1,9 +1,9 @@
 {
-    "version": "3.9.0",
+    "version": "3.9.1",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.0/Stargate_Update.zip",
-    "changelog": "• إضافة شريط الأوامر السريع العالمي (Enterprise Command Palette) بمفتاح اختصار Ctrl + K للتنقل والبحث الفوري الشامل\n• إطلاق الماسح الصوتي الذكي للشحنات بالجملة (Smart Audio Batch Scanner) وتعيين الكباتن مع نغمات تأكيدية\n• تعزيز لوحة المتابعة الرئيسية بمنصة العمليات المركزية (Command Center HUD) مع بطاقات الإجراءات الفورية\n• دمج محرك صوتي هابتك متقدم (Stargate Synthesizer Audio Engine) عبر Web Audio API للتفاعل الفوري\n• تدعيم رادار العمليات المباشر وخريطة تتبع السائقين (Live Operations Radar & Instant Dispatch)\n• تجديد وتطوير بوابة الدخول الفاخرة بالزجاج الداكن (Luxury Dark Glassmorphism) مع مؤشر نبض السيرفر اللحظي\n• استقرار تام للمحرك الذكي وترخيص الماستر الشامل (Universal Master License 2036) بدون أخطاء 500 نهائياً",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.1/Stargate_Update.zip",
+    "changelog": "• إصلاح فوري وشامل لخطأ 500 بعد التحديث ومزامنة جداول قاعدة البيانات تلقائياً عند الإقلاع (Zero-Crash Schema Sync)\n• تصحيح استدعاء المسارات وروابط التوجيه لمنع أي أخطاء BuildError في القوالب\n• تفعيل شريط الأوامر السريع (Ctrl + K) والماسح الصوتي ورادار العمليات المباشر\n• ترخيص الماستر الأبدي الموحد لجميع الفروع والمشتركين حتى 2036",
     "published_by": "Stargate Master Enterprise"
 }

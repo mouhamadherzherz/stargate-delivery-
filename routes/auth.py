@@ -9,7 +9,7 @@ from flask import (render_template, request, redirect, url_for,
                    flash, jsonify, send_file, session, Response, abort, Blueprint, g)
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-import os, sys, re, json, csv, io, sqlite3, hashlib, secrets, threading, time, tempfile
+import os, sys, re, json, csv, io, sqlite3, hashlib, secrets, threading, time, tempfile, uuid
 
 from core.extensions import (
     get_db,

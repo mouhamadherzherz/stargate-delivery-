@@ -48,7 +48,7 @@ from core.extensions import (
     log_audit, generate_txn_number, generate_tracking_number,
     update_treasury_balance, get_or_create_main_treasury, get_or_create_whish_treasury,
     parse_safe_float, parse_safe_int, safe_divide,
-    ARABIC_INDIC_DIGITS_MAP
+    ARABIC_INDIC_DIGITS_MAP, auto_migrate_db
 )
 
 # ===================== FLASK APP =====================
@@ -59,6 +59,13 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
 app.jinja_env.auto_reload = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+# Ensure database schema is 100% up-to-date on startup
+try:
+    with app.app_context():
+        auto_migrate_db(get_db())
+except Exception as _e_init:
+    logger.warning(f"[STARTUP MIGRATION] Notice: {_e_init}")
 
 # ===================== GLOBAL DEFAULTS (kept for backward compat) =====================
 DEFAULT_EXCHANGE_RATE = 89500.0
@@ -380,14 +387,23 @@ def _resolve_blueprint_url(error, endpoint, values):
         'download_update_zip': 'admin_bp.download_update_zip',
         'settings': 'admin_bp.settings_view',
         'settings_view': 'admin_bp.settings_view',
+        'merchants_view': 'merchants_bp.merchants_list',
+        'merchants_list': 'merchants_bp.merchants_list',
+        'couriers_view': 'couriers_bp.couriers_list',
+        'orders_view': 'orders_bp.orders_list',
+        'dashboard_view': 'misc_bp.dashboard',
+        'admin_updates_view': 'admin_bp.admin_updates',
+        'batch_scanner': 'misc_bp.batch_scanner_view',
+        'scanner': 'misc_bp.batch_scanner_view',
+        'operations_radar': 'misc_bp.map_dashboard',
+        'radar': 'misc_bp.map_dashboard',
     }
     if endpoint in aliases:
         target = aliases[endpoint]
-        if target in _ENDPOINT_FALLBACK_MAP.values():
-            try:
-                return url_for(target, **values)
-            except _BuildError:
-                pass
+        try:
+            return url_for(target, **values)
+        except _BuildError:
+            pass
     logger.warning(f"[URL Fallback] Could not resolve endpoint '{endpoint}', rendering '#' safe fallback.")
     return '#'
 
