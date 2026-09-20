@@ -1134,9 +1134,111 @@
             if (sb) sb.classList.add('desktop-sidebar-hidden');
         }
 
-        // Global Keyboard Zoom Shortcuts: Ctrl + Minus, Ctrl + Plus, Ctrl + 0
+        // Floating Toast Notification Engine
+        window.showToast = function(message, type = 'info', duration = 3500) {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'fixed bottom-5 left-5 z-[9999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            const bgColors = {
+                success: 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400/30 text-white shadow-emerald-600/25',
+                danger: 'bg-gradient-to-r from-rose-600 to-red-700 border-rose-400/30 text-white shadow-rose-600/25',
+                error: 'bg-gradient-to-r from-rose-600 to-red-700 border-rose-400/30 text-white shadow-rose-600/25',
+                warning: 'bg-gradient-to-r from-amber-500 to-orange-600 border-amber-400/30 text-white shadow-amber-500/25',
+                info: 'bg-gradient-to-r from-sky-600 to-blue-700 border-sky-400/30 text-white shadow-sky-600/25'
+            };
+            const icons = {
+                success: 'fa-circle-check',
+                danger: 'fa-triangle-exclamation',
+                error: 'fa-circle-xmark',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
+            const styleClass = bgColors[type] || bgColors.info;
+            const iconClass = icons[type] || icons.info;
+
+            toast.className = `pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl border shadow-xl backdrop-blur-md text-xs font-bold transform transition-all duration-300 translate-y-4 opacity-0 ${styleClass}`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid ${iconClass} text-base"></i>
+                    <span class="leading-snug">${message}</span>
+                </div>
+                <button type="button" class="text-white/80 hover:text-white p-1 ml-1" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            });
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        };
+
+        // Universal Clipboard Helper with Toast Feedback
+        window.copyToClipboard = function(text, successMsg = 'تم النسخ إلى الحافظة بنجاح 📋') {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => showToast(successMsg, 'success'));
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    showToast(successMsg, 'success');
+                } catch(err) {
+                    showToast('تعذر النسخ التلقائي', 'error');
+                }
+                document.body.removeChild(ta);
+            }
+        };
+
+        // Global Enterprise Keyboard Shortcuts:
+        // Ctrl + K (Search), Alt + N (New Order), Esc (Close Modal), Ctrl + Zoom
         window.addEventListener('keydown', function(e) {
-            if (e.ctrlKey || e.metaKey) {
+            // Ctrl/Cmd + K: Command Palette & Live Search
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                const searchInput = document.getElementById('globalLiveSearch');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                    showToast('تم تفعيل البحث السريع الشامل (Ctrl + K) 🔍', 'info');
+                }
+            }
+            // Alt + N: Quick New Order
+            else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+                e.preventDefault();
+                if (typeof openWizardModal === 'function') {
+                    openWizardModal('newOrderModal');
+                } else if (typeof openModal === 'function') {
+                    openModal('newOrderModal');
+                } else {
+                    window.location.href = '/orders?open_new=1';
+                }
+            }
+            // Escape: Close all active modals and dropdowns
+            else if (e.key === 'Escape') {
+                document.querySelectorAll('[id$="Modal"]:not(.hidden)').forEach(m => {
+                    if (typeof closeModal === 'function') closeModal(m.id);
+                    else m.classList.add('hidden');
+                });
+                const userMenu = document.getElementById('userMenuDropdown');
+                if (userMenu) userMenu.classList.add('hidden');
+                const searchRes = document.getElementById('globalSearchResults');
+                if (searchRes) searchRes.classList.add('hidden');
+            }
+            // Ctrl/Cmd + Zoom Keys
+            else if (e.ctrlKey || e.metaKey) {
                 if (e.key === '-' || e.key === 'Subtract') {
                     e.preventDefault();
                     adjustAppZoom(-0.05);

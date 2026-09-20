@@ -3,19 +3,24 @@
 {% block title %}دليل الزبائن والعناوين | {{ company_name }}{% endblock %}
 
 {% block content %}
-<div class="space-y-6 max-w-7xl mx-auto">
+<div class="space-y-6 max-w-7xl mx-auto pb-12">
 
     <!-- Header & Action Button -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-        <div>
-            <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
-                <span>دليل الزبائن والعناوين</span>
-                <span class="text-2xl">👥</span>
-            </h2>
-            <p class="text-xs text-slate-500 mt-1">قاعدة بيانات أسماء وأرقام وعناوين الزبائن للحفظ التلقائي وتسهيل تسجيل الأوردرات.</p>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-xs border border-slate-200">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+                <i class="fa-solid fa-address-book text-2xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                    <span>دليل الزبائن والعناوين</span>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-sky-50 text-sky-600 border border-sky-200 font-mono font-bold">CRM Core</span>
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">قاعدة بيانات أسماء وأرقام وعناوين الزبائن للحفظ التلقائي وتسهيل تسجيل الأوردرات.</p>
+            </div>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="openModal('newCustomerModal')" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-2xl shadow-md shadow-red-600/20 text-xs transition">
+            <button onclick="openModal('newCustomerModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-black px-5 py-2.5 rounded-2xl shadow-md shadow-sky-500/20 text-xs transition cursor-pointer">
                 <i class="fa-solid fa-user-plus"></i>
                 <span>+ تسجيل زبون جديد</span>
             </button>
@@ -23,33 +28,33 @@
     </div>
 
     <!-- Quick Add Customer Bar -->
-    <div class="bg-gradient-to-r from-red-50 via-rose-50 to-amber-50 p-4 rounded-3xl border border-red-200 shadow-sm">
+    <div class="bg-gradient-to-r from-sky-50 via-indigo-50/40 to-slate-50 p-5 rounded-3xl border border-sky-100 shadow-xs">
         <form method="POST" action="{{ url_for('add_customer_route') }}" class="flex flex-col md:flex-row items-center gap-3">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="flex items-center gap-2 shrink-0">
-                <span class="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">⚡</span>
+                <span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-xs shadow-xs"><i class="fa-solid fa-bolt"></i></span>
                 <span class="text-xs font-black text-slate-800 whitespace-nowrap">إضافة سريعة لدليل الزبائن:</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 flex-1 w-full">
-                <input type="text" name="name" required placeholder="اسم الزبون *" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
-                <input type="text" name="phone" required placeholder="رقم الهاتف (واتساب) *" dir="ltr" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-left font-mono focus:ring-2 focus:ring-red-500">
-                <input type="text" name="city" value="بيروت" placeholder="المدينة / المنطقة" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
-                <input type="text" name="address" placeholder="العنوان التفصيلي" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5 flex-1 w-full">
+                <input type="text" name="name" required placeholder="اسم الزبون *" class="bg-white border border-slate-300/80 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <input type="text" name="phone" required placeholder="رقم الهاتف (واتساب) *" dir="ltr" class="bg-white border border-slate-300/80 rounded-xl px-3.5 py-2 text-xs font-bold text-left font-mono focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <input type="text" name="city" value="بيروت" placeholder="المدينة / المنطقة" class="bg-white border border-slate-300/80 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <input type="text" name="address" placeholder="العنوان التفصيلي" class="bg-white border border-slate-300/80 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
-            <button type="submit" class="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white font-black px-5 py-2 rounded-xl text-xs shadow-sm transition whitespace-nowrap cursor-pointer">
+            <button type="submit" class="w-full md:w-auto bg-slate-900 hover:bg-black text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-xs transition whitespace-nowrap cursor-pointer">
                 + حفظ الزبون 👥
             </button>
         </form>
     </div>
 
     <!-- Search Bar -->
-    <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
+    <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
         <form method="GET" action="{{ url_for('customers_list') }}" class="flex items-center gap-3">
             <div class="relative flex-1">
-                <input type="text" name="q" value="{{ search_query }}" placeholder="ابحث باسم الزبون، رقم الهاتف، أو العنوان..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl pr-10 pl-4 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
-                <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-sm"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="ابحث باسم الزبون، رقم الهاتف، أو العنوان..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl pr-10 pl-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
             </div>
-            <button type="submit" class="bg-slate-900 hover:bg-black text-white font-bold px-5 py-2.5 rounded-2xl text-xs transition">
+            <button type="submit" class="bg-slate-900 hover:bg-black text-white font-bold px-5 py-2.5 rounded-2xl text-xs transition cursor-pointer">
                 بحث
             </button>
             {% if search_query %}
@@ -61,39 +66,39 @@
     </div>
 
     <!-- Customers Table -->
-    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="p-5 border-b border-slate-100 flex items-center justify-between">
             <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <i class="fa-solid fa-address-book text-red-600"></i>
+                <i class="fa-solid fa-users text-sky-600"></i>
                 <span>قائمة الزبائن المسجلين ({{ customers|length }})</span>
             </h3>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-right text-xs">
-                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-100">
+                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-100 uppercase">
                     <tr>
-                        <th class="py-3 px-6">اسم الزبون</th>
-                        <th class="py-3 px-6">رقم الهاتف</th>
-                        <th class="py-3 px-6">المنطقة والمدينة</th>
-                        <th class="py-3 px-6">العنوان بالتفصيل</th>
-                        <th class="py-3 px-6 text-center">عدد الطلبات السابقة</th>
-                        <th class="py-3 px-6 text-center">الإجراءات</th>
+                        <th class="py-3.5 px-6">اسم الزبون</th>
+                        <th class="py-3.5 px-6">رقم الهاتف</th>
+                        <th class="py-3.5 px-6">المنطقة والمدينة</th>
+                        <th class="py-3.5 px-6">العنوان بالتفصيل</th>
+                        <th class="py-3.5 px-6 text-center">عدد الطلبات السابقة</th>
+                        <th class="py-3.5 px-6 text-center">الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     {% for c in customers %}
                     <tr class="hover:bg-slate-50/80 transition">
                         <td class="py-3.5 px-6 font-bold text-slate-900">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center font-bold text-xs">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center font-bold text-xs">
                                     <i class="fa-solid fa-user"></i>
                                 </div>
-                                <span>{{ c.name }}</span>
+                                <span class="text-sm">{{ c.name }}</span>
                             </div>
                         </td>
                         <td class="py-3.5 px-6 font-mono font-bold text-slate-800" dir="ltr">
-                            <div class="flex items-center gap-1.5 justify-end">
+                            <div class="flex items-center gap-2 justify-end">
                                 <span>{{ c.phone }}</span>
                                 <a href="https://wa.me/{{ c.phone|clean_phone_for_whatsapp }}" target="_blank" class="text-emerald-600 hover:text-emerald-700 p-1" title="محادثة واتساب">
                                     <i class="fa-brands fa-whatsapp text-sm"></i>
@@ -101,32 +106,32 @@
                             </div>
                         </td>
                         <td class="py-3.5 px-6 font-semibold text-slate-700">
-                            <span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-lg text-[11px] font-bold">{{ c.city or 'بيروت' }}</span>
+                            <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-xl text-[11px] font-bold border border-slate-200">{{ c.city or 'بيروت' }}</span>
                         </td>
                         <td class="py-3.5 px-6 text-slate-600 max-w-xs truncate" title="{{ c.address }}">
                             {{ c.address }}
                         </td>
                         <td class="py-3.5 px-6 text-center">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-black {{ 'bg-emerald-100 text-emerald-800' if c.orders_count > 0 else 'bg-slate-100 text-slate-600' }}">
+                            <span class="px-2.5 py-1 rounded-xl text-xs font-black {{ 'bg-emerald-50 text-emerald-700 border border-emerald-200' if c.orders_count > 0 else 'bg-slate-100 text-slate-600 border border-slate-200' }}">
                                 {{ c.orders_count }} طلب
                             </span>
                         </td>
                         <td class="py-3.5 px-6 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- Create Order for this Customer -->
-                                <a href="{{ url_for('orders_list') }}?open_new=1&phone={{ c.phone }}&name={{ c.name }}&city={{ c.city }}&address={{ c.address }}" class="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl transition text-[11px] flex items-center gap-1" title="إنشاء أوردر لهذا الزبون">
+                                <a href="{{ url_for('orders_list') }}?open_new=1&phone={{ c.phone }}&name={{ c.name }}&city={{ c.city }}&address={{ c.address }}" class="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-black px-3 py-1.5 rounded-xl transition text-[11px] flex items-center gap-1" title="إنشاء أوردر لهذا الزبون">
                                     <i class="fa-solid fa-cart-plus"></i>
                                     <span>طلب جديد</span>
                                 </a>
                                 <!-- Edit Customer Button -->
-                                <button onclick="openEditCustomerModal('{{ c.id }}', '{{ c.name }}', '{{ c.phone }}', '{{ c.city }}', '{{ c.address }}', '{{ c.notes or '' }}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-xl transition border border-blue-200" title="تعديل بيانات الزبون">
+                                <button onclick="openEditCustomerModal('{{ c.id }}', '{{ c.name }}', '{{ c.phone }}', '{{ c.city }}', '{{ c.address }}', '{{ c.notes or '' }}')" class="p-1.5 text-sky-600 hover:bg-sky-50 rounded-xl transition border border-sky-200 cursor-pointer" title="تعديل بيانات الزبون">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                                 <!-- Delete Customer (Admin Only) -->
                                 {% if is_admin %}
                                 <form method="POST" action="{{ url_for('delete_customer_route', customer_id=c.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا الزبون من الدليل؟');" class="inline">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200" title="حذف الزبون">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200 cursor-pointer" title="حذف الزبون">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </form>
@@ -136,9 +141,9 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-12 text-slate-400">
+                        <td colspan="6" class="text-center py-16 text-slate-400">
                             <i class="fa-solid fa-users text-4xl text-slate-300 mb-3 block"></i>
-                            <span class="text-sm font-bold">لا يوجد زبائن مسجلين حالياً. يتم حفظ بيانات الزبون تلقائياً عند إنشاء أي أوردر!</span>
+                            <span class="text-sm font-bold text-slate-600">لا يوجد زبائن مسجلين حالياً. يتم حفظ بيانات الزبون تلقائياً عند إنشاء أي أوردر!</span>
                         </td>
                     </tr>
                     {% endfor %}
@@ -150,96 +155,96 @@
 </div>
 
 <!-- MODAL: ADD CUSTOMER -->
-<div id="newCustomerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+<div id="newCustomerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-fade-in">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-user-plus text-red-600"></i>
+                <i class="fa-solid fa-user-plus text-sky-600"></i>
                 <span>تسجيل زبون وعنوان جديد</span>
             </h3>
-            <button onclick="closeModal('newCustomerModal')" class="text-slate-400 hover:text-slate-600 p-1">
+            <button onclick="closeModal('newCustomerModal')" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
 
         <form method="POST" action="{{ url_for('add_customer_route') }}" class="space-y-3">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">اسم الزبون الكامل <span class="text-rose-500">*</span></label>
-                <input type="text" name="name" required placeholder="مثال: جهاد حرب" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500">
+                <input type="text" name="name" required placeholder="مثال: جهاد حرب" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف (لبناني) <span class="text-rose-500">*</span></label>
-                <input type="text" name="phone" required placeholder="03xxxxxx أو 70xxxxxx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500 font-mono text-left" dir="ltr">
+                <input type="text" name="phone" required placeholder="03xxxxxx أو 70xxxxxx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono text-left" dir="ltr">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">المنطقة / المدينة</label>
-                <input type="text" name="city" value="بيروت" placeholder="بيروت، جونية، طرابلس، صيدا..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500">
+                <input type="text" name="city" value="بيروت" placeholder="بيروت، جونية، طرابلس، صيدا..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">العنوان التفصيلي <span class="text-rose-500">*</span></label>
-                <input type="text" name="address" required placeholder="الشارع، البناية، الطابق، بجانب..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500">
+                <input type="text" name="address" required placeholder="الشارع، البناية، الطابق، بجانب..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات (اختياري)</label>
-                <input type="text" name="notes" placeholder="ملاحظات حول الزبون..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-red-500">
+                <input type="text" name="notes" placeholder="ملاحظات حول الزبون..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
-                <button type="button" onclick="closeModal('newCustomerModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
-                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-md shadow-red-600/20">حفظ الزبون</button>
+                <button type="button" onclick="closeModal('newCustomerModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">إلغاء</button>
+                <button type="submit" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-md shadow-sky-500/20 cursor-pointer">حفظ الزبون</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- MODAL: EDIT CUSTOMER -->
-<div id="editCustomerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+<div id="editCustomerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-fade-in">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-user-pen text-blue-600"></i>
+                <i class="fa-solid fa-user-pen text-sky-600"></i>
                 <span>تعديل بيانات الزبون والعنوان</span>
             </h3>
-            <button onclick="closeModal('editCustomerModal')" class="text-slate-400 hover:text-slate-600 p-1">
+            <button onclick="closeModal('editCustomerModal')" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
 
         <form id="editCustomerForm" method="POST" action="" class="space-y-3">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">اسم الزبون الكامل <span class="text-rose-500">*</span></label>
-                <input type="text" name="name" id="editCustomerName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500">
+                <input type="text" name="name" id="editCustomerName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف <span class="text-rose-500">*</span></label>
-                <input type="text" name="phone" id="editCustomerPhone" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500 font-mono text-left" dir="ltr">
+                <input type="text" name="phone" id="editCustomerPhone" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono text-left" dir="ltr">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">المنطقة / المدينة</label>
-                <input type="text" name="city" id="editCustomerCity" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500">
+                <input type="text" name="city" id="editCustomerCity" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">العنوان التفصيلي <span class="text-rose-500">*</span></label>
-                <input type="text" name="address" id="editCustomerAddress" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500">
+                <input type="text" name="address" id="editCustomerAddress" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات</label>
-                <input type="text" name="notes" id="editCustomerNotes" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+                <input type="text" name="notes" id="editCustomerNotes" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
 
             <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
-                <button type="button" onclick="closeModal('editCustomerModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-md shadow-blue-600/20">حفظ التعديلات</button>
+                <button type="button" onclick="closeModal('editCustomerModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">إلغاء</button>
+                <button type="submit" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-md shadow-sky-500/20 cursor-pointer">حفظ التعديلات</button>
             </div>
         </form>
     </div>

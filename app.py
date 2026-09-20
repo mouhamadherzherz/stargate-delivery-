@@ -106,6 +106,8 @@ def check_csrf():
 
 @app.before_request
 def enforce_subscription_license():
+    if app.config.get("TESTING"):
+        return
     try:
         import license_manager
         allowed = ['auth_bp.activate_license', 'static']

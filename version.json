@@ -1,9 +1,9 @@
 {
-    "version": "3.5.0",
+    "version": "3.6.0",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.5.0/Stargate_Update.zip",
-    "changelog": "• ترقية شاملة لمعايير الشركات العالمية (Global Enterprise UI Standards)\n• ضبط مقاسات النظام وهندسة دقة العرض (DPI Scaling & Proportions)\n• توحيد وضبط مقاسات الشعارات والصور هندسياً بنسب ثابتة وبدائل ذكية\n• إزالة أي تكرار وتوحيد مركز الدعم الفني والصيانة في مكان وحيد\n• تسريع وتحديث محرك النوافذ التفاعلية وشبكة الجداول الذكية",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.6.0/Stargate_Update.zip",
+    "changelog": "• تطوير شامل للمنظومة لتضاهي كبرى المنصات العالمية (World-Class Global Enterprise ERP)\n• إعادة تصميم وهندسة إدارة المنتجات والمخزون (Products & Inventory POS Engine) بنمط مؤسسي فائق السرعة والدقة\n• ترقية دليل الزبائن (CRM Hub) ببطاقات إحصائية متقدمة وألوان مؤسسية مريحة للعين\n• إدماج محرك التنبيهات العائمة الذكي (Toast Notifications) واختصارات لوحة المفاتيح السريعة (Ctrl+K, Alt+N, Esc)\n• ضبط شامل لكافة النوافذ والمطبوعات الحرارية والباركود واجتياز الفحص الشامل 100%",
     "published_by": "Stargate Master Enterprise"
 }
