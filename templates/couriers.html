@@ -107,7 +107,7 @@
                                     <i class="fa-solid fa-key text-[9px] text-amber-600"></i>
                                     <span>PIN: {{ c.pin or c.pin_code or 'لم يحدد بعد' }}</span>
                                 </span>
-                                <a href="https://wa.me/{{ c.phone|replace('+', '')|replace(' ', '') }}?text={{ ('مرحباً ' + c.name + '، تفضل رابط تطبيق السائقين لمتابعة الأوردرات وتوريد الكاش: http://192.168.9.114:8085/courier/app  رمز الـ PIN الخاص بك: ' + (c.pin or c.pin_code or 'أدخل رمزك الجديد عند أول دخول'))|urlencode }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold transition" title="إرسال رابط التطبيق ورمز الـ PIN للسائق بالواتساب مباشرة">
+                                <a href="https://wa.me/{{ c.phone|replace('+', '')|replace(' ', '') }}?text={{ ('مرحباً ' + c.name + '، تفضل رابط تطبيق السائقين لمتابعة الأوردرات وتوريد الكاش: ' + request.host_url.rstrip('/') + '/courier/app  رمز الـ PIN الخاص بك: ' + (c.pin or c.pin_code or 'أدخل رمزك الجديد عند أول دخول'))|urlencode }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold transition" title="إرسال رابط التطبيق ورمز الـ PIN للسائق بالواتساب مباشرة">
                                     <i class="fa-brands fa-whatsapp text-emerald-600"></i>
                                     <span>إرسال التطبيق</span>
                                 </a>
@@ -525,7 +525,7 @@ function openPayCourierSalaryModal(courierId, courierName, salary) {
                     <i class="fa-solid fa-link"></i> رابط تطبيق السائق (للهواتف المتصلة بالواي فاي / الراوتر):
                 </span>
                 <div class="flex items-center gap-2">
-                    <input type="text" id="courierAppLanUrlInput" readonly value="http://192.168.9.114:8085/courier/app" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white text-left font-bold" dir="ltr">
+                    <input type="text" id="courierAppLanUrlInput" readonly value="{{ request.host_url.rstrip('/') }}/courier/app" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white text-left font-bold" dir="ltr">
                     <button onclick="copyLanUrl()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-2 rounded-xl text-xs transition flex items-center gap-1">
                         <i class="fa-solid fa-copy"></i>
                         <span>نسخ</span>

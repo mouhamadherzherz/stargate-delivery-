@@ -1,9 +1,9 @@
 {
-    "version": "3.0.0",
+    "version": "3.5.0",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.0.0/Stargate_Update.zip",
-    "changelog": "• ترقية معمارية شاملة: تفكيك النظام إلى موديولات مؤسساتية مستقلة (Modular Blueprints)\n• تسريع هائل للأداء والاستجابة وتنظيف كامل للملفات الزائدة\n• ترقية وتحديث محرك حالات الطلبات وتزامن الصناديق وحركة السائقين\n• تحسين وتأمين صفحة التحديثات ودعم التحديث السحابي والمحلي بسلاسة",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.5.0/Stargate_Update.zip",
+    "changelog": "• ترقية شاملة لمعايير الشركات العالمية (Global Enterprise UI Standards)\n• ضبط مقاسات النظام وهندسة دقة العرض (DPI Scaling & Proportions)\n• توحيد وضبط مقاسات الشعارات والصور هندسياً بنسب ثابتة وبدائل ذكية\n• إزالة أي تكرار وتوحيد مركز الدعم الفني والصيانة في مكان وحيد\n• تسريع وتحديث محرك النوافذ التفاعلية وشبكة الجداول الذكية",
     "published_by": "Stargate Master Enterprise"
 }

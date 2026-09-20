@@ -21,8 +21,9 @@ a = Analysis(
         (f'{BASE}/routes',    'routes'),
         # ── Database Template ──
         (f'{BASE}/data/stargate_empty.db', 'data'),
-        # ── Cloud Config ──
+        # ── Cloud Config & Version ──
         (f'{BASE}/cloud_config.json', '.'),
+        (f'{BASE}/version.json',      '.'),
         # ── وحدات Python الداخلية ──
         (f'{BASE}/license_manager.py',          '.'),
         (f'{BASE}/node_lock.py',                '.'),

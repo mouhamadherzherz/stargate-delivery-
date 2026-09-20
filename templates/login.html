@@ -72,8 +72,8 @@
     <div class="relative w-full max-w-md card-login">
         <!-- Official Logo & Welcome Banner Section -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center p-4 bg-white rounded-3xl shadow-2xl mb-4 border border-white/20 transition-all">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Experts Logo" class="h-24 w-auto object-contain">
+            <div class="inline-flex items-center justify-center p-4 bg-white rounded-3xl shadow-2xl mb-4 border border-white/20 transition-all aspect-square w-28 h-28">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Experts Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='{{ url_for('static', filename='icons/stargate_logo.ico') }}';">
             </div>
             <h1 class="text-3xl font-black text-white tracking-tight">STARGATE EXPERTS</h1>
             <p class="text-sky-400 text-xs mt-1 font-bold tracking-wider uppercase">Your gateway to a world of expertise</p>

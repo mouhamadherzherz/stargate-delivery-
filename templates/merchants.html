@@ -111,19 +111,19 @@
                 <!-- Merchant Info -->
                 <div class="flex items-start justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center text-xl font-bold">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-200 text-[#0080B8] flex items-center justify-center text-xl font-bold shadow-2xs">
                             <i class="fa-solid fa-store"></i>
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-slate-800 text-base leading-tight">{{ m.name }}</h3>
-                                <span class="text-[10px] bg-red-50 text-red-700 font-black px-2 py-0.5 rounded-md border border-red-200">
+                                <span class="text-[10px] bg-cyan-50 text-cyan-800 font-black px-2 py-0.5 rounded-md border border-cyan-200">
                                     {{ m.category or 'عام' }}
                                 </span>
                             </div>
-                            <span class="text-xs text-red-600 font-bold block mt-0.5">{{ m.store_name }}</span>
+                            <span class="text-xs text-[#0080B8] font-bold block mt-0.5">{{ m.store_name }}</span>
                             <div class="flex items-center gap-3 mt-1 text-xs">
-                                <a href="tel:{{ m.phone }}" class="text-slate-500 hover:text-red-600 font-mono flex items-center gap-1" dir="ltr">
+                                <a href="tel:{{ m.phone }}" class="text-slate-500 hover:text-[#00B5FF] font-mono flex items-center gap-1" dir="ltr">
                                     <i class="fa-solid fa-phone text-[10px] text-emerald-600"></i> {{ m.phone }}
                                 </a>
                                 {% if m.phone %}

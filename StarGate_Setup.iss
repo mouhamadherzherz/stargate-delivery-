@@ -3,7 +3,7 @@
 ; =====================================================================
 
 #define MyAppName      "Stargate Delivery System"
-#define MyAppVersion   "2.0"
+#define MyAppVersion   "3.5"
 #define MyAppPublisher "Stargate Tech"
 #define MyAppExeName   "StargateDelivery.exe"
 #define MyDistDir      "dist\StargateDelivery"

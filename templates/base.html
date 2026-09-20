@@ -9,6 +9,10 @@
     <meta name="theme-color" content="#1E1B54">
     <meta name="application-name" content="stargate experts">
     <title>{{ title or company_name }} - نظام محاسبة وإدارة الدلفري</title>
+    <!-- Modern Cairo Arabic & Global Sans Font Stack -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Local Offline Tailwind CSS Engine -->
     <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
     <script>
@@ -42,7 +46,7 @@
                         }
                     },
                     fontFamily: {
-                        sans: ['Cairo', 'Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
+                        sans: ['Cairo', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
                     }
                 }
             }
@@ -141,8 +145,8 @@
                 <i class="fa-solid fa-bars text-base text-[#00B5FF]"></i>
             </button>
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/15 shrink-0">
-                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="w-full h-full object-contain">
+                <div class="w-8 h-8 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/15 shrink-0 aspect-square">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='{{ url_for('static', filename='icons/stargate_logo.ico') }}';">
                 </div>
                 <div>
                     <span class="font-black text-sm tracking-wide text-white block leading-tight">{{ company_name }}</span>
@@ -195,8 +199,8 @@
             <!-- Sidebar Header -->
             <div class="p-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#1E1B54] to-[#151240]">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 flex items-center justify-center shrink-0 p-1.5 overflow-hidden">
-                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Logo" class="w-full h-full object-contain">
+                    <div class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 flex items-center justify-center shrink-0 p-1.5 overflow-hidden aspect-square">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='{{ url_for('static', filename='icons/stargate_logo.ico') }}';">
                     </div>
                     <div>
                         <h1 class="font-black text-white text-base tracking-wide leading-tight">STARGATE</h1>
@@ -608,8 +612,8 @@
                 {% endwith %}
             </div>
 
-    <!-- Page Content Body -->
-            <div class="p-2 sm:p-3.5 lg:p-5 flex-1 w-full max-w-full">
+    <!-- Page Content Body (Balanced Enterprise Proportions) -->
+            <div class="p-2 sm:p-3.5 lg:p-5 flex-1 w-full max-w-[1680px] mx-auto">
                 {% block content %}{% endblock %}
             </div>
         </main>

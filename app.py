@@ -467,12 +467,15 @@ if __name__ == '__main__':
                 _screen_w = ctypes.windll.user32.GetSystemMetrics(0)
                 _screen_h = ctypes.windll.user32.GetSystemMetrics(1)
             except Exception:
-                _screen_w, _screen_h = 1920, 1080
+                _screen_w, _screen_h = 1440, 900
             webview.create_window(
-                title='Stargate Delivery System - نظام إدارة التوصيل والطلبيات',
+                title='Stargate Delivery Enterprise - نظام إدارة التوصيل والطلبيات العالمي',
                 url=f'http://127.0.0.1:{_port}',
-                width=_screen_w, height=_screen_h, min_size=(900, 580),
-                resizable=True, maximized=True)
+                width=_screen_w if _screen_w >= 1024 else 1440,
+                height=_screen_h if _screen_h >= 680 else 900,
+                min_size=(1024, 680),
+                resizable=True,
+                maximized=True)
             webview.start(gui='edgechromium', debug=False)
         except Exception as _we:
             import webbrowser
