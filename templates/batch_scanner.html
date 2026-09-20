@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}الماسح الضوئي الصوتي الذكي (Smart Audio Batch Scanner) | {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30 p-5 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-cyan-500/20">
+                <i class="fa-solid fa-barcode"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-black text-white">الماسح الضوئي الصوتي فائق السرعة</h1>
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        ⚡ معالجة فورية
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">يدعم قارئات الليزر اللاسلكية USB وكاميرا الهاتف مع نغمات تأكيد صوتية ذكية</p>
+            </div>
+        </div>
+
+        <!-- Live Tickers -->
+        <div class="flex items-center gap-3">
+            <div class="px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-2xl text-right">
+                <div class="text-[10px] text-slate-400">إجمالي الممسوح اليوم:</div>
+                <div class="text-base font-black text-cyan-400 font-mono" id="scannedCountDisplay">0 طلب</div>
+            </div>
+            <div class="px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-2xl text-right">
+                <div class="text-[10px] text-slate-400">إجمالي القيمة:</div>
+                <div class="text-base font-black text-emerald-400 font-mono" id="scannedTotalAmountDisplay">0 ل.ل</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Control Center Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Left: Scanning Command Panel (1 Col) -->
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5 text-white">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-black text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-cyan-400"></i>
+                    <span>إعدادات المسح والإجراء التلقائي</span>
+                </h3>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+            </div>
+
+            <!-- Target Action Selection -->
+            <div>
+                <label class="block text-xs font-bold text-slate-300 mb-2">الإجراء المطلوب تنفيذه فور مسح الباركود:</label>
+                <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 cursor-pointer hover:bg-slate-800 transition has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-950/40">
+                        <input type="radio" name="scanAction" value="assign" checked class="text-cyan-500 focus:ring-0">
+                        <span>🛵 إسناد لسائق</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 cursor-pointer hover:bg-slate-800 transition has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-950/40">
+                        <input type="radio" name="scanAction" value="out_for_delivery" class="text-cyan-500 focus:ring-0">
+                        <span>🚚 خرج للتوصيل</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 cursor-pointer hover:bg-slate-800 transition has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-950/40">
+                        <input type="radio" name="scanAction" value="delivered" class="text-cyan-500 focus:ring-0">
+                        <span>✅ تم التسليم</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 cursor-pointer hover:bg-slate-800 transition has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-950/40">
+                        <input type="radio" name="scanAction" value="returned" class="text-cyan-500 focus:ring-0">
+                        <span>🔄 تسجيل كمرتجع</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Target Courier Selector (Shows if action == assign) -->
+            <div id="courierSelectContainer">
+                <label class="block text-xs font-bold text-slate-300 mb-1.5">اختر السائق المستلم:</label>
+                <select id="targetCourierId" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white font-bold focus:outline-none focus:border-cyan-400">
+                    <option value="">-- حدد السائق --</option>
+                    {% for c in couriers %}
+                    <option value="{{ c.id }}">{{ c.name }} ({{ c.phone }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Main Barcode Input Box (Laser Gun Hook) -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-cyan-300 flex items-center justify-between">
+                    <span>حقل استقبال الباركود التلقائي:</span>
+                    <span class="text-[10px] text-slate-400">نشط وجاهز للقراءة الفورية 🎯</span>
+                </label>
+                <div class="relative">
+                    <input type="text" id="barcodeGunInput" autofocus autocomplete="off"
+                           placeholder="وجّه قارئ الباركود هنا أو أدخل رقم التتبع..."
+                           class="w-full bg-black/60 border-2 border-cyan-500/60 focus:border-cyan-400 rounded-2xl px-4 py-3.5 text-white font-mono text-base font-black tracking-wider placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 transition text-center"
+                           onkeydown="handleBarcodeInput(event)">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 text-sm">
+                        <i class="fa-solid fa-laser"></i>
+                    </span>
+                </div>
+                <div class="text-[11px] text-slate-400 leading-relaxed text-center">
+                    💡 *يتم حفظ الطلب وإصدار نغمة التأكيد الصوتية تلقائياً بمجرد ضغط زر الماسح.*
+                </div>
+            </div>
+
+            <!-- Sound & Volume Controls -->
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
+                <span class="text-slate-300 font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-volume-high text-emerald-400"></i>
+                    <span>التغذية الصوتية (Audio Beep)</span>
+                </span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="audioFeedbackToggle" checked class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Right: Realtime Scanned Items Feed (2 Cols) -->
+        <div class="lg:col-span-2 bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+            <div>
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-cyan-400 text-lg"></i>
+                        <h3 class="text-sm font-black text-white">سجل الشحنات الممسوحة خلال الجلسة</h3>
+                    </div>
+                    <button type="button" onclick="clearScannedList()" class="text-xs text-rose-400 hover:text-rose-300 transition flex items-center gap-1">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>تفريغ القائمة</span>
+                    </button>
+                </div>
+
+                <!-- Feed Table / List -->
+                <div class="overflow-x-auto max-h-[480px] overflow-y-auto">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-950/80 text-slate-400 text-[11px] font-bold border-b border-slate-800 sticky top-0">
+                            <tr>
+                                <th class="p-3">#</th>
+                                <th class="p-3">رقم التتبع</th>
+                                <th class="p-3">المستلم والمدينة</th>
+                                <th class="p-3">المبلغ</th>
+                                <th class="p-3">الحالة الجديدة</th>
+                                <th class="p-3">الوقت</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scannedTableBody" class="divide-y divide-slate-800 font-bold text-slate-200">
+                            <tr id="emptyRowPlaceholder">
+                                <td colspan="6" class="p-10 text-center text-slate-500 font-normal">
+                                    <i class="fa-solid fa-barcode text-3xl mb-2 block opacity-30"></i>
+                                    لا توجد شحنات ممسوحة بعد. وجّه قارئ الباركود نحو أي طرد للبدء فوراً.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400" id="sessionStatusText">جاهز للمسح المستمر...</span>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="printScannedManifest()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i>
+                        <span>طباعة بيان الجلسة (Manifest)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let scannedItems = [];
+let totalAmount = 0;
+
+// Web Audio API Sound Synthesizer
+function playChime(type) {
+    if (!document.getElementById('audioFeedbackToggle').checked) return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'success') {
+            // Uplifting modern chime (880Hz to 1174Hz)
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1174.66, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.25);
+        } else if (type === 'duplicate') {
+            // Warning dual beep (550Hz)
+            osc.frequency.setValueAtTime(550, ctx.currentTime);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.15);
+        } else {
+            // Error Buzz (180Hz)
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.35);
+        }
+    } catch(e) {}
+}
+
+async function handleBarcodeInput(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const input = document.getElementById('barcodeGunInput');
+        const code = (input.value || '').trim();
+        if (!code) return;
+        input.value = '';
+
+        // Check duplicates in current session
+        if (scannedItems.some(item => item.tracking === code)) {
+            playChime('duplicate');
+            updateSessionStatus(`⚠️ الشحنة ${code} ممسوحة مسبقاً في هذه الجلسة!`, 'amber');
+            return;
+        }
+
+        const action = document.querySelector('input[name="scanAction"]:checked').value;
+        const courierId = document.getElementById('targetCourierId').value;
+
+        if (action === 'assign' && !courierId) {
+            playChime('error');
+            alert('يرجى اختيار السائق أولاً لإسناد الشحنات إليه!');
+            return;
+        }
+
+        // Call Batch Scanner API
+        try {
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+            const res = await fetch('/api/scanner/process-item', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    tracking_number: code,
+                    action: action,
+                    courier_id: courierId
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                playChime('success');
+                addItemToTable(data.order);
+                updateSessionStatus(`✅ تم تسجيل الشحنة #${code} بنجاح!`, 'emerald');
+            } else {
+                playChime('error');
+                updateSessionStatus(`❌ خطأ: ${data.message || 'تعذر العثور على الشحنة'}`, 'rose');
+            }
+        } catch (err) {
+            playChime('error');
+            updateSessionStatus(`❌ خطأ في الاتصال: ${err.message}`, 'rose');
+        } finally {
+            input.focus();
+        }
+    }
+}
+
+function addItemToTable(order) {
+    const tbody = document.getElementById('scannedTableBody');
+    const placeholder = document.getElementById('emptyRowPlaceholder');
+    if (placeholder) placeholder.remove();
+
+    scannedItems.push(order);
+    totalAmount += (order.order_price || 0) + (order.delivery_fee || 0);
+
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-slate-800/50 transition';
+    row.innerHTML = `
+        <td class="p-3 text-slate-400 font-mono">${scannedItems.length}</td>
+        <td class="p-3 text-cyan-400 font-mono font-black">${order.tracking_number}</td>
+        <td class="p-3">${order.recipient_name || '—'} (${order.recipient_city || '—'})</td>
+        <td class="p-3 text-emerald-400 font-mono">${(order.order_price || 0).toLocaleString()} ل.ل</td>
+        <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                ${order.status_text || order.status}
+            </span>
+        </td>
+        <td class="p-3 text-slate-400 font-mono text-[10px]">${new Date().toLocaleTimeString('ar-LB')}</td>
+    `;
+    tbody.prepend(row);
+
+    // Update Counters
+    document.getElementById('scannedCountDisplay').textContent = `${scannedItems.length} طلب`;
+    document.getElementById('scannedTotalAmountDisplay').textContent = `${totalAmount.toLocaleString()} ل.ل`;
+}
+
+function clearScannedList() {
+    if (!scannedItems.length) return;
+    if (confirm('هل تريد مسح سجل الجلسة الحالي؟')) {
+        scannedItems = [];
+        totalAmount = 0;
+        document.getElementById('scannedTableBody').innerHTML = `
+            <tr id="emptyRowPlaceholder">
+                <td colspan="6" class="p-10 text-center text-slate-500 font-normal">
+                    <i class="fa-solid fa-barcode text-3xl mb-2 block opacity-30"></i>
+                    لا توجد شحنات ممسوحة بعد. وجّه قارئ الباركود نحو أي طرد للبدء فوراً.
+                </td>
+            </tr>
+        `;
+        document.getElementById('scannedCountDisplay').textContent = `0 طلب`;
+        document.getElementById('scannedTotalAmountDisplay').textContent = `0 ل.ل`;
+        updateSessionStatus('تم تفريغ القائمة بنجاح.', 'slate');
+    }
+}
+
+function updateSessionStatus(text, color) {
+    const el = document.getElementById('sessionStatusText');
+    if (el) {
+        el.textContent = text;
+        el.className = `text-xs font-bold text-${color}-400`;
+    }
+}
+
+function printScannedManifest() {
+    if (!scannedItems.length) {
+        alert('لا توجد شحنات ممسوحة لطباعة بيان الجلسة!');
+        return;
+    }
+    window.print();
+}
+
+// Keep focus on input
+window.addEventListener('click', (e) => {
+    const input = document.getElementById('barcodeGunInput');
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON' && input) {
+        input.focus();
+    }
+});
+</script>
+{% endblock %}

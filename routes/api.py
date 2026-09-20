@@ -1118,3 +1118,76 @@ def ai_ask_assistant():
         }), 200
 
 
+# --- /api/scanner/process-item -> api_scanner_process_item ---
+@api_bp.route('/api/scanner/process-item', methods=['POST'])
+@login_required
+def api_scanner_process_item():
+    try:
+        data = request.get_json(silent=True) or request.form or {}
+        code = (data.get('tracking_number') or '').strip()
+        action = data.get('action', 'assign')
+        courier_id = data.get('courier_id')
+
+        if not code:
+            return jsonify({'success': False, 'message': 'رمز الشحنة فارغ'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, tracking_number, status, recipient_name, recipient_phone, recipient_city,
+                   order_price, delivery_fee, courier_id
+            FROM orders
+            WHERE tracking_number = ? OR id = ?
+            LIMIT 1
+        """, (code, code))
+        order_row = cur.fetchone()
+
+        if not order_row:
+            return jsonify({'success': False, 'message': f'الطلبية #{code} غير موجودة'}), 404
+
+        order = dict(order_row)
+        order_id = order['id']
+
+        status_text_map = {
+            'assigned': '🛵 مسندة لسائق',
+            'out_for_delivery': '🚚 قيد التوصيل',
+            'delivered': '✅ تم التسليم',
+            'returned': '🔄 مرتجع'
+        }
+
+        from core.extensions import process_status_change
+        new_status = 'assigned'
+        notes = "إسناد بالماسح الضوئي السريع"
+
+        if action == 'out_for_delivery':
+            new_status = 'out_for_delivery'
+            notes = "خروج للشحن بالماسح"
+        elif action == 'delivered':
+            new_status = 'delivered'
+            notes = "تسليم فوري بالماسح"
+        elif action == 'returned':
+            new_status = 'returned'
+            notes = "تسجيل مرتجع بالماسح"
+        elif action == 'assign':
+            new_status = 'assigned'
+            if courier_id:
+                cur.execute("UPDATE orders SET courier_id = ? WHERE id = ?", (courier_id, order_id))
+                conn.commit()
+
+        # Apply robust status engine
+        process_status_change(order_id, new_status, notes=notes, courier_id=courier_id if action == 'assign' else None)
+
+        order['status'] = new_status
+        order['status_text'] = status_text_map.get(new_status, new_status)
+
+        return jsonify({
+            'success': True,
+            'message': 'تم تحديث حالة الشحنة بنجاح',
+            'order': order
+        })
+    except Exception as e:
+        logger.error(f"[Batch Scanner API Error] {e}", exc_info=True)
+        return jsonify({'success': False, 'message': f'خطأ أثناء المعالجة: {str(e)}'}), 500
+
+
+

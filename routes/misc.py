@@ -324,9 +324,23 @@ def print_waybill_80mm(order_id):
 
 # --- /map -> map_dashboard ---
 @misc_bp.route('/map')
+@misc_bp.route('/operations-radar')
+@misc_bp.route('/radar')
 @login_required
 def map_dashboard():
-    return render_template('map_dashboard.html')
+    return render_template('map_dashboard.html', active_page='radar')
+
+
+# --- /batch-scanner -> batch_scanner_view ---
+@misc_bp.route('/batch-scanner')
+@misc_bp.route('/scanner')
+@login_required
+def batch_scanner_view():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, phone FROM couriers WHERE status = 'active' ORDER BY name ASC")
+    couriers = [dict(r) for r in cur.fetchall()]
+    return render_template('batch_scanner.html', couriers=couriers, active_page='scanner')
 
 
 

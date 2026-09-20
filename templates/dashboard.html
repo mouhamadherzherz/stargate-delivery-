@@ -3,6 +3,85 @@
 {% block content %}
 <div class="space-y-6">
 
+    <!-- STARGATE 2026 COMMAND CENTER LAUNCHPAD -->
+    <div class="bg-gradient-to-r from-[#1E1B54] via-slate-900 to-indigo-950 p-4 sm:p-5 rounded-3xl border border-white/10 shadow-2xl text-white relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-52 h-52 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-52 h-52 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#00B5FF] to-indigo-600 flex items-center justify-center text-white text-xl shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </div>
+                <div>
+                    <h2 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                        <span>منصة العمليات المركزية والتحكم اللحظي</span>
+                        <span class="inline-flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            النظام يعمل بكفاءة 100%
+                        </span>
+                    </h2>
+                    <p class="text-xs text-slate-300 mt-0.5">وصول سريع للأدوات التشغيلية الحيوية، فحص حركة الشارع، ومعالجة الشحنات بالجملة</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="toggleCommandPalette(true)" class="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-black border border-white/15 transition flex items-center gap-2 cursor-pointer active:scale-95 shadow-xs">
+                    <i class="fa-solid fa-terminal text-cyan-400"></i>
+                    <span>شريط الأوامر</span>
+                    <kbd class="bg-black/40 text-cyan-200 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold">Ctrl+K</kbd>
+                </button>
+                <button type="button" onclick="toggleAiCopilot(true)" class="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>المساعد الذكي</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 4 Fast Action Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 relative z-10">
+            <a href="{{ url_for('batch_scanner_view') }}" class="group p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/40 transition flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-barcode"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-xs font-black text-white group-hover:text-amber-300 transition truncate">الماسح الصوتي ⚡</div>
+                    <div class="text-[10px] text-slate-400 truncate">مسح وتعيين الشحنات</div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('map_dashboard') }}" class="group p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-400/40 transition flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-xs font-black text-white group-hover:text-cyan-300 transition truncate">رادار العمليات 🛰️</div>
+                    <div class="text-[10px] text-slate-400 truncate">تتبع السائقين بالشارع</div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('accounting_ledger') }}" class="group p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-400/40 transition flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-xs font-black text-white group-hover:text-emerald-300 transition truncate">دفتر اليومية ⚖️</div>
+                    <div class="text-[10px] text-slate-400 truncate">القيود المحاسبية الدقيقة</div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('orders_list') }}#new" class="group p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 transition flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-plus-circle"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-xs font-black text-white group-hover:text-blue-300 transition truncate">طلبية جديدة 📦</div>
+                    <div class="text-[10px] text-slate-400 truncate">تسجيل أوردر فوري</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
     <!-- REAL-TIME FINANCIAL RISK RADAR ALERT BANNER -->
     {% if is_admin and risk_flags and risk_flags|length > 0 %}
     <div class="rounded-2xl p-4 border-2 shadow-lg transition-all duration-300 {% if risk_flags|selectattr('severity', 'equalto', 'high')|list|length > 0 %}bg-rose-50 border-rose-500 text-rose-900 shadow-rose-500/20 animate-pulse{% else %}bg-amber-50 border-amber-400 text-amber-900 shadow-amber-500/10{% endif %}">

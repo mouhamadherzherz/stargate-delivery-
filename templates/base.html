@@ -230,6 +230,12 @@
                     <span>الأوردرات والطلبيات</span>
                 </a>
 
+                <a href="{{ url_for('batch_scanner_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'scanner' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-barcode text-lg w-6 text-center text-amber-400"></i>
+                    <span class="flex-1">الماسح الصوتي السريع</span>
+                    <span class="text-[10px] bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full font-black">جديد ⚡</span>
+                </a>
+
                 <a href="{{ url_for('map_dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'map' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-satellite-dish text-lg w-6 text-center text-cyan-400"></i>
                     <span class="flex-1">رادار العمليات والخريطة الحية</span>
@@ -476,6 +482,20 @@
                         </div>
                     </div>
 
+                    <!-- Enterprise Quick Launch Buttons -->
+                    <a href="{{ url_for('batch_scanner_view') }}" class="inline-flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="الماسح الصوتي السريع للشحنات">
+                        <i class="fa-solid fa-barcode text-amber-600 text-xs"></i>
+                        <span class="hidden xl:inline">ماسح الباركود</span>
+                    </a>
+                    <a href="{{ url_for('map_dashboard') }}" class="inline-flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-900 border border-cyan-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="رادار العمليات المباشر وتتبع السائقين">
+                        <i class="fa-solid fa-satellite-dish text-cyan-600 text-xs"></i>
+                        <span class="hidden xl:inline">الرادار الحي</span>
+                    </a>
+                    <button type="button" onclick="toggleCommandPalette()" class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs cursor-pointer" title="فتح شريط الأوامر السريع (Ctrl + K)">
+                        <i class="fa-solid fa-terminal text-indigo-600 text-xs"></i>
+                        <span class="hidden xl:inline">الأوامر</span>
+                        <kbd class="hidden sm:inline bg-indigo-200/60 text-indigo-900 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold">Ctrl+K</kbd>
+                    </button>
                     <a href="/admin/system/health" class="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="فحص صحة النظام">
                         <i class="fa-solid fa-heart-pulse text-emerald-600 text-xs"></i>
                         <span class="hidden xl:inline">صحة النظام</span>
@@ -1364,6 +1384,41 @@
         </div>
     </div>
 
+    <!-- ════════════════ STARGATE ENTERPRISE COMMAND PALETTE (CTRL + K) ════════════════ -->
+    <div id="stargateCommandPalette" class="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md hidden flex items-start justify-center pt-[10vh] px-4" onclick="if(event.target===this) toggleCommandPalette(false)">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-2xl shadow-2xl shadow-cyan-500/10 flex flex-col overflow-hidden text-slate-100 transform transition-all">
+            <!-- Search Header -->
+            <div class="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-950/60">
+                <i class="fa-solid fa-magnifying-glass text-[#00B5FF] text-lg"></i>
+                <input type="text" id="cmdPaletteInput" placeholder="اكتب أمراً أو ابحث عن صفحة (مثال: سكانر، رادار، طلبية جديدة، كاش، سائق)..."
+                       autocomplete="off"
+                       class="flex-1 bg-transparent text-white placeholder-slate-400 text-sm font-bold focus:outline-none"
+                       oninput="filterCommands(this.value)"
+                       onkeydown="handleCommandKeydown(event)">
+                <button type="button" onclick="toggleCommandPalette(false)" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+                    <kbd class="bg-slate-800 text-slate-400 text-[10px] font-mono font-bold px-2 py-1 rounded-lg border border-slate-700">ESC</kbd>
+                </button>
+            </div>
+
+            <!-- Command Results Container -->
+            <div id="cmdPaletteResults" class="max-h-[55vh] overflow-y-auto p-2 space-y-1">
+                <!-- Injected via JavaScript -->
+            </div>
+
+            <!-- Footer Help -->
+            <div class="p-3 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                <div class="flex items-center gap-3">
+                    <span><kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono">↑</kbd> <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono">↓</kbd> للتنقل</span>
+                    <span><kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono">ENTER</kbd> للتنفيذ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-cyan-300 font-bold font-mono">Stargate 2026 Core</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
     function toggleAiCopilot(force) {
         const modal = document.getElementById('stargateAiModal');
@@ -1556,6 +1611,214 @@
         div.textContent = text;
         return div.innerHTML;
     }
+
+    /* ════════════════ STARGATE SYNTHESIZER AUDIO ENGINE ════════════════ */
+    window.StargateAudio = (function() {
+        let ctx = null;
+        function getCtx() {
+            if (!ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) ctx = new AudioCtx();
+            }
+            if (ctx && ctx.state === 'suspended') ctx.resume();
+            return ctx;
+        }
+        function playFreq(freq, dur, type='sine', gainVal=0.1) {
+            try {
+                const c = getCtx();
+                if (!c) return;
+                const osc = c.createOscillator();
+                const g = c.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, c.currentTime);
+                g.gain.setValueAtTime(gainVal, c.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+                osc.connect(g);
+                g.connect(c.destination);
+                osc.start();
+                osc.stop(c.currentTime + dur);
+            } catch(e) {}
+        }
+        return {
+            playClick: () => playFreq(800, 0.03, 'sine', 0.05),
+            playSuccess: () => {
+                playFreq(523.25, 0.08, 'sine', 0.1);
+                setTimeout(() => playFreq(659.25, 0.12, 'sine', 0.1), 70);
+            },
+            playAlert: () => {
+                playFreq(440, 0.09, 'triangle', 0.12);
+                setTimeout(() => playFreq(330, 0.13, 'triangle', 0.12), 80);
+            },
+            playScannerBeep: () => playFreq(1760, 0.08, 'sine', 0.18),
+            playError: () => {
+                playFreq(220, 0.09, 'sawtooth', 0.12);
+                setTimeout(() => playFreq(180, 0.13, 'sawtooth', 0.12), 100);
+            }
+        };
+    })();
+
+    /* ════════════════ STARGATE COMMAND PALETTE ENGINE ════════════════ */
+    const STARGATE_COMMANDS = [
+        { title: 'الماسح الصوتي السريع (باركود)', subtitle: 'مسح فوري وتعيين الشحنات بنغمة صوتية', url: '{{ url_for("batch_scanner_view") }}', icon: 'fa-barcode', badge: 'جديد ⚡', group: 'العمليات' },
+        { title: 'رادار العمليات والتتبع المباشر', subtitle: 'خريطة حية لمواقع السائقين ومحدد أقرب كابتن', url: '{{ url_for("map_dashboard") }}', icon: 'fa-satellite-dish', badge: 'مباشر', group: 'العمليات' },
+        { title: 'إضافة طلبية جديدة', subtitle: 'تسجيل أوردر جديد وحساب أجور التوصيل', url: '{{ url_for("orders_list") }}#new', icon: 'fa-plus-circle', badge: 'سريع', group: 'العمليات' },
+        { title: 'الأوردرات وكافة الشحنات', subtitle: 'متابعة الطلبات، حالات التسليم، والمرتجعات', url: '{{ url_for("orders_list") }}', icon: 'fa-box-open', badge: '', group: 'العمليات' },
+        { title: 'شباب الدليفري والكاش', subtitle: 'متابعة كاش الشارع ومصادقة عهد السائقين', url: '{{ url_for("couriers_list") }}', icon: 'fa-motorcycle', badge: '', group: 'العمليات' },
+        { title: 'تطبيق السائق للجوال', subtitle: 'شاشة الهاتف المحمول المخصصة للسائقين بالشارع', url: '{{ url_for("courier_app_view") }}', target: '_blank', icon: 'fa-mobile-screen-button', badge: 'موبايل', group: 'العمليات' },
+        { title: 'المحلات والتجار (البيجات)', subtitle: 'كشوفات حسابات المتاجر والطلبات المحملة', url: '{{ url_for("merchants_list") }}', icon: 'fa-store', badge: '', group: 'العمليات' },
+        { title: 'دليل الزبائن والعناوين', subtitle: 'سجل أرقام الهواتف والمناطق الجغرافية', url: '{{ url_for("customers_list") }}', icon: 'fa-address-book', badge: '', group: 'بيانات' },
+        { title: 'سندات التسكير والدفع', subtitle: 'تصفية الحسابات والمدفوعات مع المتاجر', url: '{{ url_for("settlements_list") }}', icon: 'fa-file-invoice-dollar', badge: '', group: 'مالية' },
+        { title: 'الصندوق والمصاريف', subtitle: 'سجل الخزينة، المقبوضات، والمصروفات اليومية', url: '{{ url_for("treasury_view") }}', icon: 'fa-vault', badge: '', group: 'مالية' },
+        { title: 'دفتر اليومية المالي ⚖️', subtitle: 'القيود المحاسبية الدقيقة ومطابقة الأرصدة', url: '{{ url_for("accounting_ledger") }}', icon: 'fa-scale-balanced', badge: '', group: 'مالية' },
+        { title: 'تقارير الأرباح والمحاسبة', subtitle: 'تحليلات الأرباح الصافية ومعدلات الإنجاز', url: '{{ url_for("reports_view") }}', icon: 'fa-chart-line', badge: '', group: 'مالية' },
+        { title: 'المساعد الذكي (AI Copilot)', subtitle: 'استشارة الذكاء الاصطناعي أوفلاين في السيولة والأداء', action: 'toggleAi', icon: 'fa-wand-magic-sparkles', badge: 'AI', group: 'ذكاء' },
+        { title: 'مركز تشخيص وصحة النظام', subtitle: 'فحص فوري لقاعدة البيانات والاتصال والذاكرة', url: '{{ url_for("system_health_view") }}', icon: 'fa-heart-pulse', badge: 'صحة', group: 'نظام' },
+        { title: 'تحديثات النظام السحابية (OTA)', subtitle: 'التحقق وتثبيت أحدث ترقيات Stargate تلقائياً', url: '{{ url_for("admin_updates") }}', icon: 'fa-cloud-arrow-down', badge: 'OTA', group: 'نظام' }
+    ];
+
+    let currentCmdIndex = 0;
+    let visibleCommands = [];
+
+    function toggleCommandPalette(force) {
+        const modal = document.getElementById('stargateCommandPalette');
+        if (!modal) return;
+        const isHidden = modal.classList.contains('hidden');
+        const show = typeof force === 'boolean' ? force : isHidden;
+        if (show) {
+            modal.classList.remove('hidden');
+            if (window.StargateAudio) window.StargateAudio.playClick();
+            const input = document.getElementById('cmdPaletteInput');
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 80);
+            }
+            filterCommands('');
+        } else {
+            modal.classList.add('hidden');
+        }
+    }
+
+    function filterCommands(query) {
+        query = (query || '').trim().toLowerCase();
+        visibleCommands = STARGATE_COMMANDS.filter(cmd => {
+            if (!query) return true;
+            return cmd.title.toLowerCase().includes(query) ||
+                   cmd.subtitle.toLowerCase().includes(query) ||
+                   (cmd.group && cmd.group.toLowerCase().includes(query));
+        });
+        currentCmdIndex = 0;
+        renderCommands();
+    }
+
+    function renderCommands() {
+        const container = document.getElementById('cmdPaletteResults');
+        if (!container) return;
+        if (visibleCommands.length === 0) {
+            container.innerHTML = `
+                <div class="py-8 text-center text-slate-500 text-xs">
+                    <i class="fa-solid fa-magnifying-glass text-xl mb-2 text-slate-600"></i>
+                    <p class="font-bold">لم يتم العثور على أوامر مطابقة.</p>
+                </div>
+            `;
+            return;
+        }
+        let html = '';
+        visibleCommands.forEach((cmd, idx) => {
+            const isSelected = idx === currentCmdIndex;
+            html += `
+                <div onclick="executeCommandAtIndex(${idx})" 
+                     class="flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${isSelected ? 'bg-indigo-600/30 border border-cyan-400/40 text-white' : 'hover:bg-slate-800/70 text-slate-300'}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 ${isSelected ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-800 text-cyan-400 border border-slate-700'}">
+                            <i class="fa-solid ${cmd.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-black flex items-center gap-2">
+                                <span>${escapeHtml(cmd.title)}</span>
+                                ${cmd.badge ? `<span class="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">${escapeHtml(cmd.badge)}</span>` : ''}
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(cmd.subtitle)}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 text-[11px] text-slate-500">
+                        <span class="text-xs font-mono">${cmd.group || ''}</span>
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        const selectedEl = container.children[currentCmdIndex];
+        if (selectedEl) selectedEl.scrollIntoView({ block: 'nearest' });
+    }
+
+    function handleCommandKeydown(e) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (visibleCommands.length > 0) {
+                currentCmdIndex = (currentCmdIndex + 1) % visibleCommands.length;
+                renderCommands();
+                if (window.StargateAudio) window.StargateAudio.playClick();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (visibleCommands.length > 0) {
+                currentCmdIndex = (currentCmdIndex - 1 + visibleCommands.length) % visibleCommands.length;
+                renderCommands();
+                if (window.StargateAudio) window.StargateAudio.playClick();
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            executeCommandAtIndex(currentCmdIndex);
+        } else if (e.key === 'Escape') {
+            toggleCommandPalette(false);
+        }
+    }
+
+    function executeCommandAtIndex(idx) {
+        const cmd = visibleCommands[idx];
+        if (!cmd) return;
+        if (window.StargateAudio) window.StargateAudio.playSuccess();
+        toggleCommandPalette(false);
+        if (cmd.action === 'toggleAi') {
+            toggleAiCopilot(true);
+        } else if (cmd.url) {
+            if (cmd.target === '_blank') {
+                window.open(cmd.url, '_blank');
+            } else {
+                window.location.href = cmd.url;
+            }
+        }
+    }
+
+    // Global Keyboard Listeners
+    window.addEventListener('keydown', function(e) {
+        // Ctrl + K or Cmd + K: Open Command Palette
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            toggleCommandPalette();
+            return;
+        }
+        // Ctrl + Space: Open AI Copilot
+        if (e.ctrlKey && e.code === 'Space') {
+            e.preventDefault();
+            toggleAiCopilot();
+            return;
+        }
+        // ESC: Close open palettes
+        if (e.key === 'Escape') {
+            const cmdPalette = document.getElementById('stargateCommandPalette');
+            if (cmdPalette && !cmdPalette.classList.contains('hidden')) {
+                toggleCommandPalette(false);
+                return;
+            }
+            const aiModal = document.getElementById('stargateAiModal');
+            if (aiModal && !aiModal.classList.contains('hidden')) {
+                toggleAiCopilot(false);
+                return;
+            }
+        }
+    });
     </script>
     {% block scripts %}{% endblock %}
 </body>
