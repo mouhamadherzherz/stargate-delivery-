@@ -7,7 +7,17 @@ import shutil
 import subprocess
 from datetime import datetime
 
-CURRENT_VERSION = "3.0.0"
+def _get_current_version():
+    try:
+        v_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'version.json')
+        if os.path.exists(v_path):
+            with open(v_path, 'r', encoding='utf-8') as f:
+                return json.load(f).get('version', '3.9.6')
+    except Exception:
+        pass
+    return "3.9.6"
+
+CURRENT_VERSION = _get_current_version()
 DEFAULT_UPDATE_URL = ""  # سيتم ضبطه من غرفة العمليات
 
 def _version_tuple(v):

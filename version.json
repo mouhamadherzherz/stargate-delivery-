@@ -1,9 +1,9 @@
 {
-    "version": "3.9.5",
+    "version": "3.9.6",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.5/Stargate_Update.zip",
-    "changelog": "• النسخة المتطورة الشاملة الفائقة 3.9.5 (Advanced Enterprise Edition)\n• تدقيق وفحص شامل لجميع المسارات والصفحات بنسبة نجاح 100% بدون أي خطأ\n• ترقية مركز الأوامر السريع (Ctrl + K) بالبحث الفوري المباشر عن أرقام الشحنات والزبائن والمتاجر\n• محرك التعافي التلقائي لقواعد البيانات (Zero-Exception Self-Healing Schema)\n• تحسين أداء البحث والفرز في جداول الطلبات والزبائن والمتاجر ودعم المعايير المزدوجة\n• توافقية كاملة ومحرك صوتي فائق الدقة لكافة العمليات",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.6/Stargate_Update.zip",
+    "changelog": "• النسخة المتطورة الشاملة 3.9.6 (Advanced Enterprise Edition)\n• تحسينات شاملة لواجهة إدارة وتسوية عهدة السائقين والمناديب والكاش\n• تصحيح وتنسيق نوافذ التوريد وتصفير العهد في الصناديق والخزائن\n• تدقيق وفحص بنية كافة القوالب بنسبة 100% بدون أي خطأ\n• ترقية مركز الأوامر السريع (Ctrl + K) بالبحث الفوري المباشر\n• محرك التعافي التلقائي لقواعد البيانات (Zero-Exception Self-Healing Schema)\n• تصميم حديث محسن للوحة التحكم والواجهة الرئيسية مع مؤثرات بصرية مريحة",
     "published_by": "Stargate Master Enterprise"
 }
