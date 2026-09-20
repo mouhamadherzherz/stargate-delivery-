@@ -53,25 +53,63 @@ class StargateLocalAI:
                 clean_phone = clean_phone[3:]
             extracted["recipient_phone"] = clean_phone
 
-        # ب. استخراج المبالغ المالية وسعر البضاعة
-        # البحث عن صيغ الدولار: 15$ أو $15 أو 15 دولار
-        usd_price = re.search(r'(\d+(?:\.\d+)?)\s*(?:\$|دولار|usd)', text, re.IGNORECASE)
-        # البحث عن مبالغ الليرة: 500000 أو 500 الف أو 500,000 ليرة
-        lbp_price = re.search(r'(\d+(?:,\d+)?(?:\.\d+)?)\s*(?:الف|ألف|ل\.ل|ليرة|lbp)', text, re.IGNORECASE)
+        # استخراج سعر الصرف المعتمد من الإعدادات
+        exchange_rate = 89500.0
+        try:
+            with self._get_connection() as conn:
+                s_row = conn.execute("SELECT exchange_rate FROM settings WHERE id = 1").fetchone()
+                if s_row and s_row['exchange_rate']:
+                    exchange_rate = float(s_row['exchange_rate'])
+        except Exception:
+            pass
+
+        extracted["exchange_rate"] = exchange_rate
+
+        # ب. استخراج المبالغ المالية وسعر البضاعة وأجرة التوصيل
+        # 1) فحص أجرة التوصيل أولاً لعزلها عن سعر البضاعة
+        fee_usd = re.search(r'(?:توصيل|أجرة|اجرة|اجار|ديليفري)[\s:]*(\d+(?:\.\d+)?)\s*(?:\$|دولار|usd)', text, re.IGNORECASE)
+        fee_lbp = re.search(r'(?:توصيل|أجرة|اجرة|اجار|ديليفري)[\s:]*(\d+(?:,\d+)?(?:\.\d+)?)\s*(?:الف|ألف|ل\.ل|ليرة|lbp)', text, re.IGNORECASE)
+        fee_plain = re.search(r'(?:توصيل|أجرة|اجرة|اجار|ديليفري)[\s:]*(\d+)', text, re.IGNORECASE)
+
+        deliv_fee_val = 0.0
+        if fee_usd:
+            deliv_fee_val = float(fee_usd.group(1)) * exchange_rate
+            extracted["delivery_fee_usd"] = float(fee_usd.group(1))
+        elif fee_lbp:
+            v = float(fee_lbp.group(1).replace(",", ""))
+            if "الف" in fee_lbp.group(0) or "ألف" in fee_lbp.group(0):
+                v *= 1000
+            deliv_fee_val = v
+        elif fee_plain:
+            val = float(fee_plain.group(1))
+            deliv_fee_val = (val * exchange_rate) if val < 20 else val
+        else:
+            deliv_fee_val = 2.0 * exchange_rate  # افتراضي 2 دولار للتوصيل
+
+        extracted["delivery_fee"] = deliv_fee_val
+
+        # 2) استخراج سعر البضاعة (مع استبعاد موضع أجرة التوصيل)
+        text_without_fee = re.sub(r'(?:توصيل|أجرة|اجرة|اجار|ديليفري)[\s:]*[0-9$a-zA-Z\.\,]+', '', text, flags=re.IGNORECASE)
+        usd_price = re.search(r'(\d+(?:\.\d+)?)\s*(?:\$|دولار|usd)', text_without_fee, re.IGNORECASE)
+        lbp_price = re.search(r'(\d+(?:,\d+)?(?:\.\d+)?)\s*(?:الف|ألف|ل\.ل|ليرة|lbp)', text_without_fee, re.IGNORECASE)
 
         if usd_price:
-            extracted["order_price"] = float(usd_price.group(1))
+            u_val = float(usd_price.group(1))
+            extracted["order_price_usd"] = u_val
+            extracted["order_price"] = u_val * exchange_rate
+            extracted["currency"] = "USD"
         elif lbp_price:
             val_str = lbp_price.group(1).replace(",", "")
             val = float(val_str)
             if "الف" in lbp_price.group(0) or "ألف" in lbp_price.group(0):
                 val *= 1000
             extracted["order_price"] = val
+            extracted["currency"] = "LBP"
         else:
-            # محاولة التقاط أي رقم مالي واضح بعد كلمات: السعر، الحساب، المبلغ
-            money_fallback = re.search(r'(?:السعر|المبلغ|الحساب|المجموع)[\s:]*([0-9,]+)', text)
+            money_fallback = re.search(r'(?:السعر|المبلغ|الحساب|المجموع|بقيمة)[\s:]*([0-9,]+)', text_without_fee)
             if money_fallback:
-                extracted["order_price"] = float(money_fallback.group(1).replace(",", ""))
+                raw_v = float(money_fallback.group(1).replace(",", ""))
+                extracted["order_price"] = (raw_v * exchange_rate) if raw_v < 200 else raw_v
 
         # ج. استخراج المنطقة بالربط مع قاعدة بيانات المناطق المحفوظة
         try:
@@ -86,32 +124,47 @@ class StargateLocalAI:
             if area.lower() in text.lower():
                 best_area = area
                 break
-            # مطابقة ذكية تقريبية (Fuzzy Match)
             ratio = difflib.SequenceMatcher(None, area, text).ratio()
             if ratio > highest_score and ratio > 0.6:
                 highest_score = ratio
                 best_area = area
         
-        extracted["recipient_city"] = best_area
+        # مدن لبنانية افتراضية في حال لم تكن مسجلة بالمناطق
+        if not best_area:
+            known_cities = ['بيروت', 'صيدا', 'صور', 'طرابلس', 'النبطية', 'جونية', 'جبيل', 'زحلة', 'بعلبك', 'عاليه', 'الشويفات', 'برج البراجنة', 'الحوش', 'الغازية', 'خلدة']
+            for kc in known_cities:
+                if kc in text:
+                    best_area = kc
+                    break
+
+        extracted["recipient_city"] = best_area or "بيروت"
 
         # د. استخراج اسم المستلم
-        name_match = re.search(r'(?:لـ|الزبون|السيد|السيدة|اسم|المستلم)[\s:]+([^\n,\-\d]+)', text)
+        name_match = re.search(r'(?:لـ|ل|الزبون|السيد|السيدة|اسم|المستلم)[\s:]+([^\n,\-\d]+)', text)
         if name_match:
             extracted["recipient_name"] = name_match.group(1).strip()
         else:
-            # افتراض السطر الأول إن لم يكن رقماً
             lines = [l.strip() for l in text.split('\n') if l.strip()]
             if lines and not re.search(r'\d', lines[0]):
                 extracted["recipient_name"] = lines[0]
 
-        # هـ. استخراج العنوان والمحتويات
-        addr_match = re.search(r'(?:العنوان|المكان|قرب|بجانب|شارع|بناية)[\s:]+([^\n]+)', text)
+        # هـ. استخراج المحتويات / الأغراض
+        items_match = re.search(r'(?:أغراض|اغراض|محتوى|طرد|بضاعة|الصنف|القطعة|طلب)[\s:]+([^\n,\-]+)', text)
+        if items_match:
+            extracted["item_description"] = items_match.group(1).strip()
+            extracted["items_detail"] = items_match.group(1).strip()
+
+        # و. استخراج العنوان بالتفصيل
+        addr_match = re.search(r'(?:العنوان|المكان|قرب|بجانب|شارع|بناية|طابق)[\s:]+([^\n]+)', text)
         if addr_match:
             extracted["recipient_address"] = addr_match.group(0).strip()
         else:
-            extracted["recipient_address"] = text[:100]
+            # تنظيف العنوان من الأرقام الطويلة والهواتف
+            clean_addr = re.sub(r'(?:\+?961|00961)?\s*[0-9]{7,8}', '', text)
+            clean_addr = re.sub(r'(\d+)\s*(?:\$|دولار|ل\.ل|ليرة|الف)', '', clean_addr)
+            extracted["recipient_address"] = clean_addr.strip()[:120]
 
-        extracted["notes"] = "مستخرج آلياً بواسطة ذكاء Stargate الداخلي"
+        extracted["notes"] = "تم استخراج البيانات آلياً بالذكاء الاصطناعي (Stargate Local AI)"
         return extracted
 
     # -------------------------------------------------------------

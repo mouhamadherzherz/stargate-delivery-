@@ -48,6 +48,13 @@ from core.extensions import (
 
 api_bp = Blueprint('api_bp', __name__)
 
+try:
+    from stargate_ai_engine import StargateLocalAI
+    local_ai = StargateLocalAI(os.path.join(DATA_DIR, 'stargate_production.db'))
+except Exception:
+    local_ai = None
+
+
 # Replace @app.route with @api_bp.route below
 
 # --- /api/service-providers -> api_service_providers ---
@@ -381,7 +388,15 @@ def api_ai_parse_order():
     if not raw_text:
         return jsonify({'success': False, 'error': 'النص فارغ'}), 400
 
-    local_parsed = local_ai.parse_order_text(raw_text)
+    global local_ai
+    if not local_ai:
+        try:
+            from stargate_ai_engine import StargateLocalAI
+            local_ai = StargateLocalAI(os.path.join(DATA_DIR, 'stargate_production.db'))
+        except Exception:
+            pass
+
+    local_parsed = local_ai.parse_order_text(raw_text) if local_ai else {}
 
     return jsonify({
         'success': True,

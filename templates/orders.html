@@ -1297,6 +1297,37 @@
 
         <input type="hidden" name="order_type" id="orderTypeInput" value="delivery">
 
+        <!-- ════════════════ AI MAGIC WHATSAPP PARSER BOX ════════════════ -->
+        <div class="mb-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-4 rounded-3xl border border-indigo-500/40 shadow-xl relative overflow-hidden group">
+          <div class="absolute -right-10 -top-10 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00B5FF] to-indigo-600 flex items-center justify-center text-white text-sm shadow-md shadow-cyan-500/20">
+                <i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
+              </span>
+              <div>
+                <h3 class="text-xs font-black text-white flex items-center gap-2">
+                  <span>المحلل الذكي لمحادثات واتساب (Stargate AI Magic Fill)</span>
+                  <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">2026 AI Engine</span>
+                </h3>
+                <p class="text-[11px] text-slate-300">الصق نص رسالة الزبون من واتساب وسيقوم الذكاء الاصطناعي باستخراج الاسم، الهاتف، المنطقة، العنوان والأسعار فوراً!</p>
+              </div>
+            </div>
+            <div id="aiParseStatus" class="text-xs font-bold text-left shrink-0"></div>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-1">
+              <input type="text" id="aiRawTextInput" placeholder="الصق هنا رسالة واتساب (مثال: أوردر لـ رامي يوسف 70123456 صيدا شارع المصارف بناية النور طابق 2، السعر 35$ والتوصيل 2$ فستان)..." 
+                     class="w-full bg-slate-950/90 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#00B5FF] focus:ring-2 focus:ring-[#00B5FF]/30 transition"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault(); parseOrderTextWithAI();}">
+            </div>
+            <button type="button" id="aiParseBtn" onclick="parseOrderTextWithAI()" class="bg-gradient-to-r from-[#00B5FF] to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-black px-6 py-2.5 rounded-2xl text-xs shadow-md shadow-cyan-500/25 transition flex items-center justify-center gap-2 shrink-0 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-bolt text-amber-300"></i>
+              <span>تحليل وتعبئة فورية ✨</span>
+            </button>
+          </div>
+        </div>
+
         <!-- ════════════════ SERVICE SELECTOR TABS ════════════════ -->
         <div class="mb-5 bg-slate-900 p-2.5 rounded-2xl shadow-xl border border-slate-800">
           <div class="text-xs font-black text-slate-400 mb-2 px-1 flex items-center gap-1.5">
@@ -6864,18 +6895,30 @@ function selectServiceTab(type) {
 }
 
 async function parseOrderTextWithAI() {
-    const rawText = document.getElementById('aiRawTextInput').value.trim();
+    const rawInput = document.getElementById('aiRawTextInput');
+    const rawText = rawInput ? rawInput.value.trim() : '';
     const statusEl = document.getElementById('aiParseStatus');
     const btn = document.getElementById('aiParseBtn');
 
     if (!rawText) {
-        statusEl.innerHTML = '<span class="text-rose-600">⚠️ يرجى لصق نص المحادثة أولاً</span>';
+        if (statusEl) statusEl.innerHTML = '<span class="text-rose-400 font-bold">⚠️ يرجى لصق نص المحادثة أولاً</span>';
+        if (rawInput) rawInput.focus();
         return;
     }
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> استخراج...';
-    statusEl.innerHTML = '<span class="text-blue-600"><i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج البيانات بالذكاء الاصطناعي...</span>';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-cyan-300"></i> <span>جاري الاستخراج...</span>';
+    }
+    if (statusEl) statusEl.innerHTML = '<span class="text-cyan-300 font-bold"><i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i> الذكاء الاصطناعي يحلل النص...</span>';
+
+    const highlightField = (el) => {
+        if (!el) return;
+        el.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/50');
+        setTimeout(() => {
+            el.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/50');
+        }, 2500);
+    };
 
     try {
         const res = await fetch('/api/ai/parse-order', {
@@ -6887,43 +6930,58 @@ async function parseOrderTextWithAI() {
         if (data.success && data.parsed) {
             const p = data.parsed;
             if (p.recipient_phone) {
-                const pInp = document.getElementById('recipientPhoneInput');
-                if (pInp) { pInp.value = p.recipient_phone; if (typeof onPhoneInputLookup === 'function') onPhoneInputLookup(p.recipient_phone); }
+                const pInp = document.getElementById('recipientPhoneInput') || document.querySelector('input[name="recipient_phone"]');
+                if (pInp) { 
+                    pInp.value = p.recipient_phone; 
+                    highlightField(pInp);
+                    if (typeof onPhoneInputLookup === 'function') onPhoneInputLookup(p.recipient_phone); 
+                }
             }
             if (p.recipient_name) {
                 const nInp = document.querySelector('input[name="recipient_name"]');
-                if (nInp) nInp.value = p.recipient_name;
+                if (nInp) { nInp.value = p.recipient_name; highlightField(nInp); }
             }
             if (p.recipient_city) {
-                const cInp = document.querySelector('input[name="recipient_city"]');
-                if (cInp) cInp.value = p.recipient_city;
+                const cInp = document.querySelector('input[name="recipient_city"]') || document.getElementById('recipientCityInput');
+                if (cInp) { 
+                    cInp.value = p.recipient_city; 
+                    highlightField(cInp);
+                    if (typeof onCityChange === 'function') onCityChange(p.recipient_city);
+                }
             }
             if (p.recipient_address) {
-                const aInp = document.querySelector('textarea[name="recipient_address"]');
-                if (aInp) aInp.value = p.recipient_address;
+                const aInp = document.querySelector('textarea[name="recipient_address"]') || document.querySelector('input[name="recipient_address"]');
+                if (aInp) { aInp.value = p.recipient_address; highlightField(aInp); }
             }
             if (p.item_description || p.items_detail) {
                 const iInp = document.querySelector('textarea[name="items_detail"]') || document.querySelector('input[name="item_description"]');
-                if (iInp) iInp.value = p.item_description || p.items_detail;
+                if (iInp) { iInp.value = p.item_description || p.items_detail; highlightField(iInp); }
             }
             if (p.order_price) {
                 const prInp = document.querySelector('input[name="order_price"]');
-                if (prInp) prInp.value = p.order_price;
+                if (prInp) { prInp.value = p.order_price; highlightField(prInp); }
             }
             if (p.delivery_fee) {
                 const fInp = document.querySelector('input[name="delivery_fee"]');
-                if (fInp) fInp.value = p.delivery_fee;
+                if (fInp) { fInp.value = p.delivery_fee; highlightField(fInp); }
             }
-            statusEl.innerHTML = `<span class="text-emerald-700 font-bold">✨ تم تفريع البيانات بنجاح (${data.engine || 'مفرغ ذكي'})</span>`;
+
+            if (statusEl) statusEl.innerHTML = `<span class="text-emerald-300 font-black flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i> تم استخراج وتعبئة كافة الحقول بنجاح!</span>`;
             if (typeof updateLiveInvoice === 'function') updateLiveInvoice();
+            if (typeof recalculateFinancials === 'function') recalculateFinancials();
+            if (typeof window.showToast === 'function') {
+                window.showToast("تم استخراج بيانات الطلب وتعبئة النموذج بالذكاء الاصطناعي ✨", "success");
+            }
         } else {
-            statusEl.innerHTML = '<span class="text-amber-700">⚠️ تعذر التعرف التلقائي، أدخل الحقول يدوياً</span>';
+            if (statusEl) statusEl.innerHTML = '<span class="text-amber-300 font-bold">⚠️ تعذر استخراج بعض الحقول، يرجى مراجعتها</span>';
         }
     } catch (err) {
-        statusEl.innerHTML = '<span class="text-rose-600">❌ حدث خطأ أثناء الاتصال بالذكاء الاصطناعي</span>';
+        if (statusEl) statusEl.innerHTML = '<span class="text-rose-400 font-bold">❌ حدث خطأ أثناء التحليل</span>';
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-robot text-sm"></i> <span>تفريغ ذكي</span>';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt text-amber-300"></i> <span>تحليل وتعبئة فورية ✨</span>';
+        }
     }
 }
 
