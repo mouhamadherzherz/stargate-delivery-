@@ -53,7 +53,7 @@ misc_bp = Blueprint('misc_bp', __name__)
 
 # --- / -> dashboard ---
 @misc_bp.route('/')
-
+@misc_bp.route('/dashboard')
 @login_required
 
 def dashboard():
