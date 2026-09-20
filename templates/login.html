@@ -263,17 +263,10 @@
                         <i class="fa-solid fa-shield-halved text-cyan-400 text-sm"></i>
                     </div>
                     <div>
-                        <h2 class="text-sm font-black text-white">تسجيل الدخول المؤسسي</h2>
-                        <p class="text-[11px] text-slate-500">نظام مشفر متعدد الصلاحيات</p>
+                        <h2 class="text-sm font-black text-white">تسجيل الدخول للنظام</h2>
+                        <p class="text-[11px] text-slate-500">أدخل بيانات الاعتماد (اسم المستخدم أو PIN)</p>
                     </div>
                 </div>
-                <!-- Quick Fill Badge -->
-                <button type="button" onclick="quickFillAdmin()" id="quickFillBtn"
-                    class="quick-fill-badge inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black cursor-pointer transition hover:scale-105"
-                    style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#FCD34D;">
-                    <i class="fa-solid fa-bolt text-[10px]"></i>
-                    دخول سريع 👑
-                </button>
             </div>
 
             <form method="POST" action="{{ url_for('login_page') }}" class="space-y-4" id="loginForm">
@@ -444,25 +437,6 @@
                 inp.style.webkitTextSecurity = 'disc';
                 icon.className = 'fa-solid fa-eye text-sm';
             }
-        }
-
-        function quickFillAdmin() {
-            beep(880, 0.1);
-            const btn = document.getElementById('quickFillBtn');
-            btn.style.background = 'rgba(245,158,11,0.3)';
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> جاري الدخول...';
-
-            switchMode('userpass');
-            setTimeout(() => {
-                const u = document.getElementById('username');
-                const p = document.getElementById('password');
-                if(u) { u.value = 'admin'; u.dispatchEvent(new Event('input')); }
-                if(p) { p.value = 'admin'; p.dispatchEvent(new Event('input')); }
-                setTimeout(() => {
-                    beep(660, 0.08);
-                    document.getElementById('loginForm').submit();
-                }, 350);
-            }, 200);
         }
 
         // Enter navigation
