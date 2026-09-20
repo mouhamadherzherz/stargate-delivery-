@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
     <!-- Local JsBarcode -->
     <script src="{{ url_for('static', filename='js/JsBarcode.all.min.js') }}"></script>
+    <!-- Local QRCode -->
+    <script src="{{ url_for('static', filename='js/qrcode.min.js') }}"></script>
 
     <style>
         * {
@@ -166,11 +168,17 @@
             </div>
         </div>
 
-        <!-- Barcode -->
-        <div class="barcode-container">
-            <svg id="barcode"></svg>
-            <div style="font-family: monospace; font-weight: bold; font-size: 14px; margin-top: -5px;">
-                {{ order.tracking_number }}
+        <!-- Barcode & Tracking QR -->
+        <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0;">
+            <div>
+                <svg id="barcode"></svg>
+                <div style="font-family: monospace; font-weight: bold; font-size: 13px; margin-top: -4px;">
+                    {{ order.tracking_number }}
+                </div>
+            </div>
+            <div style="text-align: center; border-right: 1px dashed #cbd5e1; padding-right: 12px;">
+                <div id="trackingQrCanvas" style="display: inline-block; padding: 2px; background: white;"></div>
+                <div style="font-size: 8.5px; color: #64748b; font-weight: bold; margin-top: 2px;">تتبع الشحنة 📱</div>
             </div>
         </div>
 
@@ -318,6 +326,19 @@
             height: 45,
             displayValue: false
         });
+
+        try {
+            new QRCode(document.getElementById("trackingQrCanvas"), {
+                text: window.location.origin + "/track/{{ order.tracking_number }}",
+                width: 58,
+                height: 58,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        } catch(e) {
+            console.error("QR Code generation error:", e);
+        }
     </script>
 </body>
 </html>

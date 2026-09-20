@@ -1930,6 +1930,38 @@
             }
         }
     });
+    // Live Dispatch HUD Polling
+    let lastUnassignedCount = -1;
+    function pollLiveDispatch() {
+        fetch('/api/dispatch/live')
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    if (lastUnassignedCount !== -1 && data.unassigned_count > lastUnassignedCount) {
+                        if (window.StargateAudio) window.StargateAudio.playSuccess();
+                        if (typeof showToast === 'function') {
+                            showToast(`تنبيه: يوجد ${data.unassigned_count - lastUnassignedCount} طلبات جديدة بانتظار التعيين!`, 'info');
+                        }
+                    }
+                    lastUnassignedCount = data.unassigned_count;
+                    
+                    // Update any live counters on the UI if they exist
+                    const dispatchBadge = document.getElementById('liveDispatchBadge');
+                    if(dispatchBadge) {
+                        dispatchBadge.innerText = data.unassigned_count;
+                        if(data.unassigned_count > 0) {
+                            dispatchBadge.classList.remove('hidden');
+                        } else {
+                            dispatchBadge.classList.add('hidden');
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error('Live Dispatch Polling Error:', err));
+    }
+    // Poll every 15 seconds
+    setInterval(pollLiveDispatch, 15000);
+    setTimeout(pollLiveDispatch, 2000);
     </script>
     {% block scripts %}{% endblock %}
 </body>

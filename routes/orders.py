@@ -1548,27 +1548,38 @@ def api_smart_batching():
 
 
 
-# --- /track/<tracking_number> -> public_tracking ---
+# --- /track and /track/<tracking_number> -> public_tracking ---
+@orders_bp.route('/track')
 @orders_bp.route('/track/<tracking_number>')
-def public_tracking(tracking_number):
+def public_tracking(tracking_number=None):
+    if not tracking_number:
+        tracking_number = request.args.get('q', '').strip() or request.args.get('tracking_number', '').strip()
+
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT tracking_number, status, recipient_name, recipient_city, recipient_address, recipient_phone, created_at, delivered_at, service_type
-        FROM orders WHERE tracking_number = ?
-    """, (str(tracking_number).strip(),))
-    order = cursor.fetchone()
-    
     cursor.execute("SELECT company_name, phone AS company_phone FROM settings WHERE id = 1")
     settings = cursor.fetchone() or {'company_name': 'Stargate Express', 'company_phone': ''}
 
+    if not tracking_number:
+        return render_template('public_track.html', order=None, tracking_number='', settings=dict(settings))
+
+    cursor.execute("""
+        SELECT o.tracking_number, o.status, o.recipient_name, o.recipient_city, o.recipient_address,
+               o.recipient_phone, o.created_at, o.delivered_at, o.service_type,
+               c.name AS courier_name, c.phone AS courier_phone
+        FROM orders o
+        LEFT JOIN couriers c ON o.courier_id = c.id
+        WHERE o.tracking_number = ?
+    """, (str(tracking_number).strip(),))
+    order = cursor.fetchone()
+
     if not order:
         return render_template('public_track.html', order=None, tracking_number=tracking_number, settings=dict(settings)), 404
-    
+
     order_dict = dict(order)
     phone_suffix = request.args.get('phone_suffix', '').strip()
     recip_phone = str(order_dict.get('recipient_phone') or '').strip()
-    
+
     phone_verified = False
     if phone_suffix and len(phone_suffix) == 4 and phone_suffix.isdigit():
         if recip_phone.endswith(phone_suffix):
@@ -1581,13 +1592,15 @@ def public_tracking(tracking_number):
     else:
         order_dict['full_address_masked'] = False
         order_dict['display_address'] = order_dict.get('recipient_address') or order_dict.get('recipient_city')
-    
-    qr_code_base64 = generate_qr_base64(request.url)
+
+    track_url = request.host_url.rstrip('/') + url_for('orders.public_tracking', tracking_number=tracking_number)
+    qr_code_base64 = generate_qr_base64(track_url)
     return render_template('public_track.html',
                            order=order_dict,
                            tracking_number=tracking_number,
                            qr_code_base64=qr_code_base64,
                            phone_verified=phone_verified,
+                           track_url=track_url,
                            settings=dict(settings))
 
 

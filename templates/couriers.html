@@ -171,7 +171,7 @@
                     <!-- Unsettled Count -->
                     <div class="flex items-center justify-between border-t pt-2" style="border-color:rgba(0,0,0,0.06);">
                         <span class="text-[11px] text-slate-500 font-semibold">طلبات بانتظار تسكير:</span>
-                        <span class="text-xs font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{{ c.unsettled_delivered_count }} طلب</span>
+                        <span class="text-xs font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{{ c.unsettled_count }} طلب</span>
                     </div>
                     <!-- Commissions -->
                     <div class="flex items-center justify-between text-[11px]">
@@ -917,24 +917,6 @@ function openPayCourierSalaryModal(courierId, courierName, salary) {
         });
     }
 </script>
-                    {% for t in treasuries %}
-                    <option value="{{ t.id }}" {% if t.is_default == 1 %}selected{% endif %}>{{ t.name }} (الرصيد: {{ t.balance|format_currency }} ل.ل)</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
-                <i class="fa-solid fa-circle-info text-amber-600 text-base shrink-0"></i>
-                <span>بمجرد الضغط، سيتم خصم هذا المبلغ من عهدة السائق وإيداعه في الخزينة المحددة فوراً.</span>
-            </div>
-
-            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
-                <button type="button" onclick="closeModal('handoverModal')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">إلغاء</button>
-                <button type="submit" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-600/25">استلام وتصفير العهدة ✅</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 <script>
 function openHandoverModal(courierId, courierName, custody) {

@@ -42,7 +42,8 @@ from core.extensions import (
     calc_smart_delivery_fee,
     get_merchant_categories,
     get_common_stats,
-    auto_migrate_db
+    auto_migrate_db,
+    DEFAULT_COMMISSION
 )
 
 couriers_bp = Blueprint('couriers_bp', __name__)

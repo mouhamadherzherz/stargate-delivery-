@@ -8,7 +8,7 @@ All routes here are registered under the Flask application via Blueprint.
 from flask import (render_template, request, redirect, url_for,
                    flash, jsonify, send_file, session, Response, abort, Blueprint, g)
 from datetime import datetime, timedelta
-import os, sys, re, json, csv, io, sqlite3, hashlib, secrets, threading, time, tempfile
+import os, sys, re, json, csv, io, sqlite3, hashlib, secrets, threading, time, tempfile, urllib.parse
 
 from core.extensions import (
     get_db,
@@ -43,8 +43,12 @@ from core.extensions import (
     get_common_stats,
     auto_migrate_db,
     process_status_change,
-    smart_ai_engine
+    smart_ai_engine,
+    DATA_DIR
 )
+
+# Derive DB_PATH from DATA_DIR (consistent with extensions.py)
+DB_PATH = os.path.join(DATA_DIR, 'stargate_production.db')
 
 api_bp = Blueprint('api_bp', __name__)
 
@@ -53,6 +57,17 @@ try:
     local_ai = StargateLocalAI(os.path.join(DATA_DIR, 'stargate_production.db'))
 except Exception:
     local_ai = None
+
+# Lazy-load optional integrations (app boots even if these modules are absent)
+try:
+    import telegram_reporter
+except ImportError:
+    telegram_reporter = None
+
+try:
+    import gemini_client
+except ImportError:
+    gemini_client = None
 
 
 # Replace @app.route with @api_bp.route below
@@ -155,12 +170,39 @@ def api_customers_lookup():
 
 # ===================== CALL CENTER AGENTS =====================
 
+# --- /api/dispatch/live -> api_dispatch_live ---
+@api_bp.route('/api/dispatch/live')
+@login_required
+def api_dispatch_live():
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        # Count pending orders
+        cursor.execute("SELECT COUNT(*) as pending_count FROM orders WHERE status = 'pending'")
+        pending_count = cursor.fetchone()['pending_count']
+        
+        # Count unassigned orders (status pending and courier_id is NULL)
+        cursor.execute("SELECT COUNT(*) as unassigned_count FROM orders WHERE status = 'pending' AND courier_id IS NULL")
+        unassigned_count = cursor.fetchone()['unassigned_count']
+        
+        return jsonify({
+            'success': True,
+            'pending_count': pending_count,
+            'unassigned_count': unassigned_count,
+            'timestamp': int(time.time())
+        })
+    except Exception as e:
+        logger.error(f"Live dispatch error: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 
 
 # --- /api/telegram/test -> api_telegram_test ---
 @api_bp.route('/api/telegram/test', methods=['POST'])
 @login_required
 def api_telegram_test():
+    if not telegram_reporter:
+        return jsonify({'success': False, 'message': 'وحدة Telegram غير مثبتة في هذا الخادم.'})
     data = request.get_json() or {}
     token = data.get('bot_token', '').strip() or None
     chat_id = data.get('chat_id', '').strip() or None
@@ -173,6 +215,8 @@ def api_telegram_test():
 @api_bp.route('/api/telegram/send-report', methods=['POST'])
 @login_required
 def api_telegram_send_report():
+    if not telegram_reporter:
+        return jsonify({'success': False, 'message': 'وحدة Telegram غير مثبتة في هذا الخادم.'})
     data = request.get_json() or {}
     token = data.get('bot_token', '').strip() or None
     chat_id = data.get('chat_id', '').strip() or None
