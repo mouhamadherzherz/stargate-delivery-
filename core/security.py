@@ -107,15 +107,15 @@ def has_permission(perm):
             return True
 
     tier1_employee_perms = [
-        'orders_view', 'orders_create',
-        'couriers_view', 'merchants_view',
+        'orders_view', 'orders_create', 'orders_edit', 'orders_status', 'orders_assign',
+        'couriers_view', 'couriers_settle', 'merchants_view',
         'customers_view', 'print_waybills'
     ]
     if role in ('employee', 'agent', 'call_center') and perm in tier1_employee_perms:
         return True
 
     tier2_supervisor_perms = tier1_employee_perms + [
-        'orders_edit', 'orders_status', 'orders_assign', 'couriers_settle'
+        'treasury_view', 'reports_view'
     ]
     if role in ('supervisor', 'dispatcher', 'operations_lead') and perm in tier2_supervisor_perms:
         return True

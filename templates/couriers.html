@@ -155,29 +155,68 @@
                     </span>
                 </div>
 
-                <!-- Financial Stats Box -->
-                <div class="rounded-2xl p-4 space-y-2.5" style="background:{{ 'linear-gradient(135deg,rgba(251,191,36,0.08),rgba(217,119,6,0.06))' if c.current_cash_custody and c.current_cash_custody > 0 else '#f8fafc' }};border:1px solid {{ 'rgba(251,191,36,0.25)' if c.current_cash_custody and c.current_cash_custody > 0 else 'rgba(226,232,240,0.8)' }};">
-                    <!-- Cash Custody -->
+                <!-- Financial Stats Box (تفاصيل الحساب الكاملة: كم معه وكم نريد منه) -->
+                <div class="rounded-2xl p-4 space-y-2.5" style="background:{{ 'linear-gradient(135deg,rgba(251,191,36,0.08),rgba(217,119,6,0.06))' if (c.unsettled_cash and c.unsettled_cash > 0) or (c.current_cash_custody and c.current_cash_custody > 0) else '#f8fafc' }};border:1px solid {{ 'rgba(251,191,36,0.25)' if (c.unsettled_cash and c.unsettled_cash > 0) or (c.current_cash_custody and c.current_cash_custody > 0) else 'rgba(226,232,240,0.8)' }};">
+                    
+                    <!-- 1. Cash in Hand / Street (كم معه بالشارع) -->
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-black text-slate-600 flex items-center gap-1.5">
-                            <i class="fa-solid fa-coins text-amber-500 text-[11px]"></i>
-                            كاش بعهدة السائق:
+                        <span class="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                            <i class="fa-solid fa-money-bill-wave text-emerald-600 text-[11px]"></i>
+                            الكاش المحصل (كم معه):
                         </span>
-                        <div class="text-left">
-                            <div class="text-base font-black font-mono {{ 'text-rose-600' if c.current_cash_custody and c.current_cash_custody > 0 else 'text-slate-500' }}">{{ c.current_cash_custody|format_currency }} <span class="text-xs font-normal">{{ currency }}</span></div>
-                            <div class="text-[10px] text-amber-700 font-mono text-left">≈ {{ c.current_cash_custody|to_usd(exchange_rate) }}</div>
+                        <div class="text-left font-mono">
+                            <div class="text-sm font-black text-emerald-700">{{ c.unsettled_cash|format_currency }} <span class="text-[10px] font-normal">{{ currency }}</span></div>
+                            <div class="text-[10px] text-slate-400">≈ {{ c.unsettled_cash|to_usd(exchange_rate) }}</div>
                         </div>
                     </div>
-                    <!-- Unsettled Count -->
-                    <div class="flex items-center justify-between border-t pt-2" style="border-color:rgba(0,0,0,0.06);">
-                        <span class="text-[11px] text-slate-500 font-semibold">طلبات بانتظار تسكير:</span>
-                        <span class="text-xs font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{{ c.unsettled_count }} طلب</span>
+
+                    <!-- 2. Courier Commission (كم له عمولة) -->
+                    <div class="flex items-center justify-between border-t pt-1.5" style="border-color:rgba(0,0,0,0.05);">
+                        <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                            <i class="fa-solid fa-motorcycle text-amber-500 text-[11px]"></i>
+                            عمولة السائق المستحقة (له):
+                        </span>
+                        <div class="text-left font-mono">
+                            <span class="text-xs font-black text-amber-600">{{ c.pending_driver_commissions|format_currency }} {{ currency }}</span>
+                        </div>
                     </div>
-                    <!-- Commissions -->
-                    <div class="flex items-center justify-between text-[11px]">
-                        <span class="text-slate-500">عمولات مستحقة:</span>
-                        <span class="font-black text-emerald-600 font-mono">{{ c.pending_driver_commissions|format_currency }} {{ currency }}</span>
+
+                    <!-- 3. Net Required for Office (كم نريد منه صافي) -->
+                    <div class="flex items-center justify-between border-t pt-2 p-2 rounded-xl" style="background:rgba(255,255,255,0.7);border:1px solid rgba(0,0,0,0.06);">
+                        <span class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-vault text-blue-600 text-[11px]"></i>
+                            الصافي المطلوب للمكتب:
+                        </span>
+                        <div class="text-left font-mono">
+                            {% if c.net_due_to_office > 0 %}
+                            <div class="text-base font-black text-emerald-800">{{ c.net_due_to_office|format_currency }} <span class="text-[10px] font-normal">{{ currency }}</span></div>
+                            <div class="text-[9px] text-emerald-600 font-bold">توريد للخزينة 📥</div>
+                            {% elif c.net_due_to_courier > 0 %}
+                            <div class="text-base font-black text-purple-700">{{ c.net_due_to_courier|format_currency }} <span class="text-[10px] font-normal">{{ currency }}</span></div>
+                            <div class="text-[9px] text-purple-600 font-bold">صرف للسائق 📤</div>
+                            {% else %}
+                            <span class="text-xs font-bold text-slate-400">0 {{ currency }}</span>
+                            {% endif %}
+                        </div>
                     </div>
+
+                    <!-- 4. Orders Stats -->
+                    <div class="flex items-center justify-between text-[10px] text-slate-500 border-t pt-2" style="border-color:rgba(0,0,0,0.05);">
+                        <span class="flex items-center gap-1 font-bold text-slate-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {{ c.unsettled_count }} طلب مسلّم معلق
+                        </span>
+                        <span class="flex items-center gap-1 font-bold text-blue-600">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            {{ c.active_orders_count }} بالشارع للتوصيل
+                        </span>
+                    </div>
+
+                    {% if c.current_cash_custody and c.current_cash_custody > 0 and c.current_cash_custody != c.unsettled_cash %}
+                    <div class="text-[10px] text-rose-600 font-mono text-center bg-rose-50 border border-rose-200 rounded-lg py-1 px-2">
+                        عهدة نقدية سابقة بذمته: {{ c.current_cash_custody|format_currency }} {{ currency }}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 

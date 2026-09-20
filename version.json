@@ -1,9 +1,9 @@
 {
-    "version": "3.9.8",
+    "version": "3.9.9",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.8/Stargate_Update.zip",
-    "changelog": "• حل مشكلة اهتزاز وتحرك الشاشة المفاجئ في لوحة التحكم وكافة الصفحات بشكل جذري\n• إلغاء إعادة التحميل القسري التلقائي (Auto-Reload) الذي كان يسبب وميض الشاشة وقفز التمرير\n• تطبيق محرك المزامنة الحية الصامت (Seamless Background Live Sync) لتحديث البيانات والجداول تلقائياً 100% دون أي تدخل يدوي\n• تثبيت موضع الشاشة (Scroll Lock) بدقة متناهية أثناء التحديثات\n• إضافة نقطة فحص نبض السيستم /api/live/pulse فائقة السرعة والخفة",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.9/Stargate_Update.zip",
+    "changelog": "• تطوير محرك اختيار وبحث المتاجر السريع والذكي (Smart Store Autocomplete) مع أزرار سريعة لأكثر المتاجر طلباً واختيار بضغطة زر واحدة\n• كشف وتفصيل حساب السائقين المالي الشامل (الكاش المقبوض معه بالشارع، عمولة السائق، الصافي المطلوب توريده للمكتب، وحالة الشحنات)\n• تمكين الموظفين والكول سنتر من إسناد وتعيين السائقين أو إرجاع الطلبات للمكتب فوراً دون قيود صلاحيات\n• تمكين الموظف من فتح شاشة تسكير وتوريد اليومية للصناديق بسلاسة\n• ربط متكامل لحركات الكاش وتوريد العهد النقدية",
     "published_by": "Stargate Master Enterprise"
 }

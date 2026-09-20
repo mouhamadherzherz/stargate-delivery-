@@ -52,37 +52,32 @@ couriers_bp = Blueprint('couriers_bp', __name__)
 
 # --- /couriers -> couriers_list ---
 @couriers_bp.route('/couriers')
-
 @login_required
-
 def couriers_list():
-
     conn = get_db()
-
     cursor = conn.cursor()
-
     cursor.execute("""
-
     SELECT c.*,
-
-        (SELECT COUNT(*) FROM orders WHERE courier_id = c.id AND status = 'out_for_delivery') as active_orders_count,
-
+        (SELECT COUNT(*) FROM orders WHERE courier_id = c.id AND status IN ('assigned', 'out_for_delivery')) as active_orders_count,
         (SELECT COUNT(*) FROM orders WHERE courier_id = c.id AND status = 'delivered' AND is_settled_with_courier = 0) as unsettled_count,
-
-        (SELECT IFNULL(SUM(CASE WHEN payment_method = 'whish' THEN 0 ELSE (order_price + delivery_fee) END), 0) FROM orders WHERE courier_id = c.id AND status = 'delivered' AND is_settled_with_courier = 0) as unsettled_cash,
-
+        (SELECT IFNULL(SUM(CASE 
+            WHEN payment_method = 'whish' THEN 0 
+            WHEN merchant_payment_type IN ('paid_by_courier', 'prepaid_by_customer') THEN delivery_fee 
+            ELSE (order_price + delivery_fee) 
+        END), 0) FROM orders WHERE courier_id = c.id AND status = 'delivered' AND is_settled_with_courier = 0) as unsettled_cash,
         (SELECT IFNULL(SUM(courier_commission), 0) FROM orders WHERE courier_id = c.id AND status = 'delivered' AND is_settled_with_courier = 0) as pending_driver_commissions
-
     FROM couriers c ORDER BY c.id DESC
-
     """)
-
     couriers = [dict(r) for r in cursor.fetchall()]
 
+    for c in couriers:
+        unsettled_cash = float(c.get('unsettled_cash') or 0.0)
+        pending_comm = float(c.get('pending_driver_commissions') or 0.0)
+        c['net_due_to_office'] = max(0.0, unsettled_cash - pending_comm)
+        c['net_due_to_courier'] = max(0.0, pending_comm - unsettled_cash)
+
     cursor.execute("SELECT * FROM treasuries WHERE type != 'owner_vault' AND name NOT LIKE '%الخزينة الخاصة%' ORDER BY id ASC")
-
     treasuries = [dict(r) for r in cursor.fetchall()]
-
 
     return render_template('couriers.html', couriers=couriers, treasuries=treasuries, active_page='couriers')
 
@@ -201,9 +196,8 @@ def delete_courier(courier_id):
 
 # --- /couriers/settle -> settle_courier ---
 @couriers_bp.route('/couriers/settle', methods=['POST'])
-
-@admin_required
-
+@login_required
+@permission_required('couriers_settle')
 def settle_courier():
 
     courier_id = parse_safe_int(request.form.get('courier_id'), 0)

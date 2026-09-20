@@ -267,10 +267,13 @@ def has_permission(perm):
         assigned = [p.strip() for p in custom_perms.split(',') if p.strip()]
         if perm in assigned:
             return True
-    tier1_perms = ['orders_view', 'orders_create', 'couriers_view', 'merchants_view', 'customers_view', 'print_waybills']
+    tier1_perms = [
+        'orders_view', 'orders_create', 'orders_edit', 'orders_status', 'orders_assign',
+        'couriers_view', 'couriers_settle', 'merchants_view', 'customers_view', 'print_waybills'
+    ]
     if role in ('employee', 'agent', 'call_center') and perm in tier1_perms:
         return True
-    tier2_perms = tier1_perms + ['orders_edit', 'orders_status', 'orders_assign', 'couriers_settle']
+    tier2_perms = tier1_perms + ['treasury_view', 'reports_view']
     if role in ('supervisor', 'dispatcher', 'operations_lead') and perm in tier2_perms:
         return True
     return False

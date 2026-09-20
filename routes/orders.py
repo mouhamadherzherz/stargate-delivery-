@@ -165,8 +165,12 @@ def orders_list():
 
     
 
-    cursor.execute("SELECT * FROM merchants ORDER BY store_name ASC")
-
+    cursor.execute("""
+        SELECT m.*,
+               (SELECT COUNT(*) FROM orders WHERE merchant_id = m.id) as total_orders_count
+        FROM merchants m
+        ORDER BY total_orders_count DESC, m.store_name ASC
+    """)
     merchants = [dict(r) for r in cursor.fetchall()]
 
     cursor.execute("SELECT * FROM couriers WHERE status = 'active' OR status IS NULL ORDER BY name ASC")
@@ -711,7 +715,7 @@ def assign_order_courier(order_id):
                 c_name = c_row['name'] if c_row else 'السائق'
                 flash(f"تم تعيين السائق [{c_name}] لهذا الطلب بنجاح 🛵", "success")
             else:
-                cur.execute("UPDATE orders SET courier_id = NULL, status = CASE WHEN status = 'assigned' THEN 'pending' ELSE status END WHERE id = ?", (order_id,))
+                cur.execute("UPDATE orders SET courier_id = NULL, status = CASE WHEN status IN ('assigned', 'out_for_delivery') THEN 'pending' ELSE status END WHERE id = ?", (order_id,))
                 flash("تم إلغاء تكليف السائق وأصبح الطلب بالمكتب (بدون سائق) 🏢", "info")
 
             # Transfer cash custody if order is delivered and paid by cash

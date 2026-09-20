@@ -1638,18 +1638,81 @@
                       </div>
                     </div>
 
-                    <!-- اختيار المتجر الأول مع البحث -->
-                    <div class="space-y-1.5">
-                      <input type="text" oninput="filterStoreOptions(this)"
-                             placeholder="🔍 ابحث في المتاجر بالاسم أو الهاتف..."
-                             class="store-filter-input w-full border border-purple-200 focus:border-purple-500 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-200 bg-white">
+                    <!-- شريط المتاجر السريعة الشائعة (Quick Store Chips) -->
+                    {% if merchants %}
+                    <div class="space-y-1">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-purple-900 flex items-center gap-1">
+                          <i class="fa-solid fa-bolt text-amber-500 text-[10px]"></i>
+                          <span>المتاجر الأكثر طلباً (اختيار سريع بضغطة واحدة):</span>
+                        </span>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-1.5 max-h-20 overflow-y-auto">
+                        {% for m in merchants[:7] %}
+                        <button type="button" onclick="selectSmartStore('{{ m.id }}', '{{ (m.store_name or m.name)|replace("'", "\\'") }}', '{{ m.phone or "" }}', '{{ m.default_delivery_fee or "" }}', '{{ m.default_courier_commission or "" }}')"
+                                class="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-950 border border-purple-200 text-xs font-black transition transform active:scale-95 shadow-2xs inline-flex items-center gap-1 cursor-pointer">
+                          <span>🏪 {{ m.store_name or m.name }}</span>
+                        </button>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    {% endif %}
 
+                    <!-- اختيار وبحث المتجر الذكي (Smart Store Autocomplete) -->
+                    <div class="relative space-y-1" id="smartStoreSearchWrapper">
+                      
+                      <!-- Selected Store Display Card (يظهر عند اختيار المتجر) -->
+                      <div id="smartSelectedStoreCard" class="hidden p-3 rounded-2xl bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-400 flex items-center justify-between shadow-xs animate-in">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center font-black text-sm shadow-sm">
+                            <i class="fa-solid fa-store"></i>
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <span id="smartSelectedStoreName" class="font-black text-slate-900 text-sm">--</span>
+                              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">✓ تم الاختيار</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[11px] text-slate-500 font-mono mt-0.5">
+                              <span id="smartSelectedStorePhone">--</span>
+                              <span id="smartSelectedStoreFee" class="text-purple-700 font-bold"></span>
+                            </div>
+                          </div>
+                        </div>
+                        <button type="button" onclick="clearSmartSelectedStore()" class="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1 shadow-2xs">
+                          <i class="fa-solid fa-xmark"></i>
+                          <span>تغيير المتجر</span>
+                        </button>
+                      </div>
+
+                      <!-- Search Input Box with Live Dropdown -->
+                      <div id="smartStoreInputBox" class="relative">
+                        <div class="relative flex items-center">
+                          <i class="fa-solid fa-magnifying-glass absolute right-3.5 text-purple-500 text-sm pointer-events-none"></i>
+                          <input type="text" id="smartStoreSearchInput"
+                                 placeholder="🔍 اكتب اسم المتجر أو رقم الهاتف للاختيار فوراً..."
+                                 autocomplete="off"
+                                 onfocus="openSmartStoreDropdown()"
+                                 oninput="onSmartStoreSearchInput(this.value)"
+                                 onkeydown="onSmartStoreKeydown(event)"
+                                 class="w-full bg-white border-2 border-purple-300 focus:border-purple-600 rounded-2xl pr-10 pl-10 py-2.5 text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-100 shadow-sm transition">
+                          <button type="button" onclick="clearSmartSearchInput()" id="smartStoreClearInputBtn" class="hidden absolute left-3 text-slate-400 hover:text-slate-600 p-1">
+                            <i class="fa-solid fa-circle-xmark text-xs"></i>
+                          </button>
+                        </div>
+
+                        <!-- Floating Results Menu -->
+                        <div id="smartStoreDropdownList" class="hidden absolute right-0 left-0 top-full mt-1.5 z-50 bg-white border-2 border-purple-300 rounded-2xl shadow-2xl max-h-64 overflow-y-auto divide-y divide-slate-100">
+                          <!-- Populated via JavaScript dynamically -->
+                        </div>
+                      </div>
+
+                      <!-- Hidden real select to maintain 100% backend compatibility -->
                       <select name="merchant_id" id="modalMerchantSelect"
                               onchange="onMainMerchantSelectChange(this)"
-                              class="store-select w-full border-2 border-purple-300 focus:border-purple-600 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-100 bg-white">
+                              class="store-select hidden">
                         <option value="">-- اضغط هنا لاختيار المتجر من القائمة --</option>
                         {% for m in merchants %}
-                        <option value="{{ m.id }}" data-def-fee="{{ m.default_delivery_fee or '' }}" data-def-comm="{{ m.default_courier_commission or '' }}" data-name="{{ m.name }}" data-store="{{ m.store_name or m.name }}" data-phone="{{ m.phone }}">{{ m.store_name or m.name }} — {{ m.phone }}</option>
+                        <option value="{{ m.id }}" data-def-fee="{{ m.default_delivery_fee or '' }}" data-def-comm="{{ m.default_courier_commission or '' }}" data-name="{{ m.name }}" data-store="{{ m.store_name or m.name }}" data-phone="{{ m.phone or '' }}">{{ m.store_name or m.name }} — {{ m.phone or '' }}</option>
                         {% endfor %}
                       </select>
                     </div>
@@ -2852,7 +2915,221 @@
 
 <script>
 
+// ─── Smart Fast Store Picker Engine (محرك اختيار وبحث المتاجر السريع) ───────
+let smartMerchantsData = [];
 
+function initSmartMerchantPicker() {
+  const select = document.getElementById('modalMerchantSelect');
+  if (!select) return;
+  smartMerchantsData = [];
+  for (let i = 0; i < select.options.length; i++) {
+    const opt = select.options[i];
+    if (!opt.value) continue;
+    smartMerchantsData.push({
+      id: opt.value,
+      name: opt.getAttribute('data-name') || '',
+      store: opt.getAttribute('data-store') || opt.text,
+      phone: opt.getAttribute('data-phone') || '',
+      fee: opt.getAttribute('data-def-fee') || '',
+      comm: opt.getAttribute('data-def-comm') || ''
+    });
+  }
+}
+
+function openSmartStoreDropdown() {
+  initSmartMerchantPicker();
+  const input = document.getElementById('smartStoreSearchInput');
+  const val = input ? input.value : '';
+  renderSmartStoreDropdown(val);
+  const list = document.getElementById('smartStoreDropdownList');
+  if (list) list.classList.remove('hidden');
+}
+
+function closeSmartStoreDropdown() {
+  setTimeout(() => {
+    const list = document.getElementById('smartStoreDropdownList');
+    if (list) list.classList.add('hidden');
+  }, 250);
+}
+
+function clearSmartSearchInput() {
+  const input = document.getElementById('smartStoreSearchInput');
+  if (input) {
+    input.value = '';
+    onSmartStoreSearchInput('');
+    input.focus();
+  }
+}
+
+function onSmartStoreSearchInput(query) {
+  const clearBtn = document.getElementById('smartStoreClearInputBtn');
+  if (clearBtn) {
+    if (query && query.trim()) clearBtn.classList.remove('hidden');
+    else clearBtn.classList.add('hidden');
+  }
+  renderSmartStoreDropdown(query);
+  const list = document.getElementById('smartStoreDropdownList');
+  if (list) list.classList.remove('hidden');
+}
+
+function renderSmartStoreDropdown(query) {
+  const list = document.getElementById('smartStoreDropdownList');
+  if (!list) return;
+  if (smartMerchantsData.length === 0) initSmartMerchantPicker();
+
+  const q = (query || '').trim().toLowerCase();
+  let matches = smartMerchantsData;
+  if (q) {
+    matches = smartMerchantsData.filter(m => 
+      m.store.toLowerCase().includes(q) || 
+      m.name.toLowerCase().includes(q) || 
+      m.phone.toLowerCase().includes(q)
+    );
+  }
+
+  if (matches.length === 0) {
+    const safeQ = (query || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    list.innerHTML = `
+      <div class="p-3 text-center space-y-2">
+        <p class="text-xs font-bold text-slate-500">لا يوجد متجر مطابق لـ "${safeQ}"</p>
+        <button type="button" onclick="quickCreateMerchantFromSmartInput('${safeQ}')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition inline-flex items-center gap-1 shadow-xs cursor-pointer">
+          <i class="fa-solid fa-plus text-[10px]"></i>
+          <span>➕ إضافة "${safeQ}" كمتجر جديد فوراً</span>
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  matches.slice(0, 15).forEach((m, idx) => {
+    const safeStore = m.store.replace(/'/g, "\\'");
+    const feeStr = m.fee && parseFloat(m.fee) > 0 ? `<span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md font-bold">توصيل: ${Number(m.fee).toLocaleString()}</span>` : '';
+    html += `
+      <div onclick="selectSmartStore('${m.id}', '${safeStore}', '${m.phone}', '${m.fee}', '${m.comm}')"
+           class="p-2.5 hover:bg-purple-50 cursor-pointer flex items-center justify-between transition ${idx === 0 ? 'bg-purple-50/40' : ''}">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <div>
+            <div class="font-black text-slate-900 text-xs">${m.store}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${m.phone ? '📞 ' + m.phone : ''} ${m.name && m.name !== m.store ? '• ' + m.name : ''}</div>
+          </div>
+        </div>
+        <div class="text-left font-mono">
+          ${feeStr}
+        </div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+function selectSmartStore(id, storeName, phone, fee, comm) {
+  const select = document.getElementById('modalMerchantSelect');
+  if (select) {
+    select.value = id;
+    onMainMerchantSelectChange(select);
+  }
+
+  const card = document.getElementById('smartSelectedStoreCard');
+  const inputBox = document.getElementById('smartStoreInputBox');
+  const nameEl = document.getElementById('smartSelectedStoreName');
+  const phoneEl = document.getElementById('smartSelectedStorePhone');
+  const feeEl = document.getElementById('smartSelectedStoreFee');
+
+  if (nameEl) nameEl.textContent = storeName;
+  if (phoneEl) phoneEl.textContent = phone ? '📞 ' + phone : '';
+  if (feeEl) feeEl.textContent = fee && parseFloat(fee) > 0 ? `(أجرة التوصيل: ${Number(fee).toLocaleString()} ل.ل)` : '';
+
+  if (card) card.classList.remove('hidden');
+  if (inputBox) inputBox.classList.add('hidden');
+
+  const list = document.getElementById('smartStoreDropdownList');
+  if (list) list.classList.add('hidden');
+
+  // Focus the first item name for rapid order entry!
+  setTimeout(() => {
+    const firstItemInput = document.querySelector('#storeItemsContainer_1 .item-name');
+    if (firstItemInput) firstItemInput.focus();
+  }, 100);
+}
+
+function clearSmartSelectedStore() {
+  const select = document.getElementById('modalMerchantSelect');
+  if (select) {
+    select.value = '';
+    onMainMerchantSelectChange(select);
+  }
+
+  const card = document.getElementById('smartSelectedStoreCard');
+  const inputBox = document.getElementById('smartStoreInputBox');
+  const input = document.getElementById('smartStoreSearchInput');
+
+  if (card) card.classList.add('hidden');
+  if (inputBox) inputBox.classList.remove('hidden');
+  if (input) {
+    input.value = '';
+    input.focus();
+    openSmartStoreDropdown();
+  }
+}
+
+function onSmartStoreKeydown(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const list = document.getElementById('smartStoreDropdownList');
+    if (list) {
+      const firstItem = list.querySelector('[onclick^="selectSmartStore"]');
+      if (firstItem) {
+        firstItem.click();
+      }
+    }
+  } else if (e.key === 'Escape') {
+    const list = document.getElementById('smartStoreDropdownList');
+    if (list) list.classList.add('hidden');
+  }
+}
+
+function quickCreateMerchantFromSmartInput(name) {
+  const storeName = (name || '').trim();
+  if (!storeName) return;
+
+  fetch('/api/merchants/quick-add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ store_name: storeName, name: storeName, phone: '', category: 'عام' })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.merchant) {
+      const select = document.getElementById('modalMerchantSelect');
+      if (select) {
+        const opt = document.createElement('option');
+        opt.value = data.merchant.id;
+        opt.textContent = `${data.merchant.store_name} — ${data.merchant.phone || ''}`;
+        opt.setAttribute('data-name', data.merchant.name || '');
+        opt.setAttribute('data-store', data.merchant.store_name || '');
+        opt.setAttribute('data-phone', data.merchant.phone || '');
+        opt.setAttribute('data-def-fee', data.merchant.default_delivery_fee || '');
+        opt.setAttribute('data-def-comm', data.merchant.default_courier_commission || '');
+        select.appendChild(opt);
+      }
+      initSmartMerchantPicker();
+      selectSmartStore(data.merchant.id, data.merchant.store_name, data.merchant.phone || '', data.merchant.default_delivery_fee || '', '');
+    }
+  });
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById('smartStoreSearchWrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    const list = document.getElementById('smartStoreDropdownList');
+    if (list) list.classList.add('hidden');
+  }
+});
 
 // ─── Dynamic Multi-Store & Per-Store Products Engine ───────────────────────
 window.STORE_COUNTER = 1;
@@ -3286,31 +3563,34 @@ window.recalculateAllStoresAndFinancials = recalculateAllStoresAndFinancials;
 // ─── Direct Modal Controller ───────────────────────────────────────────────
 
 function openOrderModal() {
-
   const el = document.getElementById('newOrderModal');
-
   if (!el) return;
 
   el.style.display = 'block';
-
   el.classList.remove('hidden');
-
   document.body.style.overflow = 'hidden';
-
   el.scrollTop = 0;
 
   try { initNewOrderDefaults(); } catch(e) { console.error(e); }
-
   try { updateLiveInvoice(); } catch(e) {}
 
+  try {
+    initSmartMerchantPicker();
+    const mSelect = document.getElementById('modalMerchantSelect');
+    if (mSelect && mSelect.value) {
+      const opt = mSelect.options[mSelect.selectedIndex];
+      if (opt && opt.value) {
+        selectSmartStore(opt.value, opt.getAttribute('data-store') || opt.text, opt.getAttribute('data-phone') || '', opt.getAttribute('data-def-fee') || '', opt.getAttribute('data-def-comm') || '');
+      }
+    } else {
+      clearSmartSelectedStore();
+    }
+  } catch(e) {}
+
   setTimeout(() => {
-
     const phoneInput = document.getElementById('recipientPhoneInput');
-
     if (phoneInput) phoneInput.focus();
-
   }, 100);
-
 }
 
 
