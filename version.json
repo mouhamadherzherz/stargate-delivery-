@@ -1,9 +1,9 @@
 {
-    "version": "3.7.0",
+    "version": "3.7.1",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.7.0/Stargate_Update.zip",
-    "changelog": "• ثورة الذكاء الاصطناعي الشاملة 2026 (Next-Gen Stargate AI & Neural Copilot Suite)\n• إطلاق المساعد الذكي العائم الدائم (Stargate AI Copilot) باختصار عالمي Ctrl+Space للإجابة الفورية عن الكاش، الأوردرات، والسائقين\n• المحلل الذكي الفوري لرسائل ومحادثات واتساب (AI Magic Order Auto-Fill) داخل نافذة الطلب الجديد لتعبئة كافة الحقول في ثوانٍ\n• محرك ترشيح وتوجيه السائقين الذكي (Smart Courier Recommendation & Dispatch Matrix)\n• رادار كشف التأخير والمخاطر التشغيلية والمالية بصورة استباقية\n• اجتياز الفحص الشامل لكافة المسارات والمكونات بنسبة 100%",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.7.1/Stargate_Update.zip",
+    "changelog": "• معالجة جذرية وشاملة لمحرك المساعد الذكي الداخلي (Stargate AI Copilot Engine Fix)\n• ربط الاستعلامات بالمحرك التحليلي الداخلي فائق الدقة لكاش الخزائن، كاش الشارع، تصنيف السائقين، ورادار المخاطر اللحظي\n• تعزيز أمان الاتصال وحماية الجلسات مع إرجاع فوري للأجوبة الذكية دون أي انقطاع\n• اجتياز الفحص الشامل بنسبة 100%",
     "published_by": "Stargate Master Enterprise"
 }

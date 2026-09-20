@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, sys, json, urllib.parse
 from datetime import datetime, timedelta
-from core.extensions import get_common_stats, DEFAULT_EXCHANGE_RATE
+DEFAULT_EXCHANGE_RATE = 89500.0
 
 class SmartAIEngine:
 
@@ -350,7 +350,11 @@ class SmartAIEngine:
     def answer_query_locally(self, conn, prompt):
         prompt_clean = prompt.lower().strip()
         cur = conn.cursor()
-        stats = get_common_stats(cur)
+        try:
+            from core.extensions import get_common_stats
+            stats = get_common_stats(cur)
+        except Exception:
+            stats = {}
         
         cur.execute("SELECT company_name, currency, secondary_currency, exchange_rate FROM settings WHERE id = 1")
         s = cur.fetchone()
@@ -358,78 +362,7 @@ class SmartAIEngine:
         curr = s['currency'] if s and s['currency'] else 'ل.ل'
         rate = float(s['exchange_rate']) if s and s['exchange_rate'] else DEFAULT_EXCHANGE_RATE
 
-        # Scenario 1: Cash, Treasuries, Driver Custody
-        if any(w in prompt_clean for w in ['كاش', 'خزين', 'صندوق', 'عهدة', 'سائقين', 'شارع', 'أموال', 'فلوس']):
-            cur.execute("SELECT name, balance FROM treasuries ORDER BY id ASC")
-            treasuries = cur.fetchall()
-            cur.execute("SELECT name, current_cash_custody FROM couriers WHERE status='active' AND current_cash_custody > 0 ORDER BY current_cash_custody DESC")
-            couriers = cur.fetchall()
-            
-            t_lines = "\n".join([f"• 💰 **{t['name']}**: {t['balance']:,.0f} {curr} (≈ ${t['balance']/rate:,.2f})" for t in treasuries]) or "• لا توجد خزائن مسجلة."
-            c_lines = "\n".join([f"• 🛵 **{c['name']}**: {c['current_cash_custody']:,.0f} {curr} (≈ ${c['current_cash_custody']/rate:,.2f})" for c in couriers]) or "• ✅ لا توجد عهد كاش معلقة مع السائقين."
-            
-            total_t = stats.get('total_treasury_balance', 0)
-            total_c = stats.get('total_courier_custody', 0)
-            
-            return f"""🏦 **التقرير المالي اللحظي للكاش والعهد - {company}**
-
-💵 **أرصدة الخزائن والصناديق:**
-{t_lines}
-👉 **إجمالي رصيد الخزائن:** {total_t:,.0f} {curr} (≈ ${total_t/rate:,.2f})
-
-━━━━━━━━━━━━━━━━━━━━
-🛵 **عهد الكاش المعلقة مع السائقين (كاش بالشارع):**
-{c_lines}
-👉 **إجمالي كاش الشارع المطلوب تحصيله:** {total_c:,.0f} {curr} (≈ ${total_c/rate:,.2f})
-
-💡 **توصية المحرك الذكي:**
-{"⚠️ يرجى تسكير حسابات السائقين الذين تجاوزت عهدتهم $100 فوراً لتجنب تراكم السيولة." if couriers else "✅ السيولة النقدية مضبوطة بشكل ممتاز."}"""
-
-        # Scenario 2: Orders, Today's performance, Delivery stats
-        if any(w in prompt_clean for w in ['أوردر', 'طلب', 'اليوم', 'تسليم', 'توصيل', 'كم أوردر', 'إحصائ']):
-            tot = stats.get('today_orders_count', 0)
-            deliv = stats.get('today_delivered_count', 0)
-            rev = stats.get('today_delivery_revenue', 0)
-            net = stats.get('today_net_revenue', 0)
-            ret = stats.get('today_returned_count', 0)
-            rate_pct = round((deliv / tot * 100), 1) if tot > 0 else 0.0
-            
-            return f"""📦 **إحصائيات حركة الطلبات والتشغيل لليوم - {company}**
-
-• 📬 **إجمالي الطلبات المسجلة اليوم:** {tot} طلب
-• ✅ **تم تسليمها بنجاح:** {deliv} طلب (بنسبة إنجاز {rate_pct}%)
-• 🔄 **الطلبات المرتجعة:** {ret} طلب
-• 🚚 **قيد التوصيل الآن:** {max(0, tot - deliv - ret)} طلب
-
-━━━━━━━━━━━━━━━━━━━━
-💵 **المالية التشغيلية لليوم:**
-• 📈 **إيرادات التوصيل:** {rev:,.0f} {curr}
-• 💚 **صافي أرباح الشركة لليوم:** {net:,.0f} {curr} (≈ ${net/rate:,.2f})
-
-💡 **تقييم المستشار التشغيلي:**
-{"🚀 أداء ممتاز ومعدل تسليم مرتفع اليوم!" if rate_pct >= 70 else "📌 يرجى متابعة السائقين لتسريع تسليم الطلبات المتبقية قبل نهاية اليوم."}"""
-
-        # Scenario 3: Drivers, Courier Ranking, Best Driver
-        if any(w in prompt_clean for w in ['سائق', 'كابتن', 'مندوب', 'أفضل سائق', 'تقييم السائقين', 'أداء السائق']):
-            ranking = self.get_couriers_ranking(conn)
-            if not ranking:
-                return "🛵 **تقييم السائقين:** لا يوجد سائقون نشطون مسجلون في النظام حالياً."
-            
-            r_lines = []
-            for c in ranking[:5]:
-                badge = c.get('badge', '🛵 كابتن نشط')
-                r_lines.append(f"#{c['rank']} **{c['name']}** ({badge})\n   - تم التوصيل: {c['delivered_count']} طلب | نسبة النجاح: {c['success_rate']}%\n   - العهدة الحالية: {c['current_cash_custody']:,.0f} {curr}")
-            
-            best = ranking[0]
-            return f"""🏆 **تقرير تصنيف وتقييم أداء السائقين - {company}**
-
-{chr(10).join(r_lines)}
-
-━━━━━━━━━━━━━━━━━━━━
-🌟 **أفضل كابتن حالياً:** {best['name']} بنسبة نجاح {best['success_rate']}%!
-💡 **توصية:** تشجيع السائقين عبر صرف عمولاتهم أولاً بأول يرفع معدل التسليم بنسبة 25%."""
-
-        # Scenario 4: Delayed, At-Risk orders
+        # Scenario 1: Delayed, At-Risk orders & Risk radar
         if any(w in prompt_clean for w in ['متأخر', 'تأخير', 'خطر', 'مشاكل', 'رادار', 'ريسك']):
             risks = self.get_risk_radar(conn)
             cur.execute("""
@@ -458,6 +391,77 @@ class SmartAIEngine:
 {risk_text}
 
 💡 **الإجراء الموصى به:** التواصل مع الزبائن وتحديد مواعيد تسليم مجدولة أو إعادة توزيع الشحنات."""
+
+        # Scenario 2: Drivers, Courier Ranking, Best Driver
+        if any(w in prompt_clean for w in ['كابتن', 'مندوب', 'أفضل سائق', 'أفضل كابتن', 'تقييم السائقين', 'أداء السائق', 'تصنيف']):
+            ranking = self.get_couriers_ranking(conn)
+            if not ranking:
+                return "🛵 **تقييم السائقين:** لا يوجد سائقون نشطون مسجلون في النظام حالياً."
+            
+            r_lines = []
+            for c in ranking[:5]:
+                badge = c.get('badge', '🛵 كابتن نشط')
+                r_lines.append(f"#{c['rank']} **{c['name']}** ({badge})\n   - تم التوصيل: {c['delivered_count']} طلب | نسبة النجاح: {c['success_rate']}%\n   - العهدة الحالية: {c['current_cash_custody']:,.0f} {curr}")
+            
+            best = ranking[0]
+            return f"""🏆 **تقرير تصنيف وتقييم أداء السائقين - {company}**
+
+{chr(10).join(r_lines)}
+
+━━━━━━━━━━━━━━━━━━━━
+🌟 **أفضل كابتن حالياً:** {best['name']} بنسبة نجاح {best['success_rate']}%!
+💡 **توصية:** تشجيع السائقين عبر صرف عمولاتهم أولاً بأول يرفع معدل التسليم بنسبة 25%."""
+
+        # Scenario 3: Cash, Treasuries, Driver Custody
+        if any(w in prompt_clean for w in ['كاش', 'خزين', 'صندوق', 'عهدة', 'شارع', 'أموال', 'فلوس']):
+            cur.execute("SELECT name, balance FROM treasuries ORDER BY id ASC")
+            treasuries = cur.fetchall()
+            cur.execute("SELECT name, current_cash_custody FROM couriers WHERE status='active' AND current_cash_custody > 0 ORDER BY current_cash_custody DESC")
+            couriers = cur.fetchall()
+            
+            t_lines = "\n".join([f"• 💰 **{t['name']}**: {t['balance']:,.0f} {curr} (≈ ${t['balance']/rate:,.2f})" for t in treasuries]) or "• لا توجد خزائن مسجلة."
+            c_lines = "\n".join([f"• 🛵 **{c['name']}**: {c['current_cash_custody']:,.0f} {curr} (≈ ${c['current_cash_custody']/rate:,.2f})" for c in couriers]) or "• ✅ لا توجد عهد كاش معلقة مع السائقين."
+            
+            total_t = stats.get('total_treasury_balance', 0)
+            total_c = stats.get('total_courier_custody', 0)
+            
+            return f"""🏦 **التقرير المالي اللحظي للكاش والعهد - {company}**
+
+💵 **أرصدة الخزائن والصناديق:**
+{t_lines}
+👉 **إجمالي رصيد الخزائن:** {total_t:,.0f} {curr} (≈ ${total_t/rate:,.2f})
+
+━━━━━━━━━━━━━━━━━━━━
+🛵 **عهد الكاش المعلقة مع السائقين (كاش بالشارع):**
+{c_lines}
+👉 **إجمالي كاش الشارع المطلوب تحصيله:** {total_c:,.0f} {curr} (≈ ${total_c/rate:,.2f})
+
+💡 **توصية المحرك الذكي:**
+{"⚠️ يرجى تسكير حسابات السائقين الذين تجاوزت عهدتهم $100 فوراً لتجنب تراكم السيولة." if couriers else "✅ السيولة النقدية مضبوطة بشكل ممتاز."}"""
+
+        # Scenario 4: Orders, Today's performance, Delivery stats
+        if any(w in prompt_clean for w in ['أوردر', 'طلب', 'اليوم', 'تسليم', 'توصيل', 'كم أوردر', 'إحصائ', 'حركة']):
+            tot = stats.get('today_orders_count', 0)
+            deliv = stats.get('today_delivered_count', 0)
+            rev = stats.get('today_delivery_revenue', 0)
+            net = stats.get('today_net_revenue', 0)
+            ret = stats.get('today_returned_count', 0)
+            rate_pct = round((deliv / tot * 100), 1) if tot > 0 else 0.0
+            
+            return f"""📦 **إحصائيات حركة الطلبات والتشغيل لليوم - {company}**
+
+• 📬 **إجمالي الطلبات المسجلة اليوم:** {tot} طلب
+• ✅ **تم تسليمها بنجاح:** {deliv} طلب (بنسبة إنجاز {rate_pct}%)
+• 🔄 **الطلبات المرتجعة:** {ret} طلب
+• 🚚 **قيد التوصيل الآن:** {max(0, tot - deliv - ret)} طلب
+
+━━━━━━━━━━━━━━━━━━━━
+💵 **المالية التشغيلية لليوم:**
+• 📈 **إيرادات التوصيل:** {rev:,.0f} {curr}
+• 💚 **صافي أرباح الشركة لليوم:** {net:,.0f} {curr} (≈ ${net/rate:,.2f})
+
+💡 **تقييم المستشار التشغيلي:**
+{"🚀 أداء ممتاز ومعدل تسليم مرتفع اليوم!" if rate_pct >= 70 else "📌 يرجى متابعة السائقين لتسريع تسليم الطلبات المتبقية قبل نهاية اليوم."}"""
 
         # Scenario 5: Merchants activity
         if any(w in prompt_clean for w in ['متجر', 'متاجر', 'محل', 'محلات', 'تجار', 'مبيعات']):

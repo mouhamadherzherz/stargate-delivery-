@@ -1450,18 +1450,36 @@
         if (sendBtn) sendBtn.disabled = true;
 
         try {
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || window.CSRF_TOKEN || '';
             const res = await fetch('/api/ai/ask', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({query: prompt})
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify({query: prompt, csrf_token: csrfToken})
             });
-            const data = await res.json();
-            const reply = data.answer || "لم يتم استلام رد، يرجى إعادة المحاولة.";
+            let reply = "";
+            if (!res.ok) {
+                if (res.status === 401) {
+                    reply = "⚠️ يرجى تسجيل الدخول إلى النظام لتتمكن من استخدام المساعد الذكي.";
+                } else if (res.status === 403) {
+                    reply = "⚠️ انتهت صلاحية الجلسة أو التحقق الأمني، يرجى تحديث الصفحة.";
+                } else {
+                    reply = "تعذر الاتصال بالمحرك الذكي (رمز الخطأ: " + res.status + ")، يرجى إعادة المحاولة.";
+                }
+            } else {
+                const data = await res.json();
+                reply = data.answer || data.message || "لم يتم استلام رد، يرجى إعادة المحاولة.";
+            }
             const targetEl = document.getElementById(msgId);
             if (targetEl) {
                 targetEl.innerHTML = formatAiMarkdown(reply);
             }
         } catch (err) {
+            console.error("AI Copilot Fetch Error:", err);
             const targetEl = document.getElementById(msgId);
             if (targetEl) {
                 targetEl.innerHTML = '<span class="text-rose-400 font-bold">تعذر الاتصال بالمحرك الذكي، يرجى المحاولة لاحقاً.</span>';

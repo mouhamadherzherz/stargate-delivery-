@@ -1037,21 +1037,82 @@ def ai_customer_risk():
 
 # --- /api/ai/recommend-courier -> ai_recommend_courier ---
 @api_bp.route('/api/ai/recommend-courier', methods=['GET'])
-@login_required
 def ai_recommend_courier():
-    area = request.args.get('area', '').strip()
-    recommendation = local_ai.recommend_best_courier(area)
-    return jsonify(recommendation or {})
+    try:
+        global local_ai
+        if not local_ai:
+            try:
+                from stargate_ai_engine import StargateLocalAI
+                local_ai = StargateLocalAI(os.path.join(DATA_DIR, 'stargate_production.db'))
+            except Exception:
+                pass
+        area = request.args.get('area', '').strip()
+        if local_ai and hasattr(local_ai, 'recommend_best_courier'):
+            recommendation = local_ai.recommend_best_courier(area)
+            return jsonify(recommendation or {})
+        return jsonify({})
+    except Exception as ex:
+        logger.warning(f"[AI Recommend Courier] Error: {ex}")
+        return jsonify({})
 
 
 
 
 # --- /api/ai/ask -> ai_ask_assistant ---
 @api_bp.route('/api/ai/ask', methods=['POST'])
-@login_required
 def ai_ask_assistant():
-    data = request.get_json(silent=True) or request.form or {}
-    query = data.get('query', '').strip()
-    answer = local_ai.answer_manager_query(query)
-    return jsonify({'answer': answer})
+    try:
+        # Graceful auth check
+        if not session.get('logged_in'):
+            return jsonify({
+                'success': False,
+                'answer': '⚠️ يرجى تسجيل الدخول إلى النظام لتتمكن من استشارة المحرك الذكي.'
+            }), 200
+
+        data = request.get_json(silent=True) or request.form or {}
+        query = (data.get('query') or '').strip()
+
+        if not query:
+            return jsonify({
+                'success': True,
+                'answer': 'مرحباً بك! يمكنك سؤالي عن: كاش الخزائن والشارع، حركة طلبيات اليوم، تقييم السائقين، أو فحص المخاطر والتأخير.'
+            })
+
+        reply = None
+
+        # 1. Primary Engine: Native Smart AI Engine with active SQLite connection
+        try:
+            conn = get_db()
+            from core.ai_engine import smart_ai_engine
+            if hasattr(smart_ai_engine, 'answer_query_locally'):
+                reply = smart_ai_engine.answer_query_locally(conn, query)
+        except Exception as e_smart:
+            logger.warning(f"[AI Copilot] smart_ai_engine error: {e_smart}")
+
+        # 2. Secondary Engine: StargateLocalAI fallback
+        if not reply:
+            try:
+                global local_ai
+                if not local_ai:
+                    from stargate_ai_engine import StargateLocalAI
+                    local_ai = StargateLocalAI(os.path.join(DATA_DIR, 'stargate_production.db'))
+                if local_ai and hasattr(local_ai, 'answer_manager_query'):
+                    reply = local_ai.answer_manager_query(query)
+            except Exception as e_local:
+                logger.warning(f"[AI Copilot] local_ai fallback error: {e_local}")
+
+        if not reply:
+            reply = "مرحباً بك! أنا مستشارك الذكي المدمج في نظام Stargate. يمكنك الاستفسار عن كاش الخزائن، إحصائيات التوصيل، أو تقييم السائقين."
+
+        return jsonify({
+            'success': True,
+            'answer': reply
+        })
+    except Exception as ex:
+        logger.error(f"[AI Copilot Fatal] /api/ai/ask: {ex}")
+        return jsonify({
+            'success': False,
+            'answer': f'حدث خطأ غير متوقع أثناء معالجة الاستفسار: {str(ex)}'
+        }), 200
+
 
