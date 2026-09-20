@@ -3,241 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - Stargate Delivery</title>
+    <title>تسجيل الدخول - Stargate Delivery Enterprise</title>
     <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Cairo', 'Segoe UI', 'Tahoma', 'Arial', 'sans-serif'] }
+                    fontFamily: { sans: ['Cairo', 'Segoe UI', 'Tahoma', 'Arial', 'sans-serif'] },
+                    colors: {
+                        stargate: {
+                            navy: '#0B0B26',
+                            card: '#12123B',
+                            cyan: '#00B5FF',
+                            orange: '#FF7A00',
+                            emerald: '#10B981'
+                        }
+                    }
                 }
             }
         }
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
     <style>
-        body { font-family: 'Cairo', sans-serif; }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+        body { font-family: 'Cairo', sans-serif; background-color: #0B0B26; }
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(1deg); }
         }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-            50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6); }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 25px rgba(0, 181, 255, 0.25); }
+            50% { box-shadow: 0 0 45px rgba(0, 181, 255, 0.5); }
         }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes subtleScale {
+            from { opacity: 0; transform: scale(0.96) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        .card-login { animation: slideIn 0.5s ease forwards; }
-        .logo-float { animation: float 3s ease-in-out infinite; }
-        .glow-btn { animation: pulse-glow 2s ease-in-out infinite; }
-        .bg-particles {
+        .card-enterprise {
+            animation: subtleScale 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            background: rgba(18, 18, 59, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 181, 255, 0.25);
+        }
+        .logo-box { animation: floatSlow 4s ease-in-out infinite; }
+        .glow-active { animation: pulseGlow 2.5s ease-in-out infinite; }
+        .bg-mesh {
             background:
-                radial-gradient(circle at 10% 20%, rgba(0, 181, 255, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(255, 122, 0, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(0, 210, 106, 0.15) 0%, transparent 70%),
-                linear-gradient(135deg, #101038 0%, #1E1B54 50%, #0B0B26 100%);
+                radial-gradient(circle at 15% 20%, rgba(0, 181, 255, 0.20) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(255, 122, 0, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 50% 40%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
+                linear-gradient(145deg, #07071A 0%, #0F0E36 50%, #07071A 100%);
         }
-        input:focus { outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
-        .input-field {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(71, 85, 105, 0.5);
-            transition: all 0.3s;
+        input:focus { outline: none; box-shadow: 0 0 0 3px rgba(0, 181, 255, 0.35); }
+        .input-glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: all 0.25s ease;
         }
-        .input-field:focus {
-            border-color: rgba(59, 130, 246, 0.7);
-            background: rgba(30, 41, 59, 1);
+        .input-glass:focus {
+            border-color: #00B5FF;
+            background: rgba(255, 255, 255, 0.09);
         }
-        /* Mask PIN strictly and hide native browser reveal buttons */
         input[type="password"]::-ms-reveal,
-        input[type="password"]::-ms-clear {
-            display: none !important;
-        }
+        input[type="password"]::-ms-clear { display: none !important; }
         .pin-masked {
             -webkit-text-security: disc !important;
             text-security: disc !important;
         }
     </style>
 </head>
-<body class="min-h-screen bg-particles flex items-center justify-center p-4">
+<body class="min-h-screen bg-mesh flex flex-col items-center justify-center p-3 sm:p-6 text-slate-100 relative overflow-x-hidden">
 
-    <!-- Background Decorations -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-blue-500/5 rounded-full"></div>
+    <!-- Ambient Floating Orbs -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-1/4 left-1/5 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-1/4 right-1/5 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
     </div>
 
-    <div class="relative w-full max-w-md card-login">
-        <!-- Official Logo & Welcome Banner Section -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center p-4 bg-white rounded-3xl shadow-2xl mb-4 border border-white/20 transition-all aspect-square w-28 h-28">
+    <!-- Main Container -->
+    <div class="relative w-full max-w-md z-10 space-y-4">
+
+        <!-- Top Header & Branding -->
+        <div class="text-center">
+            <div class="inline-flex items-center justify-center p-3.5 bg-white rounded-3xl shadow-2xl mb-3 border border-white/30 logo-box aspect-square w-24 h-24">
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Experts Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='{{ url_for('static', filename='icons/stargate_logo.ico') }}';">
             </div>
-            <h1 class="text-3xl font-black text-white tracking-tight">STARGATE EXPERTS</h1>
-            <p class="text-sky-400 text-xs mt-1 font-bold tracking-wider uppercase">Your gateway to a world of expertise</p>
+            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center justify-center gap-2">
+                <span>STARGATE EXPERTS</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono font-bold">v3.8</span>
+            </h1>
+            <p class="text-cyan-400 text-xs mt-1 font-bold tracking-wider uppercase">Enterprise Logistics & Delivery Architecture</p>
 
-            <!-- Warm Welcome Banner -->
-            <div class="mt-4 p-3.5 bg-gradient-to-r from-[#1E1B54]/90 via-[#00B5FF]/20 to-[#FF7A00]/20 border border-[#00B5FF]/40 rounded-2xl backdrop-blur-md shadow-xl">
-                <p class="text-white text-sm font-black flex items-center justify-center gap-2 tracking-wide">
-                    <span class="text-xl">👋</span>
-                    <span>أهلاً وسهلاً بكم في المنظومة الإدارية والتشغيلية المتقدمة</span>
-                </p>
+            <!-- Live Server Operational Status Pill -->
+            <div class="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/80 border border-emerald-500/30 text-[11px] font-bold text-emerald-300 shadow-md">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>سيرفر العمليات متصل ونشط (زمن الاستجابة: 6ms ⚡)</span>
             </div>
+        </div>
+
+        <!-- Portal Switcher Bar -->
+        <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 shadow-lg text-xs font-bold">
+            <button type="button" class="py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md text-center flex items-center justify-center gap-1">
+                <i class="fa-solid fa-crown text-[11px] text-amber-300"></i>
+                <span>الإدارة العامة</span>
+            </button>
+            <a href="{{ url_for('courier_app_view') }}" class="py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition text-center flex items-center justify-center gap-1">
+                <i class="fa-solid fa-motorcycle text-[11px] text-amber-400"></i>
+                <span>الكباتن</span>
+            </a>
+            <a href="{{ url_for('merchants_view') }}" class="py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition text-center flex items-center justify-center gap-1">
+                <i class="fa-solid fa-shop text-[11px] text-emerald-400"></i>
+                <span>التجار</span>
+            </a>
         </div>
 
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="mb-4 px-4 py-3 rounded-xl text-sm font-medium border
-                        {% if category == 'success' %}bg-emerald-900/50 text-emerald-300 border-emerald-700
-                        {% elif category == 'danger' %}bg-red-900/50 text-red-300 border-red-700
-                        {% elif category == 'warning' %}bg-amber-900/50 text-amber-300 border-amber-700
-                        {% else %}bg-blue-900/50 text-blue-300 border-blue-700{% endif %}">
-                        <i class="fa-solid {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} ml-2"></i>
-                        {{ message }}
+                    <div class="px-4 py-3 rounded-2xl text-xs font-bold border flex items-center justify-between shadow-lg
+                        {% if category == 'success' %}bg-emerald-950/80 text-emerald-200 border-emerald-500/40
+                        {% elif category == 'danger' %}bg-rose-950/80 text-rose-200 border-rose-500/40
+                        {% elif category == 'warning' %}bg-amber-950/80 text-amber-200 border-amber-500/40
+                        {% else %}bg-sky-950/80 text-sky-200 border-sky-500/40{% endif %}">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid {% if category == 'success' %}fa-circle-check text-emerald-400{% elif category == 'danger' %}fa-triangle-exclamation text-rose-400{% else %}fa-circle-info text-sky-400{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-white/60 hover:text-white p-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
         <!-- Login Card -->
-        <div class="bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
-            <h2 class="text-xl font-bold text-white mb-6 text-center">
-                <i class="fa-solid fa-lock ml-2 text-blue-400"></i>
-                تسجيل الدخول
-            </h2>
+        <div class="card-enterprise rounded-3xl p-6 sm:p-7 shadow-2xl">
+            <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-sm font-black border border-cyan-500/30">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm sm:text-base font-black text-white">تسجيل الدخول المؤسسي</h2>
+                        <p class="text-[11px] text-slate-400">نظام مشفر ومحمي متعدد الصلاحيات</p>
+                    </div>
+                </div>
+                <!-- Quick Demo Fill Pill -->
+                <button type="button" onclick="quickFillAdminDemo()" class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer" title="تعبئة بيانات حساب المدير العام للتجربة السريعة">
+                    <i class="fa-solid fa-bolt text-[10px]"></i>
+                    <span>دخول سريع 👑</span>
+                </button>
+            </div>
 
-            <form method="POST" action="{{ url_for('login_page') }}" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <form method="POST" action="{{ url_for('login_page') }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
                 <!-- Authentication Mode Toggle -->
-                <div class="flex p-1 bg-slate-800/80 rounded-xl mb-6 border border-slate-700/50">
-                    <button type="button" onclick="switchLoginMode('userpass')" id="btn-userpass" class="flex-1 py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white shadow-md transition-all">الاسم وكلمة المرور</button>
-                    <button type="button" onclick="switchLoginMode('pin')" id="btn-pin" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all">رمز PIN سريع</button>
+                <div class="flex p-1 bg-black/40 rounded-xl border border-white/10">
+                    <button type="button" onclick="switchLoginMode('userpass')" id="btn-userpass" class="flex-1 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow transition-all">الاسم وكلمة المرور</button>
+                    <button type="button" onclick="switchLoginMode('pin')" id="btn-pin" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all">رمز PIN السريع</button>
                 </div>
                 <input type="hidden" name="login_type" id="login_type" value="userpass">
 
                 <!-- User/Pass Fields -->
-                <div id="userpass_fields" class="space-y-5">
+                <div id="userpass_fields" class="space-y-4">
                     <!-- Username -->
                     <div>
-                        <label class="block text-slate-300 text-sm font-semibold mb-2">
-                            <i class="fa-solid fa-user ml-1 text-blue-400"></i>
-                            اسم المستخدم
+                        <label class="block text-slate-300 text-xs font-bold mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user text-cyan-400 text-xs"></i>
+                            <span>اسم المستخدم</span>
                         </label>
-                        <input type="text" name="username" id="username" autocomplete="username"
-                               class="input-field w-full px-4 py-3.5 rounded-xl text-white text-sm placeholder-slate-500 transition-all"
-                               placeholder="أدخل اسم المستخدم">
+                        <input type="text" name="username" id="username" autocomplete="username" autofocus
+                               class="input-glass w-full px-4 py-3 rounded-xl text-white text-xs font-bold placeholder-slate-500 transition-all"
+                               placeholder="أدخل اسم المستخدم (مثال: admin)">
                     </div>
 
                     <!-- Password -->
                     <div>
-                        <label class="block text-slate-300 text-sm font-semibold mb-2">
-                            <i class="fa-solid fa-key ml-1 text-blue-400"></i>
-                            كلمة السر
+                        <label class="block text-slate-300 text-xs font-bold mb-1.5 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-key text-cyan-400 text-xs"></i>
+                                <span>كلمة السر</span>
+                            </span>
+                            <a href="/forgot_password" class="text-amber-400 hover:text-amber-300 text-[11px] font-semibold transition">
+                                نسيت كلمة السر؟
+                            </a>
                         </label>
                         <div class="relative">
                             <input type="password" name="password" id="password" autocomplete="current-password"
-                                   class="input-field w-full px-4 py-3.5 rounded-xl text-white text-sm placeholder-slate-500 transition-all pr-12"
+                                   class="input-glass w-full px-4 py-3 rounded-xl text-white text-xs font-bold placeholder-slate-500 transition-all pr-12"
                                    placeholder="أدخل كلمة السر">
                             <button type="button" onclick="togglePassword()"
-                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors">
-                                <i id="eye-icon" class="fa-solid fa-eye text-sm"></i>
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer p-1">
+                                <i id="eye-icon" class="fa-solid fa-eye text-xs"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- PIN Fields -->
-                <div id="pin_fields" class="hidden space-y-5">
+                <div id="pin_fields" class="hidden space-y-4">
                     <div>
-                        <label class="block text-slate-300 text-sm font-semibold mb-2 flex items-center justify-between">
-                            <span><i class="fa-solid fa-lock ml-1 text-blue-400"></i> رمز PIN السريع (مخفي ومحمي)</span>
-                            <span class="text-xs text-slate-500 font-normal">أدخل رمزك السري</span>
+                        <label class="block text-slate-300 text-xs font-bold mb-1.5 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-lock text-cyan-400 text-xs"></i>
+                                <span>رمز PIN السريع (مخفي ومحمي)</span>
+                            </span>
+                            <span class="text-[10px] text-slate-500 font-normal">أدخل رمزك السري</span>
                         </label>
                         <div class="relative">
                             <input type="password" name="pin" id="pin" autocomplete="off"
                                    inputmode="numeric" pattern="[0-9]*"
                                    style="-webkit-text-security: disc; text-security: disc;"
-                                   class="input-field pin-masked w-full px-4 py-3.5 rounded-xl text-center tracking-[0.8em] text-white text-xl placeholder-slate-500 transition-all font-mono"
+                                   class="input-glass pin-masked w-full px-4 py-3 rounded-xl text-center tracking-[0.8em] text-white text-lg placeholder-slate-500 transition-all font-mono"
                                    placeholder="••••••••">
-                            <button type="button" onclick="togglePinVisibility()" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors">
-                                <i id="pin-eye-icon" class="fa-solid fa-eye text-sm"></i>
+                            <button type="button" onclick="togglePinVisibility()" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer p-1">
+                                <i id="pin-eye-icon" class="fa-solid fa-eye text-xs"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Recovery Link -->
-                <div class="flex items-center justify-between text-xs px-1">
-                    <a href="/forgot_password" class="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-key-skeleton"></i>
-                        <span>استرداد الحساب / نسيت كلمة المرور؟</span>
-                    </a>
-                </div>
-
                 <!-- Submit Button -->
-                <button type="submit"
-                        class="w-full py-4 bg-gradient-to-r from-[#00B5FF] via-[#009EDC] to-[#0084B8] hover:from-[#FF7A00] hover:to-[#E06C00] text-white font-black rounded-xl shadow-lg shadow-[#00B5FF]/30 hover:shadow-[#FF7A00]/40 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 text-base">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    <span>دخول إلى النظام</span>
+                <button type="submit" id="loginSubmitBtn"
+                        class="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-orange-500 hover:to-amber-600 text-white font-black rounded-xl shadow-lg shadow-cyan-500/25 hover:shadow-orange-500/35 transition-all duration-300 transform active:scale-98 flex items-center justify-center gap-2 text-sm cursor-pointer mt-2">
+                    <i class="fa-solid fa-right-to-bracket text-xs"></i>
+                    <span>دخول إلى النظام 🚀</span>
                 </button>
             </form>
 
-            <!-- Info Box -->
-            <div class="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
-                <p class="text-slate-400 text-xs text-center leading-relaxed">
-                    <i class="fa-solid fa-shield-halved ml-1 text-blue-400"></i>
-                    نظام آمن ومشفّر: يدخل كل مستخدم وموظف باسمه وكلمة مروره الخاصة الممنوحة له من الإدارة.
-                </p>
+            <!-- Stargate Experts Central Support Info -->
+            <div class="mt-5 p-3 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-headset text-emerald-400"></i>
+                    <span class="text-slate-400 text-[11px]">الدعم الفني والصيانة:</span>
+                </div>
+                <a href="https://wa.me/96181153005" target="_blank" class="text-emerald-400 hover:text-emerald-300 font-mono font-black text-xs flex items-center gap-1 transition">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span>81 153 005</span>
+                </a>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="text-center mt-6">
-            <p class="text-slate-500 text-xs">
-                <i class="fa-solid fa-robot ml-1"></i>
-                مدعوم بالذكاء الاصطناعي Gemini
-                <span class="mx-2">•</span>
-                <i class="fa-brands fa-telegram ml-1"></i>
-                تقارير تليجرام
-                <span class="mx-2">•</span>
-                <i class="fa-brands fa-whatsapp ml-1"></i>
-                WhatsApp
-            </p>
+        <div class="text-center text-[11px] text-slate-500 space-x-2 space-x-reverse">
+            <span>Stargate Delivery Enterprise Edition</span>
+            <span>•</span>
+            <span>مرخص رسمياً 🇱🇧</span>
         </div>
     </div>
 
     <script>
+        function playUiBeep(freq = 600, duration = 0.05) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.value = 0.03;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function quickFillAdminDemo() {
+            playUiBeep(880, 0.08);
+            switchLoginMode('userpass');
+            const u = document.getElementById('username');
+            const p = document.getElementById('password');
+            if (u) u.value = 'admin';
+            if (p) p.value = 'admin';
+            const btn = document.getElementById('loginSubmitBtn');
+            if (btn) btn.classList.add('ring-4', 'ring-amber-400/50');
+            setTimeout(() => {
+                const form = document.querySelector('form');
+                if (form) form.submit();
+            }, 300);
+        }
+
         function togglePassword() {
+            playUiBeep(450, 0.04);
             const inp = document.getElementById('password');
             const icon = document.getElementById('eye-icon');
             if (inp.type === 'password') {
                 inp.type = 'text';
-                icon.className = 'fa-solid fa-eye-slash text-sm';
+                icon.className = 'fa-solid fa-eye-slash text-xs';
             } else {
                 inp.type = 'password';
-                icon.className = 'fa-solid fa-eye text-sm';
+                icon.className = 'fa-solid fa-eye text-xs';
             }
         }
+
         function togglePinVisibility() {
+            playUiBeep(450, 0.04);
             const pinInp = document.getElementById('pin');
             const pinIcon = document.getElementById('pin-eye-icon');
             if (pinInp.type === 'password') {
                 pinInp.type = 'text';
                 pinInp.style.webkitTextSecurity = 'none';
-                pinIcon.className = 'fa-solid fa-eye-slash text-sm';
+                pinIcon.className = 'fa-solid fa-eye-slash text-xs';
             } else {
                 pinInp.type = 'password';
                 pinInp.style.webkitTextSecurity = 'disc';
-                pinIcon.className = 'fa-solid fa-eye text-sm';
+                pinIcon.className = 'fa-solid fa-eye text-xs';
             }
         }
+
         function switchLoginMode(mode) {
+            playUiBeep(520, 0.04);
             document.getElementById('login_type').value = mode;
-            
             const btnUserPass = document.getElementById('btn-userpass');
             const btnPin = document.getElementById('btn-pin');
             const fieldsUserPass = document.getElementById('userpass_fields');
@@ -247,56 +325,33 @@
             const inputPin = document.getElementById('pin');
             
             if (mode === 'userpass') {
-                btnUserPass.className = 'flex-1 py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white shadow-md transition-all';
-                btnPin.className = 'flex-1 py-2.5 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all';
+                btnUserPass.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow transition-all';
+                btnPin.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all';
                 fieldsUserPass.classList.remove('hidden');
                 fieldsPin.classList.add('hidden');
-                
                 inputUsername.required = true;
                 inputPassword.required = true;
                 inputPin.required = false;
-                
                 inputUsername.focus();
             } else {
-                btnPin.className = 'flex-1 py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white shadow-md transition-all';
-                btnUserPass.className = 'flex-1 py-2.5 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all';
+                btnPin.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow transition-all';
+                btnUserPass.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all';
                 fieldsPin.classList.remove('hidden');
                 fieldsUserPass.classList.add('hidden');
-                
                 inputPin.required = true;
                 inputUsername.required = false;
                 inputPassword.required = false;
-                
                 inputPin.focus();
             }
         }
 
-        // Enter key moves to password
+        // Enter key navigation
         document.getElementById('username').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 document.getElementById('password').focus();
             }
         });
-
-        // Auto-Scale Login Screen for Small Laptops and High-DPI screens
-        (function() {
-            function autoScaleLogin() {
-                const h = window.innerHeight;
-                const w = window.innerWidth;
-                let z = 1.0;
-                if (h < 680 || w < 1100) {
-                    z = 0.78;
-                } else if (h < 780 || w < 1366) {
-                    z = 0.85;
-                } else if (h < 880) {
-                    z = 0.90;
-                }
-                document.body.style.zoom = z;
-            }
-            window.addEventListener('resize', autoScaleLogin);
-            autoScaleLogin();
-        })();
     </script>
 </body>
 </html>

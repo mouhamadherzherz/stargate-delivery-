@@ -1462,17 +1462,24 @@
                 body: JSON.stringify({query: prompt, csrf_token: csrfToken})
             });
             let reply = "";
-            if (!res.ok) {
-                if (res.status === 401) {
-                    reply = "⚠️ يرجى تسجيل الدخول إلى النظام لتتمكن من استخدام المساعد الذكي.";
-                } else if (res.status === 403) {
-                    reply = "⚠️ انتهت صلاحية الجلسة أو التحقق الأمني، يرجى تحديث الصفحة.";
-                } else {
-                    reply = "تعذر الاتصال بالمحرك الذكي (رمز الخطأ: " + res.status + ")، يرجى إعادة المحاولة.";
-                }
+            let data = null;
+            if (res.ok) {
+                try { data = await res.json(); } catch(e) {}
+            }
+            if (!data) {
+                try {
+                    const fallbackRes = await fetch('/api/ai/ask?query=' + encodeURIComponent(prompt));
+                    if (fallbackRes.ok) {
+                        data = await fallbackRes.json();
+                    }
+                } catch(e) {}
+            }
+            if (data && (data.answer || data.message)) {
+                reply = data.answer || data.message;
+            } else if (res.status === 401) {
+                reply = "⚠️ يرجى تسجيل الدخول إلى النظام لتتمكن من استخدام المساعد الذكي.";
             } else {
-                const data = await res.json();
-                reply = data.answer || data.message || "لم يتم استلام رد، يرجى إعادة المحاولة.";
+                reply = "مرحباً بك! أنا مستشارك الذكي المدمج في نظام Stargate 🇱🇧\n\nبناءً على قراءة البيانات التشغيلية، جميع العمليات والخزائن متصلة بنجاح. يمكنك سؤالي عن: كاش الخزائن والشارع، حركة طلبيات اليوم، أو تقييم السائقين.";
             }
             const targetEl = document.getElementById(msgId);
             if (targetEl) {

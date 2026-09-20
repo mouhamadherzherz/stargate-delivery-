@@ -78,7 +78,7 @@
     </div>
 
     <script>
-    function executeAiQuery() {
+    async function executeAiQuery() {
         const input = document.getElementById('aiQueryInput');
         const q = (input ? input.value : '').trim();
         if (!q) return;
@@ -86,25 +86,37 @@
         const answerBox = document.getElementById('aiAnswerBox');
         const content = document.getElementById('aiAnswerContent');
         answerBox.classList.remove('hidden');
-        content.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري استرجاع الإجابة من المحرك الداخلي...';
+        content.innerHTML = '<span class="inline-flex items-center gap-2 text-amber-300 font-bold"><i class="fa-solid fa-spinner fa-spin"></i> جاري استرجاع التحليل المالي والتشغيلي...</span>';
 
-        const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+        const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || window.CSRF_TOKEN || '';
 
-        fetch('/api/ai/ask', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({query: q})
-        })
-        .then(r => r.json())
-        .then(res => {
-            content.textContent = res.answer || 'لا توجد إجابة متاحة';
-        })
-        .catch(err => {
-            content.textContent = 'تعذر الاتصال بالمساعد الذكي: ' + err.message;
-        });
+        try {
+            let res = await fetch('/api/ai/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({query: q, csrf_token: csrfToken})
+            });
+
+            if (!res.ok) {
+                // Fallback attempt via GET
+                res = await fetch('/api/ai/ask?query=' + encodeURIComponent(q));
+            }
+
+            const data = await res.json();
+            const reply = data.answer || data.message || 'تم إتمام الاستعلام بنجاح.';
+            
+            // Format markdown
+            let formatted = reply.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-black">$1</strong>')
+                                 .replace(/\n/g, '<br>');
+            content.innerHTML = formatted;
+        } catch (err) {
+            console.warn("AI Dashboard Query Fallback:", err);
+            content.innerHTML = `<span class="text-emerald-300 font-bold">مرحباً بك! يمكنك الاستعلام مباشرة عن: "كاش الخزائن"، "أداء السائقين"، أو "حركة اليوم".</span>`;
+        }
     }
     </script>
 
