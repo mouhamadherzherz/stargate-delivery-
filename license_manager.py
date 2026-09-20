@@ -178,8 +178,11 @@ def get_active_license_info(db_conn=None):
                 pass
             cur.execute("SELECT activation_code FROM settings LIMIT 1")
             row = cur.fetchone()
-            if row and row['activation_code']:
-                activation_code = row['activation_code']
+            if row:
+                if hasattr(row, 'keys') or isinstance(row, dict):
+                    activation_code = row['activation_code']
+                elif isinstance(row, (list, tuple)) and len(row) > 0:
+                    activation_code = row[0]
         except Exception:
             pass
             

@@ -356,12 +356,40 @@ for _rule in app.url_map.iter_rules():
             _ENDPOINT_FALLBACK_MAP[_ep] = _rule.endpoint
 
 def _resolve_blueprint_url(error, endpoint, values):
+    # 1. Exact match in fallback map (e.g. 'dashboard' -> 'misc_bp.dashboard')
     if endpoint in _ENDPOINT_FALLBACK_MAP:
         try:
             return url_for(_ENDPOINT_FALLBACK_MAP[endpoint], **values)
         except _BuildError:
             pass
-    return None
+    # 2. Match without bp prefix if wrong bp provided (e.g. 'misc_bp.download_latest_update')
+    if '.' in endpoint:
+        short_ep = endpoint.split('.', 1)[1]
+        if short_ep in _ENDPOINT_FALLBACK_MAP:
+            try:
+                return url_for(_ENDPOINT_FALLBACK_MAP[short_ep], **values)
+            except _BuildError:
+                pass
+    # 3. Common legacy route aliases
+    aliases = {
+        'system_health_hub': 'admin_bp.system_health_view',
+        'system_health_view': 'admin_bp.system_health_view',
+        'user_guide': 'misc_bp.user_guide_view',
+        'user_guide_view': 'misc_bp.user_guide_view',
+        'download_latest_update': 'admin_bp.download_update_zip',
+        'download_update_zip': 'admin_bp.download_update_zip',
+        'settings': 'admin_bp.settings_view',
+        'settings_view': 'admin_bp.settings_view',
+    }
+    if endpoint in aliases:
+        target = aliases[endpoint]
+        if target in _ENDPOINT_FALLBACK_MAP.values():
+            try:
+                return url_for(target, **values)
+            except _BuildError:
+                pass
+    logger.warning(f"[URL Fallback] Could not resolve endpoint '{endpoint}', rendering '#' safe fallback.")
+    return '#'
 
 app.url_build_error_handlers.append(_resolve_blueprint_url)
 

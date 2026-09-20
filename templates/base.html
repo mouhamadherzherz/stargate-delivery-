@@ -1476,7 +1476,22 @@
             }
             const targetEl = document.getElementById(msgId);
             if (targetEl) {
-                targetEl.innerHTML = formatAiMarkdown(reply);
+                targetEl.innerHTML = `
+                    <div class="leading-relaxed">${formatAiMarkdown(reply)}</div>
+                    <div class="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                        <span class="text-cyan-400/80 font-mono">⚡ تحليل مباشر</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="speakAiText(this)" data-text="${escapeHtml(reply)}" class="hover:text-cyan-300 px-2 py-1 bg-slate-800/60 rounded-lg transition flex items-center gap-1 cursor-pointer" title="استماع صوتي">
+                                <i class="fa-solid fa-volume-high"></i>
+                                <span>استماع</span>
+                            </button>
+                            <button type="button" onclick="copyAiResponse(this)" data-text="${escapeHtml(reply)}" class="hover:text-white px-2 py-1 bg-slate-800/60 rounded-lg transition flex items-center gap-1 cursor-pointer" title="نسخ الرد">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>نسخ</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
             }
         } catch (err) {
             console.error("AI Copilot Fetch Error:", err);
@@ -1488,6 +1503,36 @@
             if (sendBtn) sendBtn.disabled = false;
             container.scrollTop = container.scrollHeight;
         }
+    }
+
+    function copyAiResponse(btn) {
+        const text = btn.getAttribute('data-text') || '';
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> <span class="text-emerald-400">تم النسخ</span>';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }).catch(() => {});
+    }
+
+    function speakAiText(btn) {
+        if (!('speechSynthesis' in window)) {
+            alert('المتصفح لا يدعم خاصية القراءة الصوتية.');
+            return;
+        }
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            btn.classList.remove('text-cyan-400', 'bg-cyan-900/40');
+            return;
+        }
+        let clean = (btn.getAttribute('data-text') || '').replace(/[\*\#\-\_]/g, '');
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.lang = 'ar-SA';
+        utter.rate = 1.05;
+        btn.classList.add('text-cyan-400', 'bg-cyan-900/40');
+        utter.onend = () => { btn.classList.remove('text-cyan-400', 'bg-cyan-900/40'); };
+        utter.onerror = () => { btn.classList.remove('text-cyan-400', 'bg-cyan-900/40'); };
+        window.speechSynthesis.speak(utter);
     }
 
     function formatAiMarkdown(text) {

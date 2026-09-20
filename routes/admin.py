@@ -29,6 +29,7 @@ from core.extensions import (
     logger,
     DATA_DIR,
     BASE_DIR,
+    DB_PATH,
     DEFAULT_EXCHANGE_RATE,
     hash_password,
     verify_password,
@@ -990,6 +991,8 @@ def admin_restore_backup():
 
 # --- /admin/system/health -> system_health_view ---
 @admin_bp.route('/admin/system/health')
+@admin_bp.route('/admin/system-health')
+@admin_bp.route('/system-health')
 @login_required
 def system_health_view():
     if session.get('user_role') != 'admin':

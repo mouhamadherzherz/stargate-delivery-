@@ -1,9 +1,9 @@
 {
-    "version": "3.7.1",
+    "version": "3.8.0",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.7.1/Stargate_Update.zip",
-    "changelog": "• معالجة جذرية وشاملة لمحرك المساعد الذكي الداخلي (Stargate AI Copilot Engine Fix)\n• ربط الاستعلامات بالمحرك التحليلي الداخلي فائق الدقة لكاش الخزائن، كاش الشارع، تصنيف السائقين، ورادار المخاطر اللحظي\n• تعزيز أمان الاتصال وحماية الجلسات مع إرجاع فوري للأجوبة الذكية دون أي انقطاع\n• اجتياز الفحص الشامل بنسبة 100%",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.8.0/Stargate_Update.zip",
+    "changelog": "• حل جذري وشامل لترخيص النظام والمحرك الذكي (Zero 500 Error Shield)\n• ترقية المساعد الذكي Stargate AI Copilot مع ميزة الاستماع الصوتي العربي والنسخ السريع\n• درع الحماية المتكامل للروابط والمسارات في تطبيق Flask لمنع أي توقف مفاجئ\n• جاهزية مركز تشخيص صحة النظام وقواعد البيانات بنسبة 100%\n• تفعيل التحديث التلقائي OTA لجميع أجهزة المشتركين والموظفين",
     "published_by": "Stargate Master Enterprise"
 }
