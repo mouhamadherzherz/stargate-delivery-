@@ -1234,4 +1234,28 @@ def api_scanner_process_item():
         return jsonify({'success': False, 'message': f'خطأ أثناء المعالجة: {str(e)}'}), 500
 
 
+# =======================================================================
+#               REAL-TIME MULTI-DEVICE PULSE FINGERPRINT API ⚡
+# =======================================================================
+
+@api_bp.route('/api/live/pulse')
+def live_pulse():
+    """Lightweight system pulse endpoint returning an instant DB state fingerprint."""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'fingerprint': None})
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(id), count(*), COALESCE(MAX(updated_at), '') FROM orders")
+        o_row = cur.fetchone() or (0, 0, '')
+        cur.execute("SELECT count(*), COALESCE(MAX(id), 0) FROM treasury_transactions")
+        t_row = cur.fetchone() or (0, 0)
+        raw = f"{o_row[0]}-{o_row[1]}-{o_row[2]}-{t_row[0]}-{t_row[1]}"
+        fp = hashlib.md5(raw.encode('utf-8')).hexdigest()[:12]
+        return jsonify({'success': True, 'fingerprint': fp})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+
 

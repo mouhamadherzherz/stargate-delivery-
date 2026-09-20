@@ -866,11 +866,21 @@
         }
 
         // =======================================================================
-        //          REAL-TIME LIVE MULTI-DEVICE SYNC ENGINE ⚡
+        //          REAL-TIME LIVE MULTI-DEVICE SEAMLESS SYNC ENGINE ⚡
         // =======================================================================
         (function() {
             let lastFingerprint = null;
             let isPolling = false;
+            let isSyncing = false;
+            let pendingSync = false;
+            let lastUserActivity = Date.now();
+
+            // Track user interaction to prevent any disruption during typing or clicking
+            ['mousedown', 'keydown', 'touchstart', 'input'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    lastUserActivity = Date.now();
+                }, { passive: true });
+            });
 
             // Top Live Sync Toast Element
             const liveToast = document.createElement('div');
@@ -879,7 +889,7 @@
             liveToast.innerHTML = '<span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span><span id="stargateLiveSyncText">مزامنة حية فورية: تم تحديث البيانات!</span>';
             document.body.appendChild(liveToast);
 
-            function showLiveToast(msg, duration = 3500) {
+            function showLiveToast(msg, duration = 3000) {
                 const textEl = document.getElementById('stargateLiveSyncText');
                 if (textEl) textEl.textContent = msg;
                 liveToast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
@@ -889,27 +899,87 @@
                     liveToast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
                 }, duration);
             }
-            window.showToast = function(msg, type, duration) { /* Silent execution without popup banners */ };
+            window.showLiveToast = showLiveToast;
 
-            let pendingRefresh = false;
-
-            function isUserActivelyWritingModal() {
-                // Check if any modal is open and has user-entered content
+            function isUserBusy() {
+                // Check if any modal is currently visible
                 const visibleModals = Array.from(document.querySelectorAll('div[id$="Modal"]')).filter(m => {
                     return !m.classList.contains('hidden') && m.offsetParent !== null;
                 });
-                if (visibleModals.length === 0) return false;
+                if (visibleModals.length > 0) return true;
 
-                for (const modal of visibleModals) {
-                    const inputs = modal.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="radio"]):not([type="checkbox"]), textarea');
-                    for (const inp of inputs) {
-                        if (inp.value && inp.value.trim().length > 0) {
-                            return true;
-                        }
-                    }
+                // Check if focused on any input, textarea, or select
+                const active = document.activeElement;
+                if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+                    return true;
                 }
+
+                // Check if user actively interacted within the last 3 seconds
+                if (Date.now() - lastUserActivity < 3000) {
+                    return true;
+                }
+
                 return false;
             }
+
+            async function performSeamlessUpdate() {
+                if (isSyncing) return;
+                if (isUserBusy()) {
+                    pendingSync = true;
+                    return;
+                }
+                isSyncing = true;
+                pendingSync = false;
+
+                try {
+                    const currentUrl = window.location.href;
+                    const res = await fetch(currentUrl, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!res.ok) {
+                        isSyncing = false;
+                        return;
+                    }
+
+                    const html = await res.text();
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+
+                    // Save current scroll position
+                    const scrollX = window.scrollX || window.pageXOffset;
+                    const scrollY = window.scrollY || window.pageYOffset;
+
+                    // Update main content container seamlessly
+                    const currentMain = document.querySelector('main');
+                    const newMain = newDoc.querySelector('main');
+                    if (currentMain && newMain) {
+                        currentMain.innerHTML = newMain.innerHTML;
+                        // Instantly restore scroll position so there is zero screen jump
+                        window.scrollTo({ top: scrollY, left: scrollX, behavior: 'instant' });
+                    }
+
+                    // Update live dispatch badge if present
+                    const newBadge = newDoc.getElementById('liveDispatchBadge');
+                    const curBadge = document.getElementById('liveDispatchBadge');
+                    if (newBadge && curBadge) {
+                        curBadge.className = newBadge.className;
+                        curBadge.innerText = newBadge.innerText;
+                    }
+
+                    showLiveToast('🟢 تم تحديث البيانات تلقائياً بنجاح', 2200);
+                } catch (e) {
+                    console.debug('[LiveSync error]', e);
+                } finally {
+                    isSyncing = false;
+                }
+            }
+
+            // Retry update as soon as user is no longer busy
+            setInterval(() => {
+                if (pendingSync && !isUserBusy()) {
+                    performSeamlessUpdate();
+                }
+            }, 2500);
 
             function pollLiveSync() {
                 if (isPolling || document.hidden) return;
@@ -924,7 +994,7 @@
                 })
                 .then(data => {
                     isPolling = false;
-                    if (!data || !data.success) return;
+                    if (!data || !data.success || !data.fingerprint) return;
 
                     if (lastFingerprint === null) {
                         lastFingerprint = data.fingerprint;
@@ -932,17 +1002,8 @@
                     }
 
                     if (data.fingerprint !== lastFingerprint) {
-                        if (isUserActivelyWritingModal()) {
-                            pendingRefresh = true;
-                            showLiveToast('🔔 تم تسجيل بيانات جديدة! سيتم التحديث فور إغلاق النافذة...');
-                        } else {
-                            lastFingerprint = data.fingerprint;
-                            pendingRefresh = false;
-                            showLiveToast('🟢 تحديث فوري مباشر: تم تسجيل بيانات جديدة في السيستم!');
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 500);
-                        }
+                        lastFingerprint = data.fingerprint;
+                        performSeamlessUpdate();
                     }
                 })
                 .catch(() => {
@@ -950,22 +1011,12 @@
                 });
             }
 
-            // Check every 2.5 seconds for instant real-time synchronization
-            setInterval(pollLiveSync, 2500);
+            // Poll every 6 seconds in the background
+            setInterval(pollLiveSync, 6000);
 
-            // Also check immediately when tab/device wakes up
+            // Re-check when tab regains focus
             document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) {
-                    pollLiveSync();
-                }
-            });
-
-            // If a refresh was pending while writing, reload immediately when modal is closed
-            window.addEventListener('click', (e) => {
-                if (pendingRefresh && !isUserActivelyWritingModal()) {
-                    pendingRefresh = false;
-                    window.location.reload();
-                }
+                if (!document.hidden) pollLiveSync();
             });
         })();
         window.CSRF_TOKEN = "{{ csrf_token() }}";

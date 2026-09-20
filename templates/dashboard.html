@@ -1073,22 +1073,12 @@
         if (e.key === 'Escape') closeExecutiveReportModal();
     });
 
-    // Real-Time Auto-Check Heartbeat (every 25 seconds without page reload interruption)
+    // Real-time risk check runs silently every 60s — update banner handled by base.html pollLiveSync
     setInterval(async () => {
         try {
-            const res = await fetch('/api/ai/risk-radar');
-            const data = await res.json();
-            const risks = data.risks || data.flags || [];
-            // If new high severity risks appear, smoothly reload to display pulsating alert
-            const hasHigh = risks.some(r => r.severity === 'high');
-            const currentHasHigh = document.querySelector('.animate-pulse') !== null;
-            if (hasHigh !== currentHasHigh) {
-                window.location.reload();
-            }
-        } catch (e) {
-            // silent catch
-        }
-    }, 25000);
+            await fetch('/api/ai/risk-radar'); // keep endpoint warm, no reload
+        } catch (e) { /* silent */ }
+    }, 60000);
 </script>
 {% endblock %}
 

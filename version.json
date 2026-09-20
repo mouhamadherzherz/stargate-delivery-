@@ -1,9 +1,9 @@
 {
-    "version": "3.9.7",
+    "version": "3.9.8",
     "release_date": "2026-09-20",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.7/Stargate_Update.zip",
-    "changelog": "• إصلاح عاجل وحرج — النسخة 3.9.7 (Critical Bug Fixes)\n• إصلاح NameError في /api/telegram/* و /api/ai/* (telegram_reporter + gemini_client لم يكونا مستوردَين)\n• إصلاح NameError في صفحة إضافة وتعديل السائقين (DEFAULT_COMMISSION غير مستورد)\n• إصلاح حقل قاعدة البيانات unsettled_count الظاهر فارغاً في كروت المناديب\n• حذف HTML مهجور خارج الـ script block في قالب المناديب\n• جميع الـ 14 Blueprint وكافة الـ 207 Route تعمل بدون أي خطأ",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.8/Stargate_Update.zip",
+    "changelog": "• حل مشكلة اهتزاز وتحرك الشاشة المفاجئ في لوحة التحكم وكافة الصفحات بشكل جذري\n• إلغاء إعادة التحميل القسري التلقائي (Auto-Reload) الذي كان يسبب وميض الشاشة وقفز التمرير\n• تطبيق محرك المزامنة الحية الصامت (Seamless Background Live Sync) لتحديث البيانات والجداول تلقائياً 100% دون أي تدخل يدوي\n• تثبيت موضع الشاشة (Scroll Lock) بدقة متناهية أثناء التحديثات\n• إضافة نقطة فحص نبض السيستم /api/live/pulse فائقة السرعة والخفة",
     "published_by": "Stargate Master Enterprise"
 }
