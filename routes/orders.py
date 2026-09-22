@@ -506,6 +506,35 @@ def order_create():
         return_status = 'pending' if requires_return else None
 
         expected_collection = (order_price + delivery_fee) if fee_payer == 'customer' else order_price
+                # Safety check: ensure all 35 insert columns exist in orders table on legacy databases
+        try:
+            cursor.execute("PRAGMA table_info(orders)")
+            _existing_order_cols = {r[1] for r in cursor.fetchall()}
+            _needed_cols = [
+                ('tracking_number', 'TEXT'), ('merchant_id', 'INTEGER'), ('second_merchant_id', 'INTEGER'),
+                ('second_merchant_price', 'REAL DEFAULT 0.0'), ('courier_id', 'INTEGER'), ('agent_name', 'TEXT'),
+                ('recipient_name', 'TEXT'), ('recipient_phone', 'TEXT'), ('recipient_city', 'TEXT'),
+                ('recipient_address', 'TEXT'), ('order_price', 'REAL DEFAULT 0.0'), ('delivery_fee', 'REAL DEFAULT 0.0'),
+                ('courier_commission', 'REAL DEFAULT 0.0'), ('return_fee', 'REAL DEFAULT 0.0'), ('fee_payer', 'TEXT DEFAULT "customer"'),
+                ('collected_amount_expected', 'REAL DEFAULT 0.0'), ('items_detail', 'TEXT'), ('item_description', 'TEXT'),
+                ('notes', 'TEXT'), ('status', 'TEXT DEFAULT "pending"'), ('payment_method', 'TEXT DEFAULT "cash"'),
+                ('scheduled_date', 'TEXT'), ('is_scheduled', 'INTEGER DEFAULT 0'), ('merchant_payment_type', 'TEXT DEFAULT "deferred"'),
+                ('is_paid_to_merchant', 'INTEGER DEFAULT 0'), ('order_type', 'TEXT DEFAULT "delivery"'),
+                ('custom_source_name', 'TEXT DEFAULT NULL'), ('pickup_address', 'TEXT DEFAULT NULL'),
+                ('service_provider_id', 'INTEGER DEFAULT NULL'), ('service_provider_commission', 'REAL DEFAULT 0.0'),
+                ('first_merchant_price', 'REAL DEFAULT 0.0'), ('multi_merchants_data', 'TEXT DEFAULT NULL'),
+                ('requires_return', 'INTEGER DEFAULT 0'), ('return_status', 'TEXT DEFAULT "pending"'),
+                ('return_courier_id', 'INTEGER DEFAULT NULL')
+            ]
+            for col_n, col_t in _needed_cols:
+                if col_n not in _existing_order_cols:
+                    try:
+                        cursor.execute(f"ALTER TABLE orders ADD COLUMN {col_n} {col_t}")
+                    except Exception:
+                        pass
+        except Exception as _col_err:
+            logger.warning(f"Error checking order columns: {_col_err}")
+
         cursor.execute("""
 
         INSERT INTO orders (
@@ -666,17 +695,25 @@ def order_create():
         submit_action = request.form.get('submit_action', 'save')
 
         if submit_action == 'save_and_print':
-
             return redirect(url_for('print_waybill', order_id=order_id))
-
         elif submit_action == 'save_and_whatsapp' and recipient_phone:
-
             return redirect(url_for('order_whatsapp', order_id=order_id))
 
-    finally:
-        pass
+        return redirect(url_for('orders_list'))
 
-    return redirect(url_for('orders_list'))
+    except Exception as e:
+        logger.error(f"[ORDER CREATE CRITICAL ERROR] {e}", exc_info=True)
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        # Auto-heal schema if a column was missing
+        try:
+            heal_database_schema(conn)
+        except Exception:
+            pass
+        flash(f"⚠️ تنبيه: حدث خطأ أثناء حفظ الطلب: {str(e)}", "danger")
+        return redirect(url_for('orders_list'))
 
 
 
