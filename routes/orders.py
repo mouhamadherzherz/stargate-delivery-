@@ -705,9 +705,9 @@ def order_create():
         submit_action = request.form.get('submit_action', 'save')
 
         if submit_action == 'save_and_print':
-            return redirect(url_for('print_waybill', order_id=order_id))
+            return redirect(url_for('orders_list') + f'?just_created={order_id}&action=print')
         elif submit_action == 'save_and_whatsapp' and recipient_phone:
-            return redirect(url_for('order_whatsapp', order_id=order_id))
+            return redirect(url_for('orders_list'))
 
         return redirect(url_for('orders_list'))
 
