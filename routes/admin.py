@@ -1303,9 +1303,30 @@ del "%~f0"
                     ctx = ssl.create_default_context()
                     ctx.check_hostname = False
                     ctx.verify_mode = ssl.CERT_NONE
-                    req = urllib.request.Request(download_url, headers={'User-Agent': 'Stargate-OTA/3.0'})
-                    with urllib.request.urlopen(req, timeout=120, context=ctx) as response, open(zip_path, 'wb') as out_f:
-                        shutil.copyfileobj(response, out_f)
+                    downloaded = False
+                    try:
+                        req = urllib.request.Request(download_url, headers={'User-Agent': 'Stargate-OTA/3.0'})
+                        with urllib.request.urlopen(req, timeout=15, context=ctx) as response, open(zip_path, 'wb') as out_f:
+                            shutil.copyfileobj(response, out_f)
+                        downloaded = True
+                    except Exception as net_err:
+                        logger.warning(f"[OTA Update] Online download failed ({net_err}). Scanning for offline USB fallback...")
+                        search_candidates = []
+                        for drive in ['D:', 'E:', 'F:', 'G:', 'H:', 'C:']:
+                            search_candidates.append(os.path.join(drive, '\\', 'Stargate_Update.zip'))
+                            search_candidates.append(os.path.join(drive, '\\', '1 - نظام الديليفري (Stargate Delivery)', 'Stargate_Update.zip'))
+                            search_candidates.append(os.path.join(drive, '\\', 'Update_Package', 'Stargate_Update.zip'))
+                        search_candidates.append(os.path.join(BASE_DIR, 'Stargate_Update.zip'))
+
+                        for cand in search_candidates:
+                            if os.path.exists(cand) and os.path.getsize(cand) > 10000:
+                                shutil.copy2(cand, zip_path)
+                                downloaded = True
+                                logger.info(f"[OTA Update] Found offline update file on: {cand}")
+                                break
+
+                        if not downloaded:
+                            raise Exception("تعذر الاتصال بالإنترنت (خطأ DNS رقم 11002). لم يتم العثور على ملف Stargate_Update.zip على الفلاشة. يرجى توصيل الفلاشة لتحديث البرنامج بدون إنترنت.")
 
                     if os.path.exists(temp_dir):
                         shutil.rmtree(temp_dir)

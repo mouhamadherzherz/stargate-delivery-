@@ -1177,5 +1177,10 @@ def auto_migrate_db(conn):
         migration_engine.run_all_migrations(conn)
     except Exception as me_ex:
         logger.warning(f"[MigrationEngine] Notice: {me_ex}")
+    try:
+        from core.database import ensure_core_indexes
+        ensure_core_indexes()
+    except Exception as idx_ex:
+        logger.warning(f"[Core DB Indexes] Notice: {idx_ex}")
 
 from core.ai_engine import smart_ai_engine

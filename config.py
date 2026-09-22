@@ -18,6 +18,9 @@ class BaseConfig:
     DATABASE_PATH = os.environ.get("DATABASE_PATH") or os.environ.get("STARGATE_DB_PATH") or os.path.join(secure_env.DATA_DIR, "stargate_production.db")
     UPDATE_URL = os.environ.get("UPDATE_URL", "https://raw.githubusercontent.com/YourUser/YourRepo/main/version.json")
 
+    # Allow up to 300MB uploads for DB restores and Update packages
+    MAX_CONTENT_LENGTH = 300 * 1024 * 1024
+
     # Session & Security Settings
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = timedelta(hours=12)

@@ -1,3 +1,4 @@
+import time
 import os
 import json
 import base64
@@ -134,7 +135,22 @@ def verify_license_code(activation_code):
     if datetime.now().date() > expiration_date.date():
         return False, f"لقد انتهى الاشتراك في {expiration_str}. يرجى التجديد.", expiration_str
         
-    # Online Revocation Check (Cloud Kill Switch)
+    # Online Revocation Check (Cloud Kill Switch) with High-Performance Memory Cache
+    # Prevents blocking HTTP requests on every single page load
+    global _REVOCATION_CACHE
+    now_ts = time.time()
+    if '_REVOCATION_CACHE' not in globals():
+        _REVOCATION_CACHE = {}
+
+    cached_status = _REVOCATION_CACHE.get(code_clean)
+    if cached_status is not None:
+        is_revoked, last_check = cached_status
+        # Cache valid for 30 minutes (1800s)
+        if (now_ts - last_check) < 1800:
+            if is_revoked:
+                return False, "⚠️ تم إيقاف هذا الترخيص من قبل الإدارة السحابية", None
+            return True, "تم تفعيل الاشتراك بنجاح", expiration_str
+
     import sys
     base_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     cloud_config_path = os.path.join(base_dir, 'cloud_config.json')
@@ -145,15 +161,18 @@ def verify_license_code(activation_code):
                 firebase_url = cloud_cfg.get('firebase_url', '')
                 if firebase_url:
                     import requests
-                    # Fast timeout so it doesn't hang if offline
-                    # The formatting must exactly match how the Master uploaded the code
                     formatted_code = f"{code_clean[:4]}-{code_clean[4:8]}-{code_clean[8:12]}-{code_clean[12:16]}"
-                    resp = requests.get(f"{firebase_url}revoked/{formatted_code}.json", timeout=1.5)
+                    resp = requests.get(f"{firebase_url}revoked/{formatted_code}.json", timeout=1.0)
                     if resp.status_code == 200 and resp.json():
+                        _REVOCATION_CACHE[code_clean] = (True, now_ts)
                         return False, "⚠️ تم إيقاف هذا الترخيص من قبل الإدارة السحابية", None
+                    else:
+                        _REVOCATION_CACHE[code_clean] = (False, now_ts)
         except Exception:
-            pass # Ignore network errors (Offline Mode)
-            
+            # Network error or offline: cache as active for 5 mins so subsequent requests are instant
+            _REVOCATION_CACHE[code_clean] = (False, now_ts - 1500)
+            pass
+
     return True, "تم تفعيل الاشتراك بنجاح", expiration_str
 
 def get_active_license_info(db_conn=None):

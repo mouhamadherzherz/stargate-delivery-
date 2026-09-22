@@ -61,7 +61,10 @@ def check_for_updates_firebase(firebase_url):
             return False, data, f"أنت تستخدم أحدث إصدار ({CURRENT_VERSION})."
     
     except Exception as e:
-        return False, None, f"تعذر الاتصال بـ Firebase: {str(e)}"
+        err_msg = str(e)
+        if "11002" in err_msg or "getaddrinfo" in err_msg:
+            return False, None, "لا يتوفر اتصال بالإنترنت على هذا الجهاز (خطأ في خادم DNS رقم 11002). يمكنك التحديث بدون إنترنت عبر الفلاشة."
+        return False, None, f"تعذر الاتصال بالخادم السحابي: {err_msg}" 
 
 
 def check_for_updates(update_url, firebase_url=None):
