@@ -953,6 +953,92 @@ def heal_database_schema(conn):
         )
         """)
 
+        # --- Critical tables needed by orders_list JOIN queries ---
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS service_providers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            phone TEXT,
+            specialty TEXT,
+            commission_type TEXT DEFAULT 'fixed',
+            commission_rate REAL DEFAULT 0.0,
+            fixed_commission REAL DEFAULT 0.0,
+            address TEXT,
+            notes TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            phone TEXT,
+            city TEXT,
+            address TEXT,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS saved_areas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            usage_count INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            barcode TEXT,
+            name TEXT NOT NULL,
+            sku TEXT,
+            category TEXT,
+            cost_price REAL DEFAULT 0.0,
+            wholesale_price REAL DEFAULT 0.0,
+            retail_price REAL DEFAULT 0.0,
+            stock_quantity REAL DEFAULT 0.0,
+            min_stock_alert REAL DEFAULT 0.0,
+            unit TEXT DEFAULT 'piece',
+            is_active INTEGER DEFAULT 1,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS order_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER NOT NULL,
+            product_id INTEGER,
+            product_name TEXT,
+            quantity REAL DEFAULT 1.0,
+            unit_cost REAL DEFAULT 0.0,
+            unit_price REAL DEFAULT 0.0,
+            pricing_tier TEXT DEFAULT 'retail',
+            subtotal REAL DEFAULT 0.0,
+            total_cost REAL DEFAULT 0.0,
+            profit_margin REAL DEFAULT 0.0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action TEXT NOT NULL,
+            entity_type TEXT,
+            entity_id INTEGER,
+            details TEXT,
+            user_role TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
         # 2. Dynamic Column Verification & Auto-Injection
         table_columns_map = {
             'employees': [

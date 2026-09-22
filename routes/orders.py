@@ -46,6 +46,9 @@ from core.extensions import (
     smart_ai_engine
 )
 
+# ── Module-level constants ─────────────────────────────────────────────────
+DEFAULT_DELIVERY_FEE = 0.0
+
 orders_bp = Blueprint('orders_bp', __name__)
 
 # Replace @app.route with @orders_bp.route below
