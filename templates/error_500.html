@@ -49,16 +49,20 @@
         </div>
         {% endif %}
 
-        <div class="flex flex-col sm:flex-row items-center gap-3 justify-center">
-            <a href="{{ url_for('orders_list') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-red-600/25 transition text-sm">
-                <i class="fa-solid fa-house"></i>
-                <span>العودة للوحة الطلبيات</span>
+        <div class="flex flex-wrap items-center gap-3 justify-center">
+            <a href="/repair_database" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/25 transition text-sm">
+                <i class="fa-solid fa-wrench"></i>
+                <span>إصلاح تلقائي للبيانات والدخول الفوري 🛠️</span>
             </a>
-            <button onclick="window.history.back()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-6 py-3 rounded-xl border border-slate-700 transition text-sm">
-                <i class="fa-solid fa-arrow-right"></i>
-                <span>الرجوع للصفحة السابقة</span>
-            </button>
-            <button onclick="window.location.reload()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-6 py-3 rounded-xl border border-slate-700 transition text-sm">
+            <a href="/" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-cyan-600/25 transition text-sm">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span>اللوحة الرئيسية</span>
+            </a>
+            <a href="/login" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-5 py-3 rounded-2xl border border-slate-700 transition text-sm">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                <span>تسجيل الدخول</span>
+            </a>
+            <button onclick="window.location.reload()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-5 py-3 rounded-2xl border border-slate-700 transition text-sm">
                 <i class="fa-solid fa-rotate-right"></i>
                 <span>إعادة المحاولة</span>
             </button>

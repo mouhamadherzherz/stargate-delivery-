@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تنبيه أمني مشدد | حماية البرنامج من النسخ غير المصرح به</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="min-h-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-rose-950/20 to-slate-950 text-slate-100">
+    <div class="w-full max-w-lg">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-tr from-rose-600 to-red-700 flex items-center justify-center shadow-2xl shadow-rose-600/30 border border-rose-500/30 animate-pulse">
+                <i class="fa-solid fa-shield-virus text-3xl text-white"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white">تم إيقاف تشغيل النظام (حماية أمنية)</h1>
+            <p class="text-xs text-rose-400 font-bold mt-1">STARGATE ANTI-PIRACY HARDWARE LOCK ACTIVATED</p>
+        </div>
+
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-rose-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 leading-relaxed font-bold flex gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400 text-lg mt-0.5 shrink-0"></i>
+                <div>
+                    لقد تم اكتشاف محاولة تشغيل هذه النسخة على جهاز كمبيوتر جديد غير مصرح به.
+                    <div class="mt-1 font-normal text-rose-200">
+                        نظام ستارجيت محمي ببصمة العتاد الفريدة ولا يمكن نسخه أو نقله وتشغيله خارج الجهاز المخصص له من قبل الإدارة.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unlock Form -->
+            <form method="POST" action="{{ url_for('unlock_device') }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">
+                        لترخيص هذا الجهاز الجديد (أدخل مفتاح الاسترداد الأمني الرئيسي للمدير):
+                    </label>
+                    <input type="password" name="unlock_key" required placeholder="STRG-XXXX-XXXX-XXXX-XXXX"
+                           class="w-full bg-slate-950 border border-slate-700 focus:border-rose-500 rounded-xl px-4 py-3.5 text-sm font-mono text-center tracking-widest text-amber-400 focus:outline-none transition">
+                </div>
+
+                <button type="submit" class="w-full py-4 bg-gradient-to-r from-rose-600 via-rose-700 to-red-800 hover:from-rose-700 hover:to-red-900 text-white font-black rounded-xl shadow-lg shadow-rose-600/30 transition flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    <span>ترخيص وتفعيل هذا الجهاز الآن</span>
+                </button>
+            </form>
+
+            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-center">
+                <p class="text-[11px] text-slate-400">
+                    إذا كنت الموظف المصرح له، يرجى مراجعة إدارة الشركة للحصول على كود التفعيل أو إعادة البرنامج إلى الكمبيوتر المخصص.
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center text-slate-500 text-xs mt-6">
+            Stargate Enterprise Hardware Guard & Anti-Tamper © 2026
+        </div>
+    </div>
+</body>
+</html>

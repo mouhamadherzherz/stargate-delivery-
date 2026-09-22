@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جاري تطبيق التحديث - Stargate Enterprise</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 50px rgba(168, 85, 247, 0.7); }
+        }
+        .glow-box { animation: pulse-glow 3s infinite; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-lg w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl backdrop-blur-xl glow-box">
+        
+        <!-- Animated Icon -->
+        <div class="relative w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+            <div class="absolute inset-2 rounded-full border-4 border-purple-500/20 border-b-purple-500 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            <i class="fa-solid fa-cloud-arrow-down text-3xl text-indigo-400"></i>
+        </div>
+
+        <h1 class="text-2xl font-black text-white mb-2">جاري تطبيق التحديث الجديد</h1>
+        <p class="text-slate-400 text-sm mb-6 leading-relaxed">
+            يتم الآن استبدال ملفات النظام وترقية البرمجيات وإعادة تشغيل الخادم تلقائياً دون المساس ببياناتك المحفوظة.
+        </p>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-800 rounded-full h-3 mb-4 overflow-hidden p-0.5 border border-slate-700">
+            <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 h-full rounded-full transition-all duration-300" style="width: 5%"></div>
+        </div>
+
+        <!-- Status & Timer -->
+        <div class="flex justify-between items-center text-xs text-slate-400 font-mono mb-6">
+            <span id="status-text"><i class="fa-solid fa-spinner fa-spin ml-1"></i> جاري فك حزمة التحديث...</span>
+            <span id="countdown-text">8 ثوانٍ</span>
+        </div>
+
+        <!-- Safety Notice -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-4 text-xs text-slate-300 flex items-center gap-3 text-right">
+            <i class="fa-solid fa-shield-halved text-emerald-400 text-xl flex-shrink-0"></i>
+            <div>
+                <span class="font-bold text-white block mb-0.5">أمان البيانات مضمون:</span>
+                تم حماية قاعدة البيانات وسجلات المشتركين تلقائياً. سيتم نقلك مباشرة عند اكتمال التشغيل.
+            </div>
+        </div>
+
+        <!-- Manual reload link if stuck -->
+        <div class="mt-6">
+            <a href="/" id="manual-link" class="text-xs text-indigo-400 hover:text-indigo-300 underline opacity-0 transition-opacity duration-500">
+                إذا لم يتم التحويل تلقائياً، اضغط هنا لفتح البرنامج
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let progress = 5;
+        let secondsLeft = 8;
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const countdownText = document.getElementById('countdown-text');
+        const manualLink = document.getElementById('manual-link');
+
+        const timer = setInterval(() => {
+            secondsLeft--;
+            progress += 12;
+            if (progress > 95) progress = 95;
+            
+            progressBar.style.width = progress + '%';
+            countdownText.innerText = Math.max(1, secondsLeft) + ' ثوانٍ';
+
+            if (secondsLeft <= 5) {
+                statusText.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin ml-1"></i> جاري إعادة تشغيل النظام...';
+            }
+            if (secondsLeft <= 2) {
+                statusText.innerHTML = '<i class="fa-solid fa-satellite-dish ml-1"></i> التحقق من استجابة السيرفر...';
+            }
+
+            if (secondsLeft <= 0) {
+                clearInterval(timer);
+                progressBar.style.width = '100%';
+                manualLink.style.opacity = '1';
+                checkServerOnline();
+            }
+        }, 1000);
+
+        function checkServerOnline() {
+            fetch('/', { cache: 'no-store' })
+                .then(response => {
+                    if (response.ok || response.status === 302 || response.status === 200) {
+                        window.location.href = '/?update_applied=1';
+                    } else {
+                        setTimeout(checkServerOnline, 1500);
+                    }
+                })
+                .catch(() => {
+                    setTimeout(checkServerOnline, 1500);
+                });
+        }
+    </script>
+</body>
+</html>

@@ -9,6 +9,10 @@
     <meta name="theme-color" content="#1E1B54">
     <meta name="application-name" content="stargate experts">
     <title>{{ title or company_name }} - نظام محاسبة وإدارة الدلفري</title>
+    <!-- Modern Cairo Arabic & Global Sans Font Stack -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Local Offline Tailwind CSS Engine -->
     <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
     <script>
@@ -42,7 +46,7 @@
                         }
                     },
                     fontFamily: {
-                        sans: ['Cairo', 'Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
+                        sans: ['Cairo', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
                     }
                 }
             }
@@ -56,6 +60,13 @@
     <script src="{{ url_for('static', filename='js/JsBarcode.all.min.js') }}"></script>
 
     <style>
+        /* Prevent entire page horizontal scroll & jitter */
+        html, body {
+            overflow-x: hidden !important;
+            width: 100%;
+            max-width: 100vw;
+        }
+
         body {
             font-family: 'Cairo', sans-serif;
             -webkit-tap-highlight-color: transparent;
@@ -82,20 +93,120 @@
                 font-size: 16px !important; /* Prevents auto-zoom on iOS */
             }
         }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        /* ═══ Premium Custom Scrollbar ═══ */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+
+        /* ═══ Sidebar Premium Micro-animations ═══ */
+        aside#sidebar nav a {
+            position: relative;
+            overflow: hidden;
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+        aside#sidebar nav a::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            transform: translateX(100%);
+            transition: transform 0.4s ease;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
+        aside#sidebar nav a:hover::after { transform: translateX(-100%); }
+
+        /* Active nav glow pulse */
+        aside#sidebar nav a.bg-gradient-to-r {
+            box-shadow: 0 4px 15px rgba(0,181,255,0.2), inset 0 0 0 1px rgba(255,255,255,0.1);
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+
+        /* ═══ Premium Card Hover Effects ═══ */
+        .card-hover {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+        }
+
+        /* ═══ Shimmer Loading Skeleton ═══ */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        /* ═══ Page Content Fade-in ═══ */
+        @keyframes pageIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        main > div { animation: pageIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* ═══ Global Badge Pulse ═══ */
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+        .badge-live { animation: badgePulse 2s ease-in-out infinite; }
+
+        /* ═══ Focus Ring Premium ═══ */
+        input:focus, select:focus, textarea:focus, button:focus-visible {
+            outline: none;
+            ring: none;
+        }
+        input:focus-visible, select:focus-visible {
+            box-shadow: 0 0 0 3px rgba(0, 181, 255, 0.2);
+        }
+
+        /* ═══ Table Row Hover Premium ═══ */
+        tbody tr { transition: background-color 0.12s ease; }
+
+        /* ═══ Tablet & Touch Screen Enhancements ═══ */
+        .tablet-touch-btn {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tablet-touch-btn:active { transform: scale(0.94); }
+        .touch-scroll-x {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        /* ═══ Desktop Sidebar Toggle ═══ */
+        @media (min-width: 1024px) {
+            aside#sidebar.desktop-sidebar-hidden { display: none !important; }
+        }
+
+        /* ═══ Status Dot Animations ═══ */
+        @keyframes statusPing {
+            0% { transform: scale(1); opacity: 1; }
+            75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        .status-online::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: currentColor;
+            animation: statusPing 1.5s cubic-bezier(0,0,0.2,1) infinite;
+        }
+
+        /* ═══ Global Smooth Transitions ═══ */
+        a, button { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-duration: 0.15s; transition-timing-function: cubic-bezier(0.4,0,0.2,1); }
+
+        /* ═══ Print Styles ═══ */
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; zoom: 1 !important; }
         }
     </style>
 </head>
@@ -105,20 +216,30 @@
     <div id="mobileOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
 
     <!-- Mobile Navigation Bar -->
-    <header class="bg-[#1E1B54] text-white shadow-lg lg:hidden flex items-center justify-between p-3.5 sticky top-0 z-50 border-b border-white/10">
-        <div class="flex items-center space-x-3 space-x-reverse">
-            <button id="mobileMenuBtn" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white focus:outline-none flex items-center justify-center">
-                <i class="fa-solid fa-bars text-lg text-[#00B5FF]"></i>
+    <header class="bg-[#1E1B54] text-white shadow-md lg:hidden flex items-center justify-between px-3.5 py-2.5 sticky top-0 z-50 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+            <button id="mobileMenuBtn" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white focus:outline-none flex items-center justify-center transition active:scale-95">
+                <i class="fa-solid fa-bars text-base text-[#00B5FF]"></i>
             </button>
             <div class="flex items-center gap-2">
-                <span class="text-lg">🇱🇧</span>
-                <span class="font-black text-base tracking-wide text-white">{{ company_name }}</span>
+                <div class="w-8 h-8 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/15 shrink-0 aspect-square">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='{{ url_for('static', filename='icons/stargate_logo.ico') }}';">
+                </div>
+                <div>
+                    <span class="font-black text-sm tracking-wide text-white block leading-tight">{{ company_name }}</span>
+                    <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>متصل محلياً</span>
+                    </span>
+                </div>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج؟');" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition">
+            <span class="text-[11px] font-mono font-bold bg-white/10 text-cyan-200 px-2.5 py-1 rounded-xl border border-white/10">
+                1$ = {{ exchange_rate|format_currency }}
+            </span>
+            <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج؟');" class="bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs p-2 rounded-xl flex items-center justify-center transition active:scale-95" title="تسجيل الخروج">
                 <i class="fa-solid fa-power-off text-xs"></i>
-                <span>خروج 🔒</span>
             </a>
         </div>
     </header>
@@ -153,17 +274,17 @@
         <!-- Sidebar Navigation -->
         <aside id="sidebar" class="w-64 bg-[#1E1B54] text-slate-200 flex flex-col shrink-0 fixed inset-y-0 right-0 z-40 transform translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out border-l border-white/10 shadow-2xl">
             <!-- Sidebar Header -->
-            <div class="p-5 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#1E1B54] to-[#151240]">
+            <div class="p-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#1E1B54] to-[#151240]">
                 <div class="flex items-center gap-3">
-                    <div class="p-1.5 bg-white rounded-2xl shadow-lg border border-cyan-500/30 flex items-center justify-center shrink-0">
-                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Logo" class="h-10 w-auto object-contain">
+                    <div class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 flex items-center justify-center shrink-0 p-1.5 overflow-hidden aspect-square">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Stargate Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='{{ url_for('static', filename='icons/stargate_logo.ico') }}';">
                     </div>
                     <div>
                         <h1 class="font-black text-white text-base tracking-wide leading-tight">STARGATE</h1>
-                        <span class="text-[11px] text-[#00B5FF] font-black block tracking-wider uppercase">EXPERTS</span>
+                        <span class="text-[10px] text-[#00B5FF] font-bold tracking-wider uppercase">DELIVERY ENTERPRISE</span>
                     </div>
                 </div>
-                <button id="closeSidebarBtn" class="lg:hidden text-slate-400 hover:text-white p-1">
+                <button id="closeSidebarBtn" class="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -186,6 +307,18 @@
                     <span>الأوردرات والطلبيات</span>
                 </a>
 
+                <a href="{{ url_for('batch_scanner_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'scanner' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-barcode text-lg w-6 text-center text-amber-400"></i>
+                    <span class="flex-1">الماسح الصوتي السريع</span>
+                    <span class="text-[10px] bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full font-black">جديد ⚡</span>
+                </a>
+
+                <a href="{{ url_for('map_dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'map' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-satellite-dish text-lg w-6 text-center text-cyan-400"></i>
+                    <span class="flex-1">رادار العمليات والخريطة الحية</span>
+                    <span class="text-[10px] bg-cyan-500 text-slate-950 px-2 py-0.5 rounded-full font-black animate-pulse">مباشر</span>
+                </a>
+
                 <a href="{{ url_for('customers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'customers' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-address-book text-lg w-6 text-center text-[#00B5FF]"></i>
                     <span>دليل الزبائن والعناوين</span>
@@ -196,9 +329,21 @@
                     <span>شباب الدليفري والكاش</span>
                 </a>
 
+                <a href="{{ url_for('courier_app_view') }}" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition text-amber-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-mobile-screen-button text-lg w-6 text-center text-amber-400"></i>
+                    <span class="flex-1">تطبيق السائق للجوال 🛵</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                </a>
+
                 <a href="{{ url_for('merchants_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'merchants' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-store text-lg w-6 text-center text-[#00D26A]"></i>
                     <span>المحلات والتجار (البيجات)</span>
+                </a>
+
+                <a href="{{ url_for('service_providers_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'service_providers' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-wrench text-lg w-6 text-center text-emerald-400"></i>
+                    <span class="flex-1">الخدمات والمهن الحرة</span>
+                    <span class="text-[10px] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-full font-black">جديد</span>
                 </a>
 
                 {% if is_admin %}
@@ -219,6 +364,18 @@
                 <a href="{{ url_for('settings_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'settings' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                     <i class="fa-solid fa-gears text-lg w-6 text-center text-slate-300"></i>
                     <span>الإعدادات</span>
+                </a>
+
+                <a href="{{ url_for('admin_updates') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 font-bold' if active_page == 'updates' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-cloud-arrow-down text-lg w-6 text-center text-emerald-400"></i>
+                    <span class="flex-1">تحديثات النظام (OTA)</span>
+                    <span class="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">جديد</span>
+                </a>
+
+                <a href="{{ url_for('system_health_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'system_health' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-heart-pulse text-lg w-6 text-center text-rose-400"></i>
+                    <span class="flex-1">مركز تشخيص الخدمات</span>
+                    <span class="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-bold">مباشر</span>
                 </a>
                 {% endif %}
 
@@ -247,6 +404,28 @@
                     <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
                     <span>تقارير الأرباح والمحاسبة</span>
                 </a>
+
+                <a href="{{ url_for('accounting_ledger') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'accounting_ledger' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-scale-balanced text-lg w-6 text-center text-emerald-400"></i>
+                    <span>دفتر اليومية المالي ⚖️</span>
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('products_list') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'products' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-tags text-lg w-6 text-center text-amber-400"></i>
+                    <span>المنتجات والمخزون والتسعير 🏷️</span>
+                </a>
+
+                <a href="{{ url_for('user_guide_view') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'guide' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-book-open text-lg w-6 text-center text-cyan-400"></i>
+                    <span>دليل التشغيل والمستخدم 📖</span>
+                </a>
+
+                {% if is_admin %}
+                <a href="{{ url_for('admin_telemetry_errors') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition {{ 'bg-gradient-to-r from-[#00B5FF] to-[#0092D0] text-white shadow-lg shadow-[#00B5FF]/25 font-bold' if active_page == 'telemetry' else 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
+                    <i class="fa-solid fa-satellite-dish text-lg w-6 text-center text-rose-400"></i>
+                    <span>مركز مراقبة الأخطاء 📡</span>
+                </a>
                 {% endif %}
 
                 {% if not is_admin and not has_permission('reports_view') and not has_permission('treasury_view') %}
@@ -259,65 +438,69 @@
             </nav>
 
             <!-- Sidebar Footer -->
-            <div class="p-4 border-t border-slate-800 text-xs text-slate-400 bg-slate-950/50 space-y-2.5">
-                <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليم الوردية للموظف؟');" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-md shadow-rose-600/30">
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-400 bg-slate-950/50 space-y-3">
+                <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-400">صلاحية النظام:</span>
+                        <span class="text-emerald-400 font-bold font-mono">{{ license_remaining_text }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-400">سعر الصرف:</span>
+                        <span class="text-cyan-300 font-mono font-bold">1$ = {{ exchange_rate|format_currency }} ل.ل</span>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليم الوردية للموظف؟');" class="w-full bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-md shadow-rose-600/20 active:scale-95">
                     <i class="fa-solid fa-power-off text-sm"></i>
                     <span>تسكير النظام وتسليم الموظف 🔒</span>
                 </a>
-                <div class="flex items-center justify-between pt-1">
-                    <span>السيستم:</span>
+                <div class="flex items-center justify-between pt-0.5 text-[11px] text-slate-400">
+                    <span>حالة الخادم:</span>
                     <span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> شغّال محلياً 🇱🇧
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> متصل محلياً 🇱🇧
                     </span>
                 </div>
-                <div class="text-slate-500">سعر الصرف: 1$ = {{ exchange_rate|format_currency }} ل.ل</div>
             </div>
         </aside>
 
         <!-- Main Content Area -->
         <main class="flex-1 flex flex-col min-w-0 overflow-y-auto bg-slate-50">
             <!-- Top Header Desktop -->
-            <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 hidden lg:flex items-center justify-between px-6 py-3 shadow-xs gap-4 sticky top-0 z-30">
+            <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 hidden lg:flex items-center justify-between px-4 py-2.5 shadow-xs gap-3 sticky top-0 z-30">
                 <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
-                    <span class="text-xs bg-[#00D26A]/10 text-[#008f47] px-3.5 py-1.5 rounded-full font-bold border border-[#00D26A]/30 flex items-center gap-1.5 shadow-xs" title="سعر الصرف المعتمد">
-                        <i class="fa-solid fa-money-bill-transfer text-[#00D26A]"></i> 1$ = {{ exchange_rate|format_currency }} ل.ل
-                    </span>
-
-                    {% if is_admin %}
-                    <!-- Quick Street Cash Badge -->
-                    <a href="{{ url_for('couriers_list') }}" class="text-xs bg-[#FF7A00]/10 hover:bg-[#FF7A00]/20 text-[#D46500] px-3.5 py-1.5 rounded-full font-black border border-[#FF7A00]/30 flex items-center gap-1.5 shadow-xs transition" title="كاش مقبوض بالشارع مع السائقين">
-                        <i class="fa-solid fa-motorcycle text-[#FF7A00]"></i>
-                        <span>كاش الشارع:</span>
-                        <span class="font-mono text-[#FF7A00] font-black">{{ street_cash|to_usd(exchange_rate) }}</span>
-                    </a>
-
-                    <!-- Quick Whish Badge -->
-                    <a href="{{ url_for('treasury_view') }}" class="text-xs bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] px-3.5 py-1.5 rounded-full font-black border border-[#00B5FF]/30 flex items-center gap-1.5 shadow-xs transition" title="رصيد بطاقة Whish الإلكترونية المنفصلة">
-                        <i class="fa-solid fa-credit-card text-[#00B5FF]"></i>
-                        <span>ويش:</span>
-                        <span class="font-mono text-[#00B5FF] font-black">{{ whish_balance|to_usd(exchange_rate) }}</span>
-                    </a>
-
-                    <!-- Active Role Badge & Switcher -->
-                    <span class="text-xs bg-[#1E1B54] text-white px-3.5 py-1.5 rounded-full font-black border border-[#1E1B54]/40 flex items-center gap-1.5 shadow-xs">
-                        <span>👑 المدير العام</span>
-                    </span>
-                    <a href="{{ url_for('logout') }}" onclick="return confirm('هل تريد تسكير النظام وتسجيل الخروج لتسليمه للموظف؟');" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer" title="تسكير وقفل النظام بالكامل لتسليمه للموظف">
-                        <i class="fa-solid fa-power-off text-rose-600"></i>
-                        <span>تسجيل خروج / تسكير 🔒</span>
-                    </a>
-                    {% else %}
-                        <span>🎧 وضع الموظف (استقبال)</span>
-                    </span>
-                    <button type="button" onclick="openModal('adminUnlockModal')" class="text-xs bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-xs">
-                        <i class="fa-solid fa-key"></i>
-                        <span>دخول المدير</span>
+                    <!-- Desktop Sidebar Toggle Button -->
+                    <button type="button" onclick="toggleDesktopSidebar()" id="desktopSidebarToggleBtn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition active:scale-95 cursor-pointer shrink-0" title="إخفاء / إظهار القائمة الجانبية لتوسيع الشاشة">
+                        <i class="fa-solid fa-bars-staggered text-sm"></i>
                     </button>
-                    {% endif %}
+
+                    <!-- Unified Enterprise HUD Status Pill -->
+                    <div class="flex items-center bg-slate-100/90 border border-slate-200/80 rounded-2xl p-1 text-xs font-bold text-slate-700 shadow-2xs divide-x divide-slate-200 divide-x-reverse">
+                        <!-- Exchange Rate -->
+                        <span class="px-2.5 py-1 text-emerald-800 flex items-center gap-1.5" title="سعر الصرف المعتمد">
+                            <i class="fa-solid fa-money-bill-transfer text-emerald-600 text-xs"></i>
+                            <span class="font-mono">1$ = {{ exchange_rate|format_currency }}</span>
+                        </span>
+
+                        <!-- Whish Balance -->
+                        <a href="{{ url_for('treasury_view') }}" class="px-2.5 py-1 text-[#0080B8] hover:text-[#00B5FF] hover:bg-white rounded-xl transition flex items-center gap-1.5" title="رصيد بطاقة Whish">
+                            <i class="fa-solid fa-credit-card text-[#00B5FF] text-xs"></i>
+                            <span>ويش:</span>
+                            <span class="font-mono font-black">{{ whish_balance|to_usd(exchange_rate) }}</span>
+                        </a>
+
+                        {% if is_admin %}
+                        <!-- Street Cash -->
+                        <a href="{{ url_for('couriers_list') }}" class="px-2.5 py-1 text-[#D46500] hover:text-[#FF7A00] hover:bg-white rounded-xl transition flex items-center gap-1.5" title="كاش مقبوض بالشارع مع السائقين">
+                            <i class="fa-solid fa-motorcycle text-[#FF7A00] text-xs"></i>
+                            <span>الشارع:</span>
+                            <span class="font-mono font-black">{{ street_cash|to_usd(exchange_rate) }}</span>
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <!-- Global Live Search Bar -->
-                <div class="relative flex-1 max-w-md mx-2">
+                <div class="relative flex-1 max-w-sm mx-1">
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
                         <input type="text" id="globalLiveSearch" placeholder="بحث شامل سريع (أوردر، زبون، هاتف، متجر، سائق)..." 
@@ -333,31 +516,155 @@
                     </div>
                 </div>
 
-                <!-- User Profile & Action Controls -->
+                <!-- Screen Zoom Controller & Action Controls -->
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] border border-[#00B5FF]/30 text-xs font-black px-3 py-2 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
-                        <i class="fa-brands fa-telegram text-[#00B5FF] text-sm"></i>
-                        <span class="hidden sm:inline">تقرير للمدير 📲</span>
+                    <!-- Screen Zoom Controller -->
+                    <div class="flex items-center bg-slate-100 border border-slate-200 rounded-xl px-2 py-1 gap-1.5 shadow-xs shrink-0 select-none" title="تعديل مقاس وحجم الشاشة تلقائياً">
+                        <span class="text-[11px] font-bold text-slate-600 hidden xl:inline">🔍 المقاس:</span>
+                        <button type="button" onclick="adjustAppZoom(-0.05)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center border border-slate-200 transition active:scale-90 cursor-pointer" title="تصغير المحتوى (Ctrl + -)">
+                            <i class="fa-solid fa-minus text-[10px]"></i>
+                        </button>
+                        <span id="appZoomLabel" class="font-mono font-black text-indigo-950 text-xs min-w-[34px] text-center">80%</span>
+                        <button type="button" onclick="adjustAppZoom(0.05)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center border border-slate-200 transition active:scale-90 cursor-pointer" title="تكبير المحتوى (Ctrl + +)">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                        </button>
+                        <button type="button" onclick="resetAppZoomToFit()" class="px-2 h-6 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center gap-1 border border-indigo-200 transition active:scale-90 cursor-pointer" title="ضبط تلقائي كامل للمقاس (Ctrl + 0)">
+                            <i class="fa-solid fa-expand text-[9px]"></i>
+                            <span>تلقائي</span>
+                        </button>
+                    </div>
+
+                    <!-- Operational Alerts Notification Center -->
+                    <div class="relative">
+                        <button type="button" id="notifBellBtn" onclick="toggleNotificationDropdown()" class="relative inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-xs cursor-pointer" title="تنبيهات العمليات والرقابة الفورية">
+                            <i class="fa-solid fa-bell text-sm text-slate-600"></i>
+                            <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">0</span>
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div id="notifDropdown" class="hidden absolute top-full mt-2 left-0 w-80 md:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden text-right">
+                            <div class="p-3 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-bell-concierge text-amber-400"></i>
+                                    <span class="font-black text-xs">تنبيهات العمليات والرقابة الحية</span>
+                                </div>
+                                <span id="notifCountLabel" class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono font-bold">0 تنبيه</span>
+                            </div>
+                            <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-slate-100 p-1 text-xs">
+                                <div class="p-4 text-center text-slate-400 text-xs">جاري فحص حالة العمليات...</div>
+                            </div>
+                            <div class="p-2 bg-slate-50 border-t border-slate-100 text-center">
+                                <a href="/orders?status=new" class="text-[11px] font-black text-indigo-600 hover:text-indigo-800">متابعة شاشة العمليات ↗</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enterprise Quick Launch Buttons -->
+                    <a href="{{ url_for('batch_scanner_view') }}" class="inline-flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="الماسح الصوتي السريع للشحنات">
+                        <i class="fa-solid fa-barcode text-amber-600 text-xs"></i>
+                        <span class="hidden xl:inline">ماسح الباركود</span>
+                    </a>
+                    <a href="{{ url_for('map_dashboard') }}" class="inline-flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-900 border border-cyan-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="رادار العمليات المباشر وتتبع السائقين">
+                        <i class="fa-solid fa-satellite-dish text-cyan-600 text-xs"></i>
+                        <span class="hidden xl:inline">الرادار الحي</span>
+                    </a>
+                    <button type="button" onclick="toggleCommandPalette()" class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs cursor-pointer" title="فتح شريط الأوامر السريع (Ctrl + K)">
+                        <i class="fa-solid fa-terminal text-indigo-600 text-xs"></i>
+                        <span class="hidden xl:inline">الأوامر</span>
+                        <kbd class="hidden sm:inline bg-indigo-200/60 text-indigo-900 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold">Ctrl+K</kbd>
+                    </button>
+                    <a href="/admin/system/health" class="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="فحص صحة النظام">
+                        <i class="fa-solid fa-heart-pulse text-emerald-600 text-xs"></i>
+                        <span class="hidden xl:inline">صحة النظام</span>
+                    </a>
+                    <a href="/admin/updates/dashboard" class="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs" title="مركز إدارة التحديثات">
+                        <i class="fa-solid fa-cloud-arrow-down text-sky-600 text-xs"></i>
+                        <span class="hidden xl:inline">التحديثات</span>
+                    </a>
+                    <button type="button" onclick="triggerTelegramDailyReport(this)" class="inline-flex items-center gap-1.5 bg-[#00B5FF]/10 hover:bg-[#00B5FF]/20 text-[#0080B8] border border-[#00B5FF]/30 text-xs font-black px-2.5 py-1.5 rounded-xl transition shadow-xs cursor-pointer" title="إرسال التقرير المالي والتشغيلي الشامل للمدير عبر التيليجرام">
+                        <i class="fa-brands fa-telegram text-[#00B5FF] text-xs"></i>
                     </button>
 
-                    <a href="{{ url_for('orders_list') }}?open_new=1" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-md shadow-[#FF7A00]/25 transition">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>أوردر جديد</span>
-                    </a>
-
                     {% if logged_in %}
-                    <div class="flex items-center gap-2 pr-2 border-r border-slate-200">
-                    <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-black">
-                            <i class="fa-solid fa-user"></i>
+                    <!-- User Profile & Help Dropdown (Official Central Support Location) -->
+                    <div class="relative" id="userMenuContainer">
+                        <button type="button" onclick="toggleUserDropdown()" id="userMenuBtn" class="flex items-center gap-2 p-1.5 pr-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition cursor-pointer active:scale-95 shadow-xs">
+                            <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#1E1B54] to-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                                {{ (user_display_name or username or 'U')[:1]|upper }}
+                            </div>
+                            <div class="text-right hidden sm:block">
+                                <div class="text-xs font-bold text-slate-800 leading-none">{{ user_display_name or username }}</div>
+                                <div class="text-[10px] text-slate-400 font-medium mt-0.5">{{ '👑 مدير عام' if is_admin else '👤 موظف' }}</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 mr-1"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="userMenuDropdown" class="hidden absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white border border-slate-200 rounded-3xl shadow-2xl z-50 overflow-hidden text-right transform transition-all duration-150 origin-top-left">
+                            <!-- Dropdown Header -->
+                            <div class="p-4 bg-gradient-to-br from-[#1E1B54] to-indigo-950 text-white">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-amber-300 text-lg font-black shrink-0">
+                                        {{ (user_display_name or username or 'U')[:1]|upper }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-black text-sm text-white truncate">{{ user_display_name or username }}</div>
+                                        <div class="text-xs text-cyan-300 font-medium">{{ 'مدير عام النظام' if is_admin else 'موظف استقبال وعمليات' }}</div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                                    <span class="text-slate-300">صلاحية الترخيص:</span>
+                                    <span class="text-amber-300 font-bold font-mono">{{ license_remaining_text }}</span>
+                                </div>
+                            </div>
+
+                            <!-- OFFICIAL CENTRAL SUPPORT SECTION (The Designated Location for 81153005) -->
+                            <div class="p-3 bg-slate-50 border-b border-slate-100">
+                                <div class="text-[11px] font-bold text-slate-500 mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-headset text-indigo-600"></i>
+                                    <span>الدعم الفني والصيانة المعتمد</span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-auto"></span>
+                                </div>
+                                <a href="https://wa.me/96181153005?text=مرحبا%20stargate%20experts%20أحتاج%20صيانة%20ودعم%20فني" target="_blank" class="w-full flex items-center justify-between p-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-600/20 transition group">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center text-sm">
+                                            <i class="fa-brands fa-whatsapp text-base"></i>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-xs font-black leading-tight">مركز الصيانة 24/7</div>
+                                            <div class="text-[10px] text-emerald-100">فريق Stargate Experts</div>
+                                        </div>
+                                    </div>
+                                    <span class="font-mono text-xs font-black tracking-wider bg-white/20 px-2 py-0.5 rounded-lg" dir="ltr">81153005</span>
+                                </a>
+                            </div>
+
+                            <!-- Quick Menu Links -->
+                            <div class="p-2 space-y-1 text-xs">
+                                {% if is_admin %}
+                                <a href="{{ url_for('settings_view') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-bold transition">
+                                    <i class="fa-solid fa-gear text-slate-400 w-4 text-center"></i>
+                                    <span>إعدادات النظام والشركة</span>
+                                </a>
+                                <a href="/admin/system/health" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-bold transition">
+                                    <i class="fa-solid fa-heart-pulse text-emerald-500 w-4 text-center"></i>
+                                    <span>فحص صحة النظام</span>
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('user_guide_view') }}" target="_blank" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-bold transition">
+                                    <i class="fa-solid fa-book-open text-blue-500 w-4 text-center"></i>
+                                    <span>دليل المستخدم والإرشادات</span>
+                                </a>
+                            </div>
+
+                            <!-- Logout / Lock -->
+                            <div class="p-2 bg-slate-50 border-t border-slate-100">
+                                <a href="{{ url_for('logout') }}" onclick="return confirm('هل أنت متأكد من تسكير النظام وتسجيل الخروج؟');" class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-50 font-bold text-xs transition border border-rose-200">
+                                    <i class="fa-solid fa-power-off text-rose-600"></i>
+                                    <span>تسكير النظام وتسجيل الخروج 🔒</span>
+                                </a>
+                            </div>
                         </div>
-                        <div class="text-right hidden xl:block">
-                            <div class="text-xs font-bold text-slate-800 leading-tight">{{ user_display_name or username }}</div>
-                            <div class="text-[10px] text-slate-400">{{ 'مدير عام' if is_admin else 'موظف' }}</div>
-                        </div>
-                        <a href="{{ url_for('logout') }}" onclick="return confirm('هل أنت متأكد من تسكير النظام وتسجيل الخروج؟');" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-xs shadow-rose-600/20 cursor-pointer" title="تسكير النظام وتسجيل الخروج">
-                            <i class="fa-solid fa-power-off text-xs"></i>
-                            <span class="hidden sm:inline">تسكير النظام 🔒</span>
-                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -365,10 +672,24 @@
 
             <!-- Flash Messages Notification Container -->
             <div class="px-6 lg:px-8 pt-4">
+                {% if session.get('must_change_password') %}
+                <div class="mb-4 p-4 rounded-2xl bg-amber-50 border-2 border-amber-500 text-amber-950 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <span class="p-2.5 rounded-xl bg-amber-500 text-white shadow"><i class="fa-solid fa-triangle-exclamation text-xl"></i></span>
+                        <div>
+                            <div class="font-black text-base text-amber-900">🚨 تنبيه أمان حرج: أنت تستخدم كلمة المرور الافتراضية للنظام!</div>
+                            <div class="text-xs text-amber-800 font-bold">لحماية أموال الخزائن وسجلات العمليات، يجب تعيين كلمة مرور جديدة ورمز PIN مخصص فوراً.</div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('settings_view') }}" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl font-black text-sm shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-key"></i> تغيير كلمة المرور والـ PIN الآن
+                    </a>
+                </div>
+                {% endif %}
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <div class="mb-4 p-4 rounded-2xl text-sm font-bold flex items-center justify-between shadow-lg transition-all duration-300
+                            <div class="mb-4 p-4 rounded-2xl text-base font-bold flex items-center justify-between shadow-lg transition-all duration-300
                                 {% if category == 'success' %} bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-emerald-600/20 border border-emerald-500/30
                                 {% elif category == 'danger' %} bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-rose-600/20 border border-rose-500/30
                                 {% elif category == 'info' %} bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-sky-600/20 border border-sky-500/30
@@ -388,8 +709,8 @@
                 {% endwith %}
             </div>
 
-    <!-- Page Content Body -->
-            <div class="p-6 lg:p-8 flex-1">
+    <!-- Page Content Body (Balanced Enterprise Proportions) -->
+            <div class="p-2 sm:p-3.5 lg:p-5 flex-1 w-full max-w-[1680px] mx-auto">
                 {% block content %}{% endblock %}
             </div>
         </main>
@@ -409,6 +730,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('unlock_admin') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">أدخل كلمة سر المدير:</label>
                     <input type="password" name="pin" required placeholder="••••••••" autofocus class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-black tracking-widest text-center focus:ring-2 focus:ring-red-500 font-mono">
@@ -430,12 +752,32 @@
     <!-- Scripts -->
     <script>
         function openModal(id) {
+            if (id === 'newOrderModal') {
+                if (typeof window.openWizardModal === 'function') {
+                    window.openWizardModal('newOrderModal');
+                    return;
+                }
+            }
             const el = document.getElementById(id);
-            if (el) el.classList.remove('hidden');
+            if (el) {
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+                el.style.display = 'flex';
+            }
         }
         function closeModal(id) {
+            if (id === 'newOrderModal') {
+                if (typeof window.closeOrderModal === 'function') {
+                    window.closeOrderModal();
+                    return;
+                }
+            }
             const el = document.getElementById(id);
-            if (el) el.classList.add('hidden');
+            if (el) {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+                el.style.display = 'none';
+            }
         }
 
         const sidebar = document.getElementById('sidebar');
@@ -524,11 +866,21 @@
         }
 
         // =======================================================================
-        //          REAL-TIME LIVE MULTI-DEVICE SYNC ENGINE ⚡
+        //          REAL-TIME LIVE MULTI-DEVICE SEAMLESS SYNC ENGINE ⚡
         // =======================================================================
         (function() {
             let lastFingerprint = null;
             let isPolling = false;
+            let isSyncing = false;
+            let pendingSync = false;
+            let lastUserActivity = Date.now();
+
+            // Track user interaction to prevent any disruption during typing or clicking
+            ['mousedown', 'keydown', 'touchstart', 'input'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    lastUserActivity = Date.now();
+                }, { passive: true });
+            });
 
             // Top Live Sync Toast Element
             const liveToast = document.createElement('div');
@@ -537,7 +889,7 @@
             liveToast.innerHTML = '<span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span><span id="stargateLiveSyncText">مزامنة حية فورية: تم تحديث البيانات!</span>';
             document.body.appendChild(liveToast);
 
-            function showLiveToast(msg, duration = 3500) {
+            function showLiveToast(msg, duration = 3000) {
                 const textEl = document.getElementById('stargateLiveSyncText');
                 if (textEl) textEl.textContent = msg;
                 liveToast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
@@ -547,26 +899,87 @@
                     liveToast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
                 }, duration);
             }
+            window.showLiveToast = showLiveToast;
 
-            let pendingRefresh = false;
-
-            function isUserActivelyWritingModal() {
-                // Check if any modal is open and has user-entered content
+            function isUserBusy() {
+                // Check if any modal is currently visible
                 const visibleModals = Array.from(document.querySelectorAll('div[id$="Modal"]')).filter(m => {
                     return !m.classList.contains('hidden') && m.offsetParent !== null;
                 });
-                if (visibleModals.length === 0) return false;
+                if (visibleModals.length > 0) return true;
 
-                for (const modal of visibleModals) {
-                    const inputs = modal.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="radio"]):not([type="checkbox"]), textarea');
-                    for (const inp of inputs) {
-                        if (inp.value && inp.value.trim().length > 0) {
-                            return true;
-                        }
-                    }
+                // Check if focused on any input, textarea, or select
+                const active = document.activeElement;
+                if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+                    return true;
                 }
+
+                // Check if user actively interacted within the last 3 seconds
+                if (Date.now() - lastUserActivity < 3000) {
+                    return true;
+                }
+
                 return false;
             }
+
+            async function performSeamlessUpdate() {
+                if (isSyncing) return;
+                if (isUserBusy()) {
+                    pendingSync = true;
+                    return;
+                }
+                isSyncing = true;
+                pendingSync = false;
+
+                try {
+                    const currentUrl = window.location.href;
+                    const res = await fetch(currentUrl, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!res.ok) {
+                        isSyncing = false;
+                        return;
+                    }
+
+                    const html = await res.text();
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+
+                    // Save current scroll position
+                    const scrollX = window.scrollX || window.pageXOffset;
+                    const scrollY = window.scrollY || window.pageYOffset;
+
+                    // Update main content container seamlessly
+                    const currentMain = document.querySelector('main');
+                    const newMain = newDoc.querySelector('main');
+                    if (currentMain && newMain) {
+                        currentMain.innerHTML = newMain.innerHTML;
+                        // Instantly restore scroll position so there is zero screen jump
+                        window.scrollTo({ top: scrollY, left: scrollX, behavior: 'instant' });
+                    }
+
+                    // Update live dispatch badge if present
+                    const newBadge = newDoc.getElementById('liveDispatchBadge');
+                    const curBadge = document.getElementById('liveDispatchBadge');
+                    if (newBadge && curBadge) {
+                        curBadge.className = newBadge.className;
+                        curBadge.innerText = newBadge.innerText;
+                    }
+
+                    showLiveToast('🟢 تم تحديث البيانات تلقائياً بنجاح', 2200);
+                } catch (e) {
+                    console.debug('[LiveSync error]', e);
+                } finally {
+                    isSyncing = false;
+                }
+            }
+
+            // Retry update as soon as user is no longer busy
+            setInterval(() => {
+                if (pendingSync && !isUserBusy()) {
+                    performSeamlessUpdate();
+                }
+            }, 2500);
 
             function pollLiveSync() {
                 if (isPolling || document.hidden) return;
@@ -581,7 +994,7 @@
                 })
                 .then(data => {
                     isPolling = false;
-                    if (!data || !data.success) return;
+                    if (!data || !data.success || !data.fingerprint) return;
 
                     if (lastFingerprint === null) {
                         lastFingerprint = data.fingerprint;
@@ -589,17 +1002,8 @@
                     }
 
                     if (data.fingerprint !== lastFingerprint) {
-                        if (isUserActivelyWritingModal()) {
-                            pendingRefresh = true;
-                            showLiveToast('🔔 تم تسجيل بيانات جديدة! سيتم التحديث فور إغلاق النافذة...');
-                        } else {
-                            lastFingerprint = data.fingerprint;
-                            pendingRefresh = false;
-                            showLiveToast('🟢 تحديث فوري مباشر: تم تسجيل بيانات جديدة في السيستم!');
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 500);
-                        }
+                        lastFingerprint = data.fingerprint;
+                        performSeamlessUpdate();
                     }
                 })
                 .catch(() => {
@@ -607,25 +1011,1011 @@
                 });
             }
 
-            // Check every 2.5 seconds for instant real-time synchronization
-            setInterval(pollLiveSync, 2500);
+            // Poll every 6 seconds in the background
+            setInterval(pollLiveSync, 6000);
 
-            // Also check immediately when tab/device wakes up
+            // Re-check when tab regains focus
             document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) {
-                    pollLiveSync();
-                }
-            });
-
-            // If a refresh was pending while writing, reload immediately when modal is closed
-            window.addEventListener('click', (e) => {
-                if (pendingRefresh && !isUserActivelyWritingModal()) {
-                    pendingRefresh = false;
-                    window.location.reload();
-                }
+                if (!document.hidden) pollLiveSync();
             });
         })();
+        window.CSRF_TOKEN = "{{ csrf_token() }}";
+
+        window.triggerTelegramDailyReport = async function(btn) {
+            if (!btn) btn = event?.target;
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+            }
+            try {
+                const res = await fetch('/api/telegram/send-report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': window.CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ csrf_token: window.CSRF_TOKEN })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ' + (data.message || 'تم إرسال التقرير المالي والتشغيلي بنجاح إلى التيليجرام!'));
+                } else {
+                    alert('⚠️ لم يتم الإرسال: ' + (data.message || 'يرجى إدخال Bot Token و Chat ID في صفحة الإعدادات أولاً.'));
+                }
+            } catch (err) {
+                alert('❌ تعذر الاتصال بخادم التليجرام: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        };
+
+        // ================= Global OmniSearch & Notifications =================
+        const searchInput = document.getElementById('globalLiveSearch');
+        const searchResults = document.getElementById('globalSearchResults');
+        const clearBtn = document.getElementById('clearGlobalSearchBtn');
+        let searchDebounceTimer;
+
+        if (searchInput && searchResults) {
+            searchInput.addEventListener('input', function() {
+                const val = this.value.trim();
+                if (clearBtn) clearBtn.classList.toggle('hidden', val.length === 0);
+                clearTimeout(searchDebounceTimer);
+                if (val.length < 2) {
+                    searchResults.classList.add('hidden');
+                    searchResults.innerHTML = '';
+                    return;
+                }
+                searchDebounceTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch('/api/search/global?q=' + encodeURIComponent(val));
+                        const data = await res.json();
+                        if (data.results && data.results.length > 0) {
+                            searchResults.innerHTML = data.results.map(r => `
+                                <a href="${r.url}" class="block p-3 hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 text-right">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700">${r.category}</span>
+                                        <span class="text-xs font-bold text-slate-800">${r.title}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-1">${r.subtitle}</div>
+                                </a>
+                            `).join('');
+                            searchResults.classList.remove('hidden');
+                        } else {
+                            searchResults.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">لا توجد نتائج مطابقة لبحثك</div>';
+                            searchResults.classList.remove('hidden');
+                        }
+                    } catch(err) {
+                        console.error('Search error:', err);
+                    }
+                }, 200);
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    clearBtn.classList.add('hidden');
+                    searchResults.classList.add('hidden');
+                    searchResults.innerHTML = '';
+                    searchInput.focus();
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            });
+        }
+
+        window.toggleNotificationDropdown = function() {
+            const dd = document.getElementById('notifDropdown');
+            if (dd) {
+                dd.classList.toggle('hidden');
+                if (!dd.classList.contains('hidden')) {
+                    fetchNotifications();
+                }
+            }
+        };
+
+        async function fetchNotifications() {
+            try {
+                const res = await fetch('/api/system/notifications');
+                const data = await res.json();
+                const badge = document.getElementById('notifBadge');
+                const countLbl = document.getElementById('notifCountLabel');
+                const list = document.getElementById('notifList');
+
+                if (data.success) {
+                    const count = data.count || 0;
+                    if (badge) {
+                        badge.textContent = count;
+                        badge.classList.toggle('hidden', count === 0);
+                    }
+                    if (countLbl) {
+                        countLbl.textContent = `${count} تنبيه`;
+                    }
+                    if (list) {
+                        if (data.alerts && data.alerts.length > 0) {
+                            list.innerHTML = data.alerts.map(a => {
+                                const borderClr = a.type === 'danger' ? 'border-rose-500' : (a.type === 'warning' ? 'border-amber-500' : 'border-blue-500');
+                                const bgClr = a.type === 'danger' ? 'bg-rose-50/60' : (a.type === 'warning' ? 'bg-amber-50/60' : 'bg-blue-50/60');
+                                return `
+                                    <a href="${a.url}" class="block p-3 ${bgClr} hover:opacity-90 transition border-r-4 ${borderClr} text-right">
+                                        <div class="flex items-center gap-2 font-bold text-xs text-slate-800">
+                                            <i class="${a.icon}"></i>
+                                            <span>${a.title}</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">${a.desc}</p>
+                                    </a>
+                                `;
+                            }).join('');
+                        } else {
+                            list.innerHTML = '<div class="p-6 text-center text-emerald-600 font-bold text-xs"><i class="fa-solid fa-circle-check text-xl mb-1 block"></i> كافة العمليات منتظمة ولا توجد أي تأخيرات!</div>';
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('Notification poll error:', e);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = document.getElementById('notifBellBtn');
+            const dd = document.getElementById('notifDropdown');
+            if (btn && dd && !btn.contains(e.target) && !dd.contains(e.target)) {
+                dd.classList.add('hidden');
+            }
+        });
+
+        fetchNotifications();
+        setInterval(fetchNotifications, 60000);
+    </script>
+
+    <!-- ================= STARGATE DYNAMIC SCREEN AUTO-FIT & ZOOM ENGINE ================= -->
+    <script>
+    (function() {
+        let currentZoom = 0.82;
+
+        function computeOptimalZoom() {
+            // Check if employee has manually saved their preference
+            const saved = localStorage.getItem('stargate_ui_zoom');
+            if (saved) {
+                const val = parseFloat(saved);
+                if (!isNaN(val) && val >= 0.50 && val <= 1.50) {
+                    return val;
+                }
+            }
+
+            // Screen & Window dimension based calculation
+            const screenW = window.screen.width || window.innerWidth;
+            const screenH = window.screen.height || window.innerHeight;
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+
+            const w = Math.min(screenW, winW);
+            const h = Math.min(screenH, winH);
+
+            // Target layout fits comfortably without horizontal scroll
+            if (w <= 1100 || h <= 640) {
+                return 0.72; // Ultra-compact screen / small laptop
+            } else if (w <= 1366 || h <= 768) {
+                return 0.80; // Standard 1366x768 laptop or 1080p @ 150% scaling
+            } else if (w <= 1536 || h <= 864) {
+                return 0.85; // 1080p @ 125% scaling (typical 15.6" laptop)
+            } else if (w <= 1680 || h <= 950) {
+                return 0.90; // Medium widescreen display
+            } else {
+                return 0.95; // Large FHD / 2K monitor
+            }
+        }
+
+        function applyZoom(zoomFactor, save) {
+            zoomFactor = Math.round(Math.min(1.30, Math.max(0.55, zoomFactor)) * 100) / 100;
+            currentZoom = zoomFactor;
+
+            // In Chromium / Edge WebView2, setting zoom on document.body or html applies smooth layout zoom
+            document.body.style.zoom = zoomFactor;
+
+            const lbl = document.getElementById('appZoomLabel');
+            if (lbl) {
+                lbl.textContent = Math.round(zoomFactor * 100) + '%';
+            }
+
+            if (save) {
+                localStorage.setItem('stargate_ui_zoom', zoomFactor.toString());
+            }
+        }
+
+        window.adjustAppZoom = function(delta) {
+            applyZoom(currentZoom + delta, true);
+        };
+
+        window.resetAppZoomToFit = function() {
+            localStorage.removeItem('stargate_ui_zoom');
+            const optimal = computeOptimalZoom();
+            applyZoom(optimal, false);
+            const lbl = document.getElementById('appZoomLabel');
+            if (lbl) {
+                lbl.classList.add('text-emerald-600');
+                setTimeout(() => lbl.classList.remove('text-emerald-600'), 600);
+            }
+        };
+
+        // Desktop Sidebar Toggle
+        window.toggleDesktopSidebar = function() {
+            const sb = document.getElementById('sidebar');
+            if (!sb) return;
+            sb.classList.toggle('desktop-sidebar-hidden');
+            const isHidden = sb.classList.contains('desktop-sidebar-hidden');
+            localStorage.setItem('stargate_desktop_sb_hidden', isHidden ? '1' : '0');
+        };
+
+        // User Profile & Help Dropdown
+        window.toggleUserDropdown = function() {
+            const menu = document.getElementById('userMenuDropdown');
+            if (menu) menu.classList.toggle('hidden');
+        };
+        document.addEventListener('click', function(e) {
+            const container = document.getElementById('userMenuContainer');
+            const menu = document.getElementById('userMenuDropdown');
+            if (container && menu && !container.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Restore sidebar state
+        const savedSbState = localStorage.getItem('stargate_desktop_sb_hidden');
+        if (savedSbState === '1') {
+            const sb = document.getElementById('sidebar');
+            if (sb) sb.classList.add('desktop-sidebar-hidden');
+        }
+
+        // Floating Toast Notification Engine
+        window.showToast = function(message, type = 'info', duration = 3500) {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'fixed bottom-5 left-5 z-[9999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            const bgColors = {
+                success: 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400/30 text-white shadow-emerald-600/25',
+                danger: 'bg-gradient-to-r from-rose-600 to-red-700 border-rose-400/30 text-white shadow-rose-600/25',
+                error: 'bg-gradient-to-r from-rose-600 to-red-700 border-rose-400/30 text-white shadow-rose-600/25',
+                warning: 'bg-gradient-to-r from-amber-500 to-orange-600 border-amber-400/30 text-white shadow-amber-500/25',
+                info: 'bg-gradient-to-r from-sky-600 to-blue-700 border-sky-400/30 text-white shadow-sky-600/25'
+            };
+            const icons = {
+                success: 'fa-circle-check',
+                danger: 'fa-triangle-exclamation',
+                error: 'fa-circle-xmark',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
+            const styleClass = bgColors[type] || bgColors.info;
+            const iconClass = icons[type] || icons.info;
+
+            toast.className = `pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl border shadow-xl backdrop-blur-md text-xs font-bold transform transition-all duration-300 translate-y-4 opacity-0 ${styleClass}`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid ${iconClass} text-base"></i>
+                    <span class="leading-snug">${message}</span>
+                </div>
+                <button type="button" class="text-white/80 hover:text-white p-1 ml-1" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            });
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        };
+
+        // Universal Clipboard Helper with Toast Feedback
+        window.copyToClipboard = function(text, successMsg = 'تم النسخ إلى الحافظة بنجاح 📋') {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => showToast(successMsg, 'success'));
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    showToast(successMsg, 'success');
+                } catch(err) {
+                    showToast('تعذر النسخ التلقائي', 'error');
+                }
+                document.body.removeChild(ta);
+            }
+        };
+
+        // Global Enterprise Keyboard Shortcuts:
+        // Ctrl + K (Search), Alt + N (New Order), Esc (Close Modal), Ctrl + Zoom
+        window.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K: Command Palette & Live Search
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                const searchInput = document.getElementById('globalLiveSearch');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                    showToast('تم تفعيل البحث السريع الشامل (Ctrl + K) 🔍', 'info');
+                }
+            }
+            // Alt + N: Quick New Order
+            else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+                e.preventDefault();
+                if (typeof openWizardModal === 'function') {
+                    openWizardModal('newOrderModal');
+                } else if (typeof openModal === 'function') {
+                    openModal('newOrderModal');
+                } else {
+                    window.location.href = '/orders?open_new=1';
+                }
+            }
+            // Escape: Close all active modals and dropdowns
+            else if (e.key === 'Escape') {
+                document.querySelectorAll('[id$="Modal"]:not(.hidden)').forEach(m => {
+                    if (typeof closeModal === 'function') closeModal(m.id);
+                    else m.classList.add('hidden');
+                });
+                const userMenu = document.getElementById('userMenuDropdown');
+                if (userMenu) userMenu.classList.add('hidden');
+                const searchRes = document.getElementById('globalSearchResults');
+                if (searchRes) searchRes.classList.add('hidden');
+            }
+            // Ctrl + Space or Alt + A: Global AI Copilot Shortcut
+            else if ((e.ctrlKey && (e.code === 'Space' || e.key === ' ')) || (e.altKey && (e.key === 'a' || e.key === 'A'))) {
+                e.preventDefault();
+                if (typeof toggleAiCopilot === 'function') toggleAiCopilot();
+            }
+            // Ctrl/Cmd + Zoom Keys
+            else if (e.ctrlKey || e.metaKey) {
+                if (e.key === '-' || e.key === 'Subtract') {
+                    e.preventDefault();
+                    adjustAppZoom(-0.05);
+                } else if (e.key === '=' || e.key === '+' || e.key === 'Add') {
+                    e.preventDefault();
+                    adjustAppZoom(0.05);
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    resetAppZoomToFit();
+                }
+            }
+        });
+
+        // Initialize immediately
+        function initAppScale() {
+            const target = computeOptimalZoom();
+            applyZoom(target, false);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAppScale);
+        } else {
+            initAppScale();
+        }
+
+        // Auto-recalculate on window resize only if user hasn't set manual preference
+        window.addEventListener('resize', function() {
+            if (!localStorage.getItem('stargate_ui_zoom')) {
+                const target = computeOptimalZoom();
+                applyZoom(target, false);
+            }
+        });
+    })();
+    </script>
+
+    <!-- ════════════════ STARGATE NEURAL AI COPILOT (GLOBAL FLOATING AGENT) ════════════════ -->
+    <div id="stargateAiFab" onclick="toggleAiCopilot()" class="fixed bottom-6 left-6 z-50 group flex items-center gap-2.5 cursor-pointer select-none">
+        <div class="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#00B5FF] via-indigo-600 to-purple-600 p-0.5 shadow-xl shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all duration-300 transform group-hover:scale-105 group-active:scale-95 flex items-center justify-center">
+            <div class="w-full h-full bg-slate-950/90 rounded-2xl flex items-center justify-center text-white relative overflow-hidden backdrop-blur-md">
+                <span class="absolute inset-0 bg-gradient-to-tr from-[#00B5FF]/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                <i class="fa-solid fa-wand-magic-sparkles text-xl text-cyan-300 group-hover:rotate-12 transition-transform"></i>
+                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-slate-950 animate-pulse"></span>
+            </div>
+        </div>
+        <div class="hidden sm:flex items-center gap-2 bg-slate-900/90 hover:bg-slate-900 border border-slate-700/80 text-white px-3.5 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md transition group-hover:border-cyan-500/50">
+            <span>المستشار الذكي (AI)</span>
+            <span class="font-mono text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-500/30">Ctrl+Space</span>
+        </div>
+    </div>
+
+    <!-- AI Copilot Modal Dialog -->
+    <div id="stargateAiModal" class="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm hidden flex items-end sm:items-center justify-center sm:p-4">
+        <div class="bg-slate-950 border border-indigo-500/30 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-xl h-[85vh] sm:h-[620px] shadow-2xl flex flex-col overflow-hidden text-white relative animate-fade-in">
+            <!-- Glow effect -->
+            <div class="absolute -right-20 -top-20 w-60 h-60 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-20 -bottom-20 w-60 h-60 bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Header -->
+            <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between relative z-10 bg-slate-950/80 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00B5FF] to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
+                        <i class="fa-solid fa-robot text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm sm:text-base font-black text-white">مستشار Stargate الذكي (AI Copilot)</h2>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">2026 AI Ready</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">تحليل لحظي للكاش والطلبيات والسائقين والتنبؤ بالأعطال والمخاطر</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="clearAiCopilotChat()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition text-xs cursor-pointer" title="مسح المحادثة"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button type="button" onclick="toggleAiCopilot(false)" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition text-sm cursor-pointer" title="إغلاق (Esc)"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <!-- Prompt Quick Pills -->
+            <div class="p-3 bg-slate-900/60 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto touch-scroll-x relative z-10 text-xs shrink-0">
+                <button type="button" onclick="sendAiQuickPrompt('ما هو رصيد الكاش بالخزائن وكاش الشارع مع السائقين؟')" class="whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/20 font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <span>🏦 كاش الخزائن والشارع</span>
+                </button>
+                <button type="button" onclick="sendAiQuickPrompt('إحصائيات حركة الطلبات والتشغيل لليوم')" class="whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-emerald-500/20 font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <span>📦 حركة طلبيات اليوم</span>
+                </button>
+                <button type="button" onclick="sendAiQuickPrompt('تقييم أداء السائقين ومن هو أفضل كابتن؟')" class="whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 border border-amber-500/20 font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <span>🏆 تصنيف الكباتن</span>
+                </button>
+                <button type="button" onclick="sendAiQuickPrompt('هل يوجد أي طلبات متأخرة أو رادار مخاطر؟')" class="whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-rose-300 border border-rose-500/20 font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <span>🚨 فحص المخاطر والتأخير</span>
+                </button>
+            </div>
+
+            <!-- Chat Messages Log -->
+            <div id="aiCopilotMessages" class="flex-1 p-4 space-y-3.5 overflow-y-auto relative z-10 text-xs">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00B5FF] to-indigo-600 flex items-center justify-center text-white text-xs shrink-0 mt-0.5 shadow-sm">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="bg-slate-900/90 p-4 rounded-2xl rounded-tr-none border border-slate-800 text-slate-200 leading-relaxed max-w-[90%] space-y-2">
+                        <p class="font-bold text-cyan-300">مرحباً بك! أنا مستشارك الذكي المدمج في نظام Stargate 🚀</p>
+                        <p class="text-slate-300">أنا متصل مباشرة بقاعدة البيانات التشغيلية لتحليل الكاش، تتبع السائقين، رصد أي تأخير، وتوليد التقارير التنفيذية الفورية.</p>
+                        <p class="text-slate-400 text-[11px]">اضغط على أحد الأزرار السريعة أعلاه أو اكتب سؤالك بالأسفل مباشرة.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="p-3 sm:p-4 bg-slate-950/90 border-t border-slate-800 relative z-10">
+                <form id="aiCopilotForm" onsubmit="handleAiCopilotSubmit(event)" class="flex items-center gap-2">
+                    <input type="text" id="aiCopilotInput" placeholder="اسأل المساعد الذكي عن الكاش، السائقين، الأوردرات..." class="flex-1 bg-slate-900 border border-slate-700/80 rounded-2xl px-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30 transition" autocomplete="off">
+                    <button type="submit" id="aiCopilotSendBtn" class="bg-gradient-to-r from-[#00B5FF] to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-black px-5 py-3 rounded-2xl text-xs shadow-md shadow-cyan-500/20 transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+                        <span>إرسال</span>
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════ STARGATE ENTERPRISE COMMAND PALETTE (CTRL + K) ════════════════ -->
+    <div id="stargateCommandPalette" class="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md hidden flex items-start justify-center pt-[10vh] px-4" onclick="if(event.target===this) toggleCommandPalette(false)">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-2xl shadow-2xl shadow-cyan-500/10 flex flex-col overflow-hidden text-slate-100 transform transition-all">
+            <!-- Search Header -->
+            <div class="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-950/60">
+                <i class="fa-solid fa-magnifying-glass text-[#00B5FF] text-lg"></i>
+                <input type="text" id="cmdPaletteInput" placeholder="اكتب أمراً أو ابحث عن صفحة (مثال: سكانر، رادار، طلبية جديدة، كاش، سائق)..."
+                       autocomplete="off"
+                       class="flex-1 bg-transparent text-white placeholder-slate-400 text-sm font-bold focus:outline-none"
+                       oninput="filterCommands(this.value)"
+                       onkeydown="handleCommandKeydown(event)">
+                <button type="button" onclick="toggleCommandPalette(false)" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+                    <kbd class="bg-slate-800 text-slate-400 text-[10px] font-mono font-bold px-2 py-1 rounded-lg border border-slate-700">ESC</kbd>
+                </button>
+            </div>
+
+            <!-- Command Results Container -->
+            <div id="cmdPaletteResults" class="max-h-[55vh] overflow-y-auto p-2 space-y-1">
+                <!-- Injected via JavaScript -->
+            </div>
+
+            <!-- Footer Help -->
+            <div class="p-3 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                <div class="flex items-center gap-3">
+                    <span><kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono">↑</kbd> <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono">↓</kbd> للتنقل</span>
+                    <span><kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono">ENTER</kbd> للتنفيذ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-cyan-300 font-bold font-mono">Stargate 2026 Core</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function toggleAiCopilot(force) {
+        const modal = document.getElementById('stargateAiModal');
+        if (!modal) return;
+        const isHidden = modal.classList.contains('hidden');
+        const show = typeof force === 'boolean' ? force : isHidden;
+        if (show) {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                const input = document.getElementById('aiCopilotInput');
+                if (input) input.focus();
+            }, 100);
+        } else {
+            modal.classList.add('hidden');
+        }
+    }
+
+    function clearAiCopilotChat() {
+        const container = document.getElementById('aiCopilotMessages');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00B5FF] to-indigo-600 flex items-center justify-center text-white text-xs shrink-0 mt-0.5 shadow-sm">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div class="bg-slate-900/90 p-4 rounded-2xl rounded-tr-none border border-slate-800 text-slate-200 leading-relaxed max-w-[90%] space-y-1.5">
+                    <p class="font-bold text-cyan-300">تم مسح المحادثة بنجاح.</p>
+                    <p class="text-slate-400 text-xs">يمكنك البدء بسؤال جديد أو طلب فحص السيولة أو الأداء.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function sendAiQuickPrompt(text) {
+        const input = document.getElementById('aiCopilotInput');
+        if (!input) return;
+        input.value = text;
+        const form = document.getElementById('aiCopilotForm');
+        if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+
+    async function handleAiCopilotSubmit(e) {
+        if (e) e.preventDefault();
+        const input = document.getElementById('aiCopilotInput');
+        const prompt = input ? input.value.trim() : '';
+        if (!prompt) return;
+
+        const container = document.getElementById('aiCopilotMessages');
+        const sendBtn = document.getElementById('aiCopilotSendBtn');
+
+        // Append User Message
+        const userDiv = document.createElement('div');
+        userDiv.className = 'flex items-start justify-end gap-3';
+        userDiv.innerHTML = `
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-2xl rounded-tl-none text-white text-xs font-semibold leading-relaxed max-w-[85%] shadow-md">
+                ${escapeHtml(prompt)}
+            </div>
+            <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center text-xs shrink-0 mt-0.5 font-bold">
+                أنت
+            </div>
+        `;
+        container.appendChild(userDiv);
+        input.value = '';
+        container.scrollTop = container.scrollHeight;
+
+        // Append AI Typing indicator
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'flex items-start gap-3';
+        const msgId = 'aiMsg_' + Date.now();
+        aiDiv.innerHTML = `
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00B5FF] to-indigo-600 flex items-center justify-center text-white text-xs shrink-0 mt-0.5 shadow-sm">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div id="${msgId}" class="bg-slate-900/90 p-4 rounded-2xl rounded-tr-none border border-slate-800 text-slate-200 text-xs leading-relaxed max-w-[90%] shadow-sm">
+                <span class="inline-flex items-center gap-1.5 text-cyan-300">
+                    <i class="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                    <span>جاري التفكير والتحليل اللحظي...</span>
+                </span>
+            </div>
+        `;
+        container.appendChild(aiDiv);
+        container.scrollTop = container.scrollHeight;
+
+        if (sendBtn) sendBtn.disabled = true;
+
+        try {
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || window.CSRF_TOKEN || '';
+            const res = await fetch('/api/ai/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify({query: prompt, csrf_token: csrfToken})
+            });
+            let reply = "";
+            let data = null;
+            if (res.ok) {
+                try { data = await res.json(); } catch(e) {}
+            }
+            if (!data) {
+                try {
+                    const fallbackRes = await fetch('/api/ai/ask?query=' + encodeURIComponent(prompt));
+                    if (fallbackRes.ok) {
+                        data = await fallbackRes.json();
+                    }
+                } catch(e) {}
+            }
+            if (data && (data.answer || data.message)) {
+                reply = data.answer || data.message;
+            } else if (res.status === 401) {
+                reply = "⚠️ يرجى تسجيل الدخول إلى النظام لتتمكن من استخدام المساعد الذكي.";
+            } else {
+                reply = "مرحباً بك! أنا مستشارك الذكي المدمج في نظام Stargate 🇱🇧\n\nبناءً على قراءة البيانات التشغيلية، جميع العمليات والخزائن متصلة بنجاح. يمكنك سؤالي عن: كاش الخزائن والشارع، حركة طلبيات اليوم، أو تقييم السائقين.";
+            }
+            const targetEl = document.getElementById(msgId);
+            if (targetEl) {
+                targetEl.innerHTML = `
+                    <div class="leading-relaxed">${formatAiMarkdown(reply)}</div>
+                    <div class="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                        <span class="text-cyan-400/80 font-mono">⚡ تحليل مباشر</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="speakAiText(this)" data-text="${escapeHtml(reply)}" class="hover:text-cyan-300 px-2 py-1 bg-slate-800/60 rounded-lg transition flex items-center gap-1 cursor-pointer" title="استماع صوتي">
+                                <i class="fa-solid fa-volume-high"></i>
+                                <span>استماع</span>
+                            </button>
+                            <button type="button" onclick="copyAiResponse(this)" data-text="${escapeHtml(reply)}" class="hover:text-white px-2 py-1 bg-slate-800/60 rounded-lg transition flex items-center gap-1 cursor-pointer" title="نسخ الرد">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>نسخ</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error("AI Copilot Fetch Error:", err);
+            const targetEl = document.getElementById(msgId);
+            if (targetEl) {
+                targetEl.innerHTML = '<span class="text-rose-400 font-bold">تعذر الاتصال بالمحرك الذكي، يرجى المحاولة لاحقاً.</span>';
+            }
+        } finally {
+            if (sendBtn) sendBtn.disabled = false;
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    function copyAiResponse(btn) {
+        const text = btn.getAttribute('data-text') || '';
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> <span class="text-emerald-400">تم النسخ</span>';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }).catch(() => {});
+    }
+
+    function speakAiText(btn) {
+        if (!('speechSynthesis' in window)) {
+            alert('المتصفح لا يدعم خاصية القراءة الصوتية.');
+            return;
+        }
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            btn.classList.remove('text-cyan-400', 'bg-cyan-900/40');
+            return;
+        }
+        let clean = (btn.getAttribute('data-text') || '').replace(/[\*\#\-\_]/g, '');
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.lang = 'ar-SA';
+        utter.rate = 1.05;
+        btn.classList.add('text-cyan-400', 'bg-cyan-900/40');
+        utter.onend = () => { btn.classList.remove('text-cyan-400', 'bg-cyan-900/40'); };
+        utter.onerror = () => { btn.classList.remove('text-cyan-400', 'bg-cyan-900/40'); };
+        window.speechSynthesis.speak(utter);
+    }
+
+    function formatAiMarkdown(text) {
+        if (!text) return '';
+        let escaped = escapeHtml(text);
+        escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-black">$1</strong>');
+        escaped = escaped.replace(/\*(.*?)\*/g, '<em class="text-cyan-200">$1</em>');
+        escaped = escaped.replace(/\n/g, '<br>');
+        return escaped;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /* ════════════════ STARGATE SYNTHESIZER AUDIO ENGINE ════════════════ */
+    window.StargateAudio = (function() {
+        let ctx = null;
+        function getCtx() {
+            if (!ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) ctx = new AudioCtx();
+            }
+            if (ctx && ctx.state === 'suspended') ctx.resume();
+            return ctx;
+        }
+        function playFreq(freq, dur, type='sine', gainVal=0.1) {
+            try {
+                const c = getCtx();
+                if (!c) return;
+                const osc = c.createOscillator();
+                const g = c.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, c.currentTime);
+                g.gain.setValueAtTime(gainVal, c.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+                osc.connect(g);
+                g.connect(c.destination);
+                osc.start();
+                osc.stop(c.currentTime + dur);
+            } catch(e) {}
+        }
+        return {
+            playClick: () => playFreq(800, 0.03, 'sine', 0.05),
+            playSuccess: () => {
+                playFreq(523.25, 0.08, 'sine', 0.1);
+                setTimeout(() => playFreq(659.25, 0.12, 'sine', 0.1), 70);
+            },
+            playAlert: () => {
+                playFreq(440, 0.09, 'triangle', 0.12);
+                setTimeout(() => playFreq(330, 0.13, 'triangle', 0.12), 80);
+            },
+            playScannerBeep: () => playFreq(1760, 0.08, 'sine', 0.18),
+            playError: () => {
+                playFreq(220, 0.09, 'sawtooth', 0.12);
+                setTimeout(() => playFreq(180, 0.13, 'sawtooth', 0.12), 100);
+            }
+        };
+    })();
+
+    /* ════════════════ STARGATE COMMAND PALETTE ENGINE ════════════════ */
+    const STARGATE_COMMANDS = [
+        { title: 'الماسح الصوتي السريع (باركود)', subtitle: 'مسح فوري وتعيين الشحنات بنغمة صوتية', url: '{{ url_for("batch_scanner_view") }}', icon: 'fa-barcode', badge: 'جديد ⚡', group: 'العمليات' },
+        { title: 'رادار العمليات والتتبع المباشر', subtitle: 'خريطة حية لمواقع السائقين ومحدد أقرب كابتن', url: '{{ url_for("map_dashboard") }}', icon: 'fa-satellite-dish', badge: 'مباشر', group: 'العمليات' },
+        { title: 'إضافة طلبية جديدة', subtitle: 'تسجيل أوردر جديد وحساب أجور التوصيل', url: '{{ url_for("orders_list") }}#new', icon: 'fa-plus-circle', badge: 'سريع', group: 'العمليات' },
+        { title: 'الأوردرات وكافة الشحنات', subtitle: 'متابعة الطلبات، حالات التسليم، والمرتجعات', url: '{{ url_for("orders_list") }}', icon: 'fa-box-open', badge: '', group: 'العمليات' },
+        { title: 'شباب الدليفري والكاش', subtitle: 'متابعة كاش الشارع ومصادقة عهد السائقين', url: '{{ url_for("couriers_list") }}', icon: 'fa-motorcycle', badge: '', group: 'العمليات' },
+        { title: 'تطبيق السائق للجوال', subtitle: 'شاشة الهاتف المحمول المخصصة للسائقين بالشارع', url: '{{ url_for("courier_app_view") }}', target: '_blank', icon: 'fa-mobile-screen-button', badge: 'موبايل', group: 'العمليات' },
+        { title: 'المحلات والتجار (البيجات)', subtitle: 'كشوفات حسابات المتاجر والطلبات المحملة', url: '{{ url_for("merchants_list") }}', icon: 'fa-store', badge: '', group: 'العمليات' },
+        { title: 'دليل الزبائن والعناوين', subtitle: 'سجل أرقام الهواتف والمناطق الجغرافية', url: '{{ url_for("customers_list") }}', icon: 'fa-address-book', badge: '', group: 'بيانات' },
+        { title: 'سندات التسكير والدفع', subtitle: 'تصفية الحسابات والمدفوعات مع المتاجر', url: '{{ url_for("settlements_list") }}', icon: 'fa-file-invoice-dollar', badge: '', group: 'مالية' },
+        { title: 'الصندوق والمصاريف', subtitle: 'سجل الخزينة، المقبوضات، والمصروفات اليومية', url: '{{ url_for("treasury_view") }}', icon: 'fa-vault', badge: '', group: 'مالية' },
+        { title: 'دفتر اليومية المالي ⚖️', subtitle: 'القيود المحاسبية الدقيقة ومطابقة الأرصدة', url: '{{ url_for("accounting_ledger") }}', icon: 'fa-scale-balanced', badge: '', group: 'مالية' },
+        { title: 'تقارير الأرباح والمحاسبة', subtitle: 'تحليلات الأرباح الصافية ومعدلات الإنجاز', url: '{{ url_for("reports_view") }}', icon: 'fa-chart-line', badge: '', group: 'مالية' },
+        { title: 'المساعد الذكي (AI Copilot)', subtitle: 'استشارة الذكاء الاصطناعي أوفلاين في السيولة والأداء', action: 'toggleAi', icon: 'fa-wand-magic-sparkles', badge: 'AI', group: 'ذكاء' },
+        { title: 'مركز تشخيص وصحة النظام', subtitle: 'فحص فوري لقاعدة البيانات والاتصال والذاكرة', url: '{{ url_for("system_health_view") }}', icon: 'fa-heart-pulse', badge: 'صحة', group: 'نظام' },
+        { title: 'تحديثات النظام السحابية (OTA)', subtitle: 'التحقق وتثبيت أحدث ترقيات Stargate تلقائياً', url: '{{ url_for("admin_updates") }}', icon: 'fa-cloud-arrow-down', badge: 'OTA', group: 'نظام' }
+    ];
+
+    let currentCmdIndex = 0;
+    let visibleCommands = [];
+
+    function toggleCommandPalette(force) {
+        const modal = document.getElementById('stargateCommandPalette');
+        if (!modal) return;
+        const isHidden = modal.classList.contains('hidden');
+        const show = typeof force === 'boolean' ? force : isHidden;
+        if (show) {
+            modal.classList.remove('hidden');
+            if (window.StargateAudio) window.StargateAudio.playClick();
+            const input = document.getElementById('cmdPaletteInput');
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 80);
+            }
+            filterCommands('');
+        } else {
+            modal.classList.add('hidden');
+        }
+    }
+
+    function filterCommands(query) {
+        const raw = (query || '').trim();
+        const q = raw.toLowerCase();
+        let matched = STARGATE_COMMANDS.filter(cmd => {
+            if (!q) return true;
+            return cmd.title.toLowerCase().includes(q) ||
+                   cmd.subtitle.toLowerCase().includes(q) ||
+                   (cmd.group && cmd.group.toLowerCase().includes(q));
+        });
+
+        if (raw.length > 0) {
+            const dynamicActions = [
+                { 
+                    title: `بحث فوري عن الأوردر / الباركود "${raw}"`, 
+                    subtitle: 'الانتقال المباشر لجدول الشحنات ومطابقة رقم الطرد', 
+                    url: '/orders?q=' + encodeURIComponent(raw), 
+                    icon: 'fa-magnifying-glass', 
+                    badge: 'بحث فوري', 
+                    group: 'شحنات' 
+                },
+                { 
+                    title: `بحث في دليل الزبائن عن "${raw}"`, 
+                    subtitle: 'عرض ملف الزبون، العناوين، وسجل الطلبات السابقة', 
+                    url: '/customers?q=' + encodeURIComponent(raw), 
+                    icon: 'fa-address-book', 
+                    badge: 'زبائن', 
+                    group: 'دليل' 
+                },
+                { 
+                    title: `بحث في سجل المتاجر والبيجات عن "${raw}"`, 
+                    subtitle: 'البحث عن المتجر، رصيد الكاش، والطلبيات المسجلة', 
+                    url: '/merchants?q=' + encodeURIComponent(raw), 
+                    icon: 'fa-store', 
+                    badge: 'تجار', 
+                    group: 'متاجر' 
+                }
+            ];
+            visibleCommands = [...dynamicActions, ...matched];
+        } else {
+            visibleCommands = matched;
+        }
+
+        currentCmdIndex = 0;
+        renderCommands();
+    }
+
+    function renderCommands() {
+        const container = document.getElementById('cmdPaletteResults');
+        if (!container) return;
+        if (visibleCommands.length === 0) {
+            container.innerHTML = `
+                <div class="py-8 text-center text-slate-500 text-xs">
+                    <i class="fa-solid fa-magnifying-glass text-xl mb-2 text-slate-600"></i>
+                    <p class="font-bold">لم يتم العثور على أوامر مطابقة.</p>
+                </div>
+            `;
+            return;
+        }
+        let html = '';
+        visibleCommands.forEach((cmd, idx) => {
+            const isSelected = idx === currentCmdIndex;
+            html += `
+                <div onclick="executeCommandAtIndex(${idx})" 
+                     class="flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${isSelected ? 'bg-indigo-600/30 border border-cyan-400/40 text-white' : 'hover:bg-slate-800/70 text-slate-300'}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 ${isSelected ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-800 text-cyan-400 border border-slate-700'}">
+                            <i class="fa-solid ${cmd.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-black flex items-center gap-2">
+                                <span>${escapeHtml(cmd.title)}</span>
+                                ${cmd.badge ? `<span class="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">${escapeHtml(cmd.badge)}</span>` : ''}
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(cmd.subtitle)}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 text-[11px] text-slate-500">
+                        <span class="text-xs font-mono">${cmd.group || ''}</span>
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        const selectedEl = container.children[currentCmdIndex];
+        if (selectedEl) selectedEl.scrollIntoView({ block: 'nearest' });
+    }
+
+    function handleCommandKeydown(e) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (visibleCommands.length > 0) {
+                currentCmdIndex = (currentCmdIndex + 1) % visibleCommands.length;
+                renderCommands();
+                if (window.StargateAudio) window.StargateAudio.playClick();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (visibleCommands.length > 0) {
+                currentCmdIndex = (currentCmdIndex - 1 + visibleCommands.length) % visibleCommands.length;
+                renderCommands();
+                if (window.StargateAudio) window.StargateAudio.playClick();
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            executeCommandAtIndex(currentCmdIndex);
+        } else if (e.key === 'Escape') {
+            toggleCommandPalette(false);
+        }
+    }
+
+    function executeCommandAtIndex(idx) {
+        const cmd = visibleCommands[idx];
+        if (!cmd) return;
+        if (window.StargateAudio) window.StargateAudio.playSuccess();
+        toggleCommandPalette(false);
+        if (cmd.action === 'toggleAi') {
+            toggleAiCopilot(true);
+        } else if (cmd.url) {
+            if (cmd.target === '_blank') {
+                window.open(cmd.url, '_blank');
+            } else {
+                window.location.href = cmd.url;
+            }
+        }
+    }
+
+    // Global Keyboard Listeners
+    window.addEventListener('keydown', function(e) {
+        // Ctrl + K or Cmd + K: Open Command Palette
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            toggleCommandPalette();
+            return;
+        }
+        // Ctrl + Space: Open AI Copilot
+        if (e.ctrlKey && e.code === 'Space') {
+            e.preventDefault();
+            toggleAiCopilot();
+            return;
+        }
+        // ESC: Close open palettes
+        if (e.key === 'Escape') {
+            const cmdPalette = document.getElementById('stargateCommandPalette');
+            if (cmdPalette && !cmdPalette.classList.contains('hidden')) {
+                toggleCommandPalette(false);
+                return;
+            }
+            const aiModal = document.getElementById('stargateAiModal');
+            if (aiModal && !aiModal.classList.contains('hidden')) {
+                toggleAiCopilot(false);
+                return;
+            }
+        }
+    });
+    // Live Dispatch HUD Polling
+    let lastUnassignedCount = -1;
+    function pollLiveDispatch() {
+        fetch('/api/dispatch/live')
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    if (lastUnassignedCount !== -1 && data.unassigned_count > lastUnassignedCount) {
+                        if (window.StargateAudio) window.StargateAudio.playSuccess();
+                        if (typeof showToast === 'function') {
+                            showToast(`تنبيه: يوجد ${data.unassigned_count - lastUnassignedCount} طلبات جديدة بانتظار التعيين!`, 'info');
+                        }
+                    }
+                    lastUnassignedCount = data.unassigned_count;
+                    
+                    // Update any live counters on the UI if they exist
+                    const dispatchBadge = document.getElementById('liveDispatchBadge');
+                    if(dispatchBadge) {
+                        dispatchBadge.innerText = data.unassigned_count;
+                        if(data.unassigned_count > 0) {
+                            dispatchBadge.classList.remove('hidden');
+                        } else {
+                            dispatchBadge.classList.add('hidden');
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error('Live Dispatch Polling Error:', err));
+    }
+    // Poll every 15 seconds
+    setInterval(pollLiveDispatch, 15000);
+    setTimeout(pollLiveDispatch, 2000);
     </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
+
+

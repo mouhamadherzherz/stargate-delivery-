@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تعديل بيانات الزبون | Stargate Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            padding: 2rem;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-black text-white">
+                <i class="fa-solid fa-user-edit text-indigo-500 ml-2"></i> ملف الزبون
+            </h1>
+            <a href="/sg_master/dashboard" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-xl border border-slate-600 transition font-bold">
+                العودة للغرفة <i class="fa-solid fa-arrow-left mr-2"></i>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Info Panel -->
+            <div class="glass p-6 rounded-3xl lg:col-span-1 h-fit">
+                <h3 class="text-xl font-bold mb-6 border-b border-slate-700 pb-3">حالة الاشتراك</h3>
+                
+                <div class="mb-4">
+                    <p class="text-slate-400 text-sm mb-1">تاريخ البدء</p>
+                    <p class="text-white font-bold">{{ customer.date }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-slate-400 text-sm mb-1">تاريخ الانتهاء</p>
+                    <p class="text-white font-bold">{{ customer.expiration_date }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-slate-400 text-sm mb-1">مدة الاشتراك</p>
+                    <p class="text-white font-bold">{{ customer.days }} يوم</p>
+                </div>
+
+                <div class="mb-6">
+                    <p class="text-slate-400 text-sm mb-1">الحالة (في الغرفة)</p>
+                    {% if customer.status == 'revoked' %}
+                        <span class="inline-block bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm font-bold border border-red-500/30">
+                            <i class="fa-solid fa-ban"></i> ملغى
+                        </span>
+                    {% else %}
+                        <span class="inline-block bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-sm font-bold border border-emerald-500/30">
+                            <i class="fa-solid fa-check-circle"></i> نشط
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="bg-slate-900/50 p-4 rounded-xl mb-4 border border-slate-700">
+                    <p class="text-slate-400 text-xs mb-1">الكود المولد</p>
+                    <p class="text-indigo-400 font-mono font-bold text-lg break-all select-all">{{ customer.code }}</p>
+                </div>
+            </div>
+
+            <!-- Right Edit Form -->
+            <div class="glass p-8 rounded-3xl lg:col-span-2">
+                <form action="/sg_master/customer/{{ customer.id }}" method="POST">
+                    
+                    <div class="mb-6">
+                        <label class="block text-slate-300 font-bold mb-2">اسم الزبون / المطعم</label>
+                        <input type="text" name="customer_name" value="{{ customer.customer_name }}" class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-slate-300 font-bold mb-2">رقم الهاتف / معلومات التواصل</label>
+                        <input type="text" name="customer_phone" value="{{ customer.customer_phone }}" class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                    </div>
+
+                    <div class="mb-8">
+                        <label class="block text-slate-300 font-bold mb-2">ملاحظات (خاصة بك)</label>
+                        <textarea name="notes" rows="4" placeholder="مثال: هذا الزبون تأخر في الدفع، أو عنوان محله كذا..." class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">{{ customer.notes }}</textarea>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 border-t border-slate-700/50 pt-8 mt-4">
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-black py-4 rounded-xl shadow-lg transition-all text-lg">
+                            <i class="fa-solid fa-save"></i> حفظ التعديلات
+                        </button>
+                        
+                        {% if customer.status == 'revoked' %}
+                            <button type="submit" name="status_action" value="reactivate" class="bg-emerald-600/80 hover:bg-emerald-500 text-white font-bold py-4 px-8 rounded-xl transition border border-emerald-500">
+                                <i class="fa-solid fa-rotate-left"></i> إعادة تنشيط
+                            </button>
+                        {% else %}
+                            <button type="submit" name="status_action" value="revoke" class="bg-red-600/80 hover:bg-red-500 text-white font-bold py-4 px-8 rounded-xl transition border border-red-500" onclick="return confirm('تنبيه: هذا الإلغاء هو فقط لغرض الأرشفة والسجلات الخاصة بك، ولن يقوم بإغلاق برنامج الزبون عن بعد بشكل فوري نظراً لأن برنامجه أوفلاين. هل أنت متأكد؟');">
+                                <i class="fa-solid fa-ban"></i> تحديد كملغى
+                            </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

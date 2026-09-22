@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stargate Master | Mission Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            border-right: 3px solid #818cf8;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-72 glass h-full flex flex-col border-l border-slate-700/50 shadow-2xl relative z-20">
+        <div class="p-6 border-b border-slate-700/50">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-satellite-dish text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h2 class="font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 text-lg">Mission Control</h2>
+                    <p class="text-xs text-slate-500 font-mono">STARGATE V3.0</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-6 overflow-y-auto">
+            <a href="#" onclick="switchTab('dashboard')" class="nav-item active flex items-center gap-3 px-6 py-4 text-slate-300 font-bold mb-2">
+                <i class="fa-solid fa-chart-line w-5 text-center"></i> المؤشرات والإحصائيات
+            </a>
+            <a href="#" onclick="switchTab('licenses')" class="nav-item flex items-center gap-3 px-6 py-4 text-slate-300 font-bold mb-2">
+                <i class="fa-solid fa-key w-5 text-center"></i> توليد التراخيص (License)
+            </a>
+            <a href="#" onclick="switchTab('recovery')" class="nav-item flex items-center gap-3 px-6 py-4 text-slate-300 font-bold mb-2">
+                <i class="fa-solid fa-life-ring w-5 text-center"></i> استعادة الحسابات (Recovery)
+            </a>
+            <a href="#" onclick="switchTab('updates')" class="nav-item flex items-center gap-3 px-6 py-4 text-slate-300 font-bold mb-2">
+                <i class="fa-solid fa-box-open w-5 text-center"></i> تجهيز التحديثات (Releases)
+            </a>
+            <a href="#" onclick="switchTab('settings')" class="nav-item flex items-center gap-3 px-6 py-4 text-slate-300 font-bold mb-2">
+                <i class="fa-solid fa-shield-halved w-5 text-center"></i> إعدادات الأمان
+            </a>
+        </nav>
+
+        <div class="p-6 border-t border-slate-700/50">
+            <a href="/sg_master/logout" class="flex items-center gap-3 text-rose-400 hover:text-rose-300 font-bold transition">
+                <i class="fa-solid fa-power-off"></i> تسجيل الخروج السري
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 h-full overflow-y-auto relative">
+        <!-- Background Effects -->
+        <div class="absolute top-0 right-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+            <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/10 blur-[100px]"></div>
+            <div class="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[100px]"></div>
+        </div>
+
+        <div class="relative z-10 p-10 max-w-6xl mx-auto">
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-8">
+                    {% for category, message in messages %}
+                        <div class="p-4 rounded-xl mb-4 text-sm font-bold flex items-center justify-between {% if category == 'success' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30{% else %}bg-rose-500/20 text-rose-400 border border-rose-500/30{% endif %}">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid {% if category == 'success' %}fa-circle-check text-lg{% else %}fa-circle-exclamation text-lg{% endif %}"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark opacity-50 hover:opacity-100"></i></button>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Tab: Dashboard -->
+            <div id="tab-dashboard" class="tab-content active">
+                <h1 class="text-3xl font-black mb-2 text-white">القيادة والإحصائيات</h1>
+                <p class="text-slate-400 mb-10">مرحباً بك في مركز التحكم الرئيسي (SaaS Operation Center).</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Stat Card 1 -->
+                    <div class="glass p-6 rounded-2xl relative overflow-hidden group hover:border-indigo-500/30 transition">
+                        <div class="absolute -right-6 -top-6 text-indigo-500/10 group-hover:text-indigo-500/20 transition duration-500">
+                            <i class="fa-solid fa-key text-9xl transform -rotate-12"></i>
+                        </div>
+                        <h3 class="text-slate-400 font-bold mb-1">التراخيص المُصدرة</h3>
+                        <div class="text-5xl font-black text-indigo-400">{{ stats.licenses_generated }}</div>
+                        <div class="mt-4 text-xs font-mono text-slate-500">مجموع الأكواد التي تم توليدها للزبائن</div>
+                    </div>
+
+                    <!-- Stat Card 2 -->
+                    <div class="glass p-6 rounded-2xl relative overflow-hidden group hover:border-emerald-500/30 transition">
+                        <div class="absolute -right-6 -top-6 text-emerald-500/10 group-hover:text-emerald-500/20 transition duration-500">
+                            <i class="fa-solid fa-box-open text-9xl transform rotate-12"></i>
+                        </div>
+                        <h3 class="text-slate-400 font-bold mb-1">حزم التحديثات (Releases)</h3>
+                        <div class="text-5xl font-black text-emerald-400">{{ stats.updates_packaged }}</div>
+                        <div class="mt-4 text-xs font-mono text-slate-500">مرات توليد وضغط Update.zip</div>
+                    </div>
+
+                    <!-- Stat Card 3 -->
+                    <div class="glass p-6 rounded-2xl relative overflow-hidden group hover:border-amber-500/30 transition">
+                        <div class="absolute -right-6 -top-6 text-amber-500/10 group-hover:text-amber-500/20 transition duration-500">
+                            <i class="fa-solid fa-life-ring text-9xl transform -rotate-12"></i>
+                        </div>
+                        <h3 class="text-slate-400 font-bold mb-1">حسابات تم إنقاذها</h3>
+                        <div class="text-5xl font-black text-amber-400">{{ stats.accounts_recovered }}</div>
+                        <div class="mt-4 text-xs font-mono text-slate-500">عدد مرات توليد أكواد فك القفل (Unlock)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Licenses -->
+            <div id="tab-licenses" class="tab-content">
+                <h1 class="text-3xl font-black mb-2 text-indigo-400">توليد تراخيص الزبائن</h1>
+                <p class="text-slate-400 mb-10">قم بتوليد أكواد تفعيل جديدة لمشتركيك (مشفرة ومحمية).</p>
+
+                <div class="glass p-8 rounded-3xl max-w-2xl">
+                    <form action="/sg_master/generate_license" method="POST" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-slate-300 font-bold mb-2">اسم الزبون (اختياري)</label>
+                                <input type="text" name="customer_name" placeholder="مثال: مطعم الشام"
+                                       class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-bold mb-2">رقم هاتف الزبون (اختياري)</label>
+                                <input type="text" name="customer_phone" placeholder="مثال: 05xxxxxx"
+                                       class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-bold mb-2">معرف جهاز الزبون (Hardware ID)</label>
+                            <input type="text" name="hardware_id" placeholder="اتركه فارغاً لترخيص عام (Universal)"
+                                   class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono text-lg transition">
+                            <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info"></i> إذا تركته فارغاً، الكود سيعمل على أول جهاز يستخدمه الزبون ويرتبط به.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-slate-300 font-bold mb-2">مدة التفويض (بالأيام)</label>
+                            <select name="days" class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-bold text-lg cursor-pointer">
+                                <option value="30">شهر واحد (30 يوم)</option>
+                                <option value="90">3 أشهر (90 يوم)</option>
+                                <option value="180">6 أشهر (180 يوم)</option>
+                                <option value="365">سنة كاملة (365 يوم)</option>
+                                <option value="3650">ترخيص دائم (10 سنوات)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                            <i class="fa-solid fa-key"></i> توليد كود التفعيل
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mt-10 max-w-4xl">
+                    <div class="flex justify-between items-end mb-4">
+                        <h2 class="text-2xl font-black text-white">سجل الزبائن وإدارة المشتركين</h2>
+                        <div class="relative w-64">
+                            <input type="text" id="customerSearch" onkeyup="filterCustomers()" placeholder="ابحث بالاسم أو الهاتف..." 
+                                   class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm">
+                            <i class="fa-solid fa-search absolute left-3 top-3 text-slate-500"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="glass rounded-2xl overflow-hidden">
+                        <table class="w-full text-right border-collapse" id="customersTable">
+                            <thead>
+                                <tr class="bg-slate-800/50 text-slate-300 text-sm">
+                                    <th class="p-4 font-bold border-b border-slate-700/50">الزبون / الهاتف</th>
+                                    <th class="p-4 font-bold border-b border-slate-700/50">الكود المولد</th>
+                                    <th class="p-4 font-bold border-b border-slate-700/50">تاريخ الانتهاء</th>
+                                    <th class="p-4 font-bold border-b border-slate-700/50 text-center">الحالة</th>
+                                    <th class="p-4 font-bold border-b border-slate-700/50 text-center">إدارة</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-slate-400 text-sm">
+                                {% for lic in licenses|reverse %}
+                                <tr class="hover:bg-slate-800/30 transition border-b border-slate-700/50 last:border-0 customer-row">
+                                    <td class="p-4 search-target">
+                                        <div class="font-bold text-white">{{ lic.customer_name }}</div>
+                                        <div class="text-xs">{{ lic.customer_phone }}</div>
+                                    </td>
+                                    <td class="p-4 font-mono text-indigo-400 text-xs search-target">{{ lic.code }}</td>
+                                    <td class="p-4">
+                                        <div class="text-white">{{ lic.expiration_date or 'غير محدد' }}</div>
+                                        <div class="text-xs text-slate-500">{{ lic.days }} يوم</div>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        {% if lic.status == 'revoked' %}
+                                            <span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs font-bold border border-red-500/30">ملغى</span>
+                                        {% else %}
+                                            <span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-xs font-bold border border-emerald-500/30">نشط</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 text-center flex gap-2 justify-center">
+                                        <button onclick="navigator.clipboard.writeText('{{ lic.code }}'); alert('تم النسخ!')" class="text-slate-500 hover:text-indigo-400 transition bg-slate-800 px-3 py-1 rounded" title="نسخ الكود">
+                                            <i class="fa-solid fa-copy"></i>
+                                        </button>
+                                        <a href="/sg_master/customer/{{ lic.id }}" class="text-slate-500 hover:text-emerald-400 transition bg-slate-800 px-3 py-1 rounded" title="إدارة الزبون">
+                                            <i class="fa-solid fa-cog"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="p-8 text-center text-slate-500">لا يوجد زبائن أو تراخيص حتى الآن.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <script>
+                function filterCustomers() {
+                    var input, filter, table, tr, td, i, txtValue;
+                    input = document.getElementById("customerSearch");
+                    filter = input.value.toUpperCase();
+                    table = document.getElementById("customersTable");
+                    tr = table.getElementsByClassName("customer-row");
+                    for (i = 0; i < tr.length; i++) {
+                        let textContent = tr[i].innerText;
+                        if (textContent.toUpperCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "";
+                        } else {
+                            tr[i].style.display = "none";
+                        }
+                    }
+                }
+                </script>
+            </div>
+
+            <!-- Tab: Recovery -->
+            <div id="tab-recovery" class="tab-content">
+                <h1 class="text-3xl font-black mb-2 text-rose-400">مركز إنقاذ الحسابات (Master Reset)</h1>
+                <p class="text-slate-400 mb-10">إذا نسي الزبون الباسورد، سيظهر له كود طلب، ضعه هنا لفك القفل.</p>
+
+                <div class="glass p-8 rounded-3xl max-w-2xl border-l-4 border-rose-500">
+                    <form action="/sg_master/recover_account" method="POST" class="space-y-6">
+                        <div>
+                            <label class="block text-slate-300 font-bold mb-2">كود طلب الاسترداد (يرسله الزبون لك)</label>
+                            <input type="text" name="request_code" required placeholder="مثال: REQ-A1B2C3"
+                                   class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-4 text-white placeholder-slate-600 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono text-xl tracking-widest text-center transition">
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white font-black py-4 rounded-xl shadow-lg shadow-rose-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                            <i class="fa-solid fa-unlock-keyhole"></i> توليد كود فك القفل (Unlock Code)
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab: Updates -->
+            <div id="tab-updates" class="tab-content">
+                <h1 class="text-3xl font-black mb-2 text-emerald-400">تجهيز التحديثات (Release Builder)</h1>
+                <p class="text-slate-400 mb-10">نظام ذكي لجمع وتغليف الأكواد الجديدة كملف تحديث لإرسالها للزبائن.</p>
+
+                <div class="grid grid-cols-1 gap-8 max-w-4xl">
+
+                    <!-- Step 1: Build ZIP -->
+                    <div class="glass p-8 rounded-3xl border-t-4 border-emerald-500">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 font-black text-xl">1</div>
+                            <div>
+                                <h2 class="text-xl font-black text-white">بناء حزمة التحديث (Update.zip)</h2>
+                                <p class="text-slate-400 text-sm">اضغط لتجميع الملفات وتحميل ZIP على جهازك</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 mb-6 text-sm leading-relaxed">
+                            سيقوم النظام تلقائياً بجمع ملفاتك البرمجية المعدلة، وإزالة أي ملفات مؤقتة أو قواعد بيانات، وتجهيز ملف نظيف جاهز للرفع.
+                        </p>
+                        <form action="/sg_master/generate_update_zip" method="POST" onsubmit="return confirm('هل أنت متأكد من تجميع التحديث الآن؟')">
+                            <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 text-lg">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> تجميع وتحميل التحديث الآن
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: Publish to Firebase -->
+                    <div class="glass p-8 rounded-3xl border-t-4 border-orange-500">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center text-orange-400 font-black text-xl">2</div>
+                            <div>
+                                <h2 class="text-xl font-black text-white">🔥 نشر التحديث على Firebase</h2>
+                                <p class="text-slate-400 text-sm">ارفع الـ ZIP على Google Drive ثم أدخل الرابط هنا</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 mb-6 text-sm leading-relaxed">
+                            بعد رفع ملف ZIP على Google Drive أو Dropbox، أدخل الرابط المباشر هنا. سيُعلم الزبائن بالتحديث فور ضغطهم "البحث عن تحديثات" في برنامجهم.
+                        </p>
+                        <form action="/sg_master/publish_update_firebase" method="POST" class="space-y-4" onsubmit="return confirm('هل تريد نشر هذا التحديث على Firebase الآن؟ سيراه جميع الزبائن فوراً!')">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-slate-300 font-bold mb-2 text-sm">رقم الإصدار الجديد</label>
+                                    <input type="text" name="new_version" required placeholder="مثال: 2.0.1"
+                                           class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-mono text-center transition">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-300 font-bold mb-2 text-sm">رابط تحميل الـ ZIP</label>
+                                    <input type="url" name="download_url" required placeholder="https://drive.google.com/..."
+                                           class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-mono text-sm transition">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-bold mb-2 text-sm">ملاحظات التحديث (Changelog)</label>
+                                <textarea name="changelog" rows="3" placeholder="- تم إضافة زر استرجاع الأرجيلة&#10;- إصلاح خطأ في صفحة التحديثات"
+                                          class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm transition resize-none"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-orange-600 to-red-500 hover:from-orange-500 hover:to-red-400 text-white font-black py-4 rounded-xl shadow-lg shadow-orange-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 text-lg">
+                                <i class="fa-brands fa-google"></i>
+                                <i class="fa-solid fa-fire"></i>
+                                نشر التحديث على Firebase الآن 🚀
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Tab: Settings -->
+            <div id="tab-settings" class="tab-content">
+                <h1 class="text-3xl font-black mb-2 text-amber-400">إعدادات الأمان والتكوين</h1>
+                <p class="text-slate-400 mb-10">تغيير الباسورد الكبرى وإعدادات غرفة العمليات.</p>
+
+                <div class="glass p-8 rounded-3xl max-w-2xl">
+                    <h2 class="text-xl font-black text-white mb-6 border-b border-slate-700/50 pb-4">تغيير الكلمة السرية الكبرى</h2>
+                    
+                    <form action="/sg_master/change_password" method="POST" class="space-y-6">
+                        <div>
+                            <label class="block text-slate-300 font-bold mb-2">كلمة المرور الحالية</label>
+                            <input type="password" name="current_password" required
+                                   class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono transition">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-slate-300 font-bold mb-2">كلمة المرور الجديدة</label>
+                            <input type="password" name="new_password" required minlength="6"
+                                   class="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono transition">
+                            <p class="text-xs text-slate-500 mt-2">يجب ألا تقل عن 6 أحرف. سيتم تشفيرها وحفظها محلياً في جهازك فقط.</p>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-black py-4 rounded-xl shadow-lg shadow-amber-500/25 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                            <i class="fa-solid fa-floppy-disk"></i> حفظ الكلمة السرية الجديدة
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Remove active class from nav items
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById('tab-' + tabId).classList.add('active');
+            // Add active class to clicked nav item
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>

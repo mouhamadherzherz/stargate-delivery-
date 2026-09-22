@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+            <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                <span>مقدمو الخدمات والمهنيون</span>
+                <span class="text-2xl">🔧</span>
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">ميكانيكيون، سبّاكون، حدادون، نجارون، وغيرهم — تتبع العمولات المستحقة وتحصيلها.</p>
+        </div>
+        <button onclick="openModal('addSpModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-black px-5 py-2.5 rounded-xl shadow-md transition text-sm">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>إضافة مهني جديد</span>
+        </button>
+    </div>
+
+    <!-- Stats Row -->
+    {% set total_pending = namespace(val=0) %}
+    {% set total_collected = namespace(val=0) %}
+    {% for sp in providers %}
+        {% set total_pending.val = total_pending.val + sp.pending_commission %}
+        {% set total_collected.val = total_collected.val + sp.collected_commission %}
+    {% endfor %}
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm text-center">
+            <div class="text-3xl font-black text-slate-800">{{ providers | length }}</div>
+            <div class="text-xs text-slate-500 font-bold mt-1">مهني مسجّل</div>
+        </div>
+        <div class="bg-amber-50 rounded-2xl p-5 border border-amber-200 shadow-sm text-center">
+            <div class="text-3xl font-black text-amber-700 font-mono">{{ "%.2f"|format(total_pending.val) }}</div>
+            <div class="text-xs text-amber-600 font-bold mt-1">💰 عمولة معلّقة</div>
+        </div>
+        <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-200 shadow-sm text-center">
+            <div class="text-3xl font-black text-emerald-700 font-mono">{{ "%.2f"|format(total_collected.val) }}</div>
+            <div class="text-xs text-emerald-600 font-bold mt-1">✅ عمولة مقبوضة</div>
+        </div>
+    </div>
+
+    <!-- Providers Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for sp in providers %}
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+            <div>
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-slate-800 text-base">{{ sp.name }}</h3>
+                                {% if not sp.is_active %}
+                                <span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-md">غير نشط</span>
+                                {% endif %}
+                            </div>
+                            <span class="text-xs text-orange-600 font-bold block">{{ sp.specialty }}</span>
+                            {% if sp.phone %}
+                            <a href="tel:{{ sp.phone }}" class="text-xs text-slate-500 hover:text-orange-600 font-mono flex items-center gap-1 mt-0.5" dir="ltr">
+                                <i class="fa-solid fa-phone text-[10px] text-emerald-600"></i> {{ sp.phone }}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-500 font-bold">نوع العمولة:</span>
+                        <span class="font-black text-slate-800">
+                            {% if sp.commission_type == 'percent' %}
+                                {{ sp.commission_rate }}%
+                            {% else %}
+                                {{ sp.fixed_commission }} ثابت
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs border-t border-slate-200 pt-2">
+                        <span class="text-amber-600 font-bold">عمولة معلّقة:</span>
+                        <span class="font-black text-amber-700 font-mono">{{ "%.2f"|format(sp.pending_commission) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-emerald-600 font-bold">عمولة مقبوضة:</span>
+                        <span class="font-black text-emerald-700 font-mono">{{ "%.2f"|format(sp.collected_commission) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs border-t border-slate-200 pt-2">
+                        <span class="text-slate-500 font-bold">إجمالي المهام:</span>
+                        <span class="font-black text-slate-800">{{ sp.total_jobs }} مهمة</span>
+                    </div>
+                </div>
+
+                {% if sp.notes %}
+                <div class="mt-2 text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <i class="fa-solid fa-info-circle text-blue-400 ml-1"></i> {{ sp.notes }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-5 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                {% if sp.pending_commission > 0 %}
+                <form method="POST" action="{{ url_for('collect_sp_commission', sp_id=sp.id) }}" onsubmit="return confirm('تأكيد قبض عمولة {{ sp.name }}؟');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-2xl text-xs font-black transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                        <span>قبض العمولة ({{ "%.2f"|format(sp.pending_commission) }}) 💰</span>
+                    </button>
+                </form>
+                {% endif %}
+                <div class="flex items-center gap-2">
+                    <a href="{{ url_for('orders_list') }}?service_provider_id={{ sp.id }}" class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-list-ul"></i>
+                        <span>المهام ({{ sp.total_jobs }})</span>
+                    </a>
+                    {% if is_admin %}
+                    <button onclick="openEditSpModal({{ sp.id }}, '{{ sp.name|replace("'", "\\'") }}', '{{ sp.specialty|replace("'", "\\'") }}', '{{ (sp.phone or '')|replace("'", "\\'") }}', '{{ sp.commission_type }}', {{ sp.commission_rate }}, {{ sp.fixed_commission }}, '{{ (sp.notes or '')|replace("'", "\\'") }}', {{ sp.is_active }})"
+                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition border border-blue-200 text-xs">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <form method="POST" action="{{ url_for('delete_service_provider', sp_id=sp.id) }}" onsubmit="return confirm('حذف {{ sp.name }}؟');" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200 text-xs">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-3 text-center py-20 text-slate-400">
+            <i class="fa-solid fa-screwdriver-wrench text-5xl mb-4 opacity-30"></i>
+            <p class="font-bold text-lg">لا يوجد مهنيون مسجّلون بعد</p>
+            <p class="text-sm mt-1">أضف أول مهني بالنقر على زر "إضافة مهني جديد" أعلاه</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- MODAL: ADD SERVICE PROVIDER -->
+<div id="addSpModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-screwdriver-wrench text-orange-500"></i> إضافة مهني جديد
+            </h3>
+            <button onclick="closeModal('addSpModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ url_for('add_service_provider') }}" class="mt-4 space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الاسم *</label>
+                    <input type="text" name="name" required placeholder="اسم الفني أو صاحب المهنة"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">التخصص *</label>
+                    <input type="text" name="specialty" required placeholder="مثال: ميكانيكي" list="specialtyList"
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:bg-white transition">
+                    <datalist id="specialtyList">
+                        <option value="ميكانيكي">
+                        <option value="سبّاك">
+                        <option value="حداد">
+                        <option value="نجار">
+                        <option value="كهربائي">
+                        <option value="مبرّد وتكييف">
+                        <option value="دهّان">
+                        <option value="سائق تاكسي">
+                        <option value="صانع مفاتيح">
+                        <option value="تنظيف وترتيب">
+                    </datalist>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف</label>
+                <input type="text" name="phone" dir="ltr" placeholder="+961..."
+                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:bg-white transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">نوع العمولة</label>
+                <select name="commission_type" onchange="toggleCommissionFields(this, 'add')"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 transition font-bold">
+                    <option value="fixed" selected>مبلغ ثابت مقطوع (سعر محدد $ أو ل.ل)</option>
+                    <option value="percent">نسبة مئوية %</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div id="addFixedCommField">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ الثابت المقطوع</label>
+                    <input type="number" name="fixed_commission" value="5" step="0.5" min="0" placeholder="مثال: 5$ أو 450,000"
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-orange-500 transition">
+                </div>
+                <div id="addCommRateField" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">النسبة %</label>
+                    <input type="number" name="commission_rate" value="10" step="0.5" min="0" max="100"
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات</label>
+                <textarea name="notes" rows="2" placeholder="أي ملاحظات..."
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 resize-none transition"></textarea>
+            </div>
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('addSpModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition">إلغاء</button>
+                <button type="submit" class="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold px-5 py-2 rounded-xl text-sm transition">
+                    <i class="fa-solid fa-plus ml-1"></i> إضافة
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: EDIT SERVICE PROVIDER -->
+<div id="editSpModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-pen text-blue-600"></i> تعديل بيانات المهني
+            </h3>
+            <button onclick="closeModal('editSpModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <form method="POST" id="editSpForm" action="" class="mt-4 space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الاسم *</label>
+                    <input type="text" name="name" id="editSpName" required
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">التخصص *</label>
+                    <input type="text" name="specialty" id="editSpSpecialty" required list="specialtyList"
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف</label>
+                <input type="text" name="phone" id="editSpPhone" dir="ltr"
+                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">نوع العمولة</label>
+                <select name="commission_type" id="editSpCommType" onchange="toggleCommissionFields(this, 'edit')"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 transition">
+                    <option value="percent">نسبة مئوية %</option>
+                    <option value="fixed">مبلغ ثابت</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div id="editCommRateField">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">النسبة %</label>
+                    <input type="number" name="commission_rate" id="editSpCommRate" step="0.5" min="0" max="100"
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div id="editFixedCommField" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ الثابت</label>
+                    <input type="number" name="fixed_commission" id="editSpFixedComm" step="0.5" min="0"
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات</label>
+                <textarea name="notes" id="editSpNotes" rows="2"
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 resize-none transition"></textarea>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="is_active" id="editSpActive" value="1" class="rounded">
+                <span class="text-sm font-bold text-slate-700">نشط (يمكن إسناد مهام إليه)</span>
+            </label>
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('editSpModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition">إلغاء</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-sm transition">
+                    <i class="fa-solid fa-save ml-1"></i> حفظ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function toggleCommissionFields(sel, prefix) {
+        const isFixed = sel.value === 'fixed';
+        document.getElementById(prefix + 'CommRateField').classList.toggle('hidden', isFixed);
+        document.getElementById(prefix + 'FixedCommField').classList.toggle('hidden', !isFixed);
+    }
+
+    function openEditSpModal(id, name, specialty, phone, commType, commRate, fixedComm, notes, isActive) {
+        document.getElementById('editSpForm').action = '/service-providers/' + id + '/edit';
+        document.getElementById('editSpName').value = name;
+        document.getElementById('editSpSpecialty').value = specialty;
+        document.getElementById('editSpPhone').value = phone;
+        document.getElementById('editSpCommType').value = commType;
+        document.getElementById('editSpCommRate').value = commRate;
+        document.getElementById('editSpFixedComm').value = fixedComm;
+        document.getElementById('editSpNotes').value = notes;
+        document.getElementById('editSpActive').checked = isActive == 1;
+        toggleCommissionFields(document.getElementById('editSpCommType'), 'edit');
+        openModal('editSpModal');
+    }
+</script>
+{% endblock %}

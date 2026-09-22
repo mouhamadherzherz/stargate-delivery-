@@ -111,23 +111,23 @@
                 <!-- Merchant Info -->
                 <div class="flex items-start justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center text-xl font-bold">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-200 text-[#0080B8] flex items-center justify-center text-xl font-bold shadow-2xs">
                             <i class="fa-solid fa-store"></i>
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-slate-800 text-base leading-tight">{{ m.name }}</h3>
-                                <span class="text-[10px] bg-red-50 text-red-700 font-black px-2 py-0.5 rounded-md border border-red-200">
+                                <span class="text-[10px] bg-cyan-50 text-cyan-800 font-black px-2 py-0.5 rounded-md border border-cyan-200">
                                     {{ m.category or 'عام' }}
                                 </span>
                             </div>
-                            <span class="text-xs text-red-600 font-bold block mt-0.5">{{ m.store_name }}</span>
+                            <span class="text-xs text-[#0080B8] font-bold block mt-0.5">{{ m.store_name }}</span>
                             <div class="flex items-center gap-3 mt-1 text-xs">
-                                <a href="tel:{{ m.phone }}" class="text-slate-500 hover:text-red-600 font-mono flex items-center gap-1" dir="ltr">
+                                <a href="tel:{{ m.phone }}" class="text-slate-500 hover:text-[#00B5FF] font-mono flex items-center gap-1" dir="ltr">
                                     <i class="fa-solid fa-phone text-[10px] text-emerald-600"></i> {{ m.phone }}
                                 </a>
                                 {% if m.phone %}
-                                <a href="whatsapp://send?phone={{ m.phone|clean_phone }}" class="text-emerald-600 hover:text-emerald-700 flex items-center gap-1 font-bold text-[11px]" title="مراسلة عبر تطبيق الواتساب المكتبي 📱">
+                                <a href="https://wa.me/{{ m.phone|clean_phone }}" target="_blank" class="text-emerald-600 hover:text-emerald-700 flex items-center gap-1 font-bold text-[11px]" title="مراسلة عبر تطبيق الواتساب المكتبي 📱">
                                     <i class="fa-brands fa-whatsapp"></i> واتساب
                                 </a>
                                 {% endif %}
@@ -177,19 +177,29 @@
 
             <!-- Actions Buttons -->
             <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <!-- Action Buttons (Touch Tablet POS Style) -->
                 <div class="flex items-center gap-2">
                     {% if has_permission('merchants_payout') %}
-                    <button onclick="openMerchantPayoutModal('{{ m.id }}', '{{ m.name }}', '{{ m.store_name }}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5" title="صرف ودفع مستحقات التاجر">
-                        <i class="fa-solid fa-hand-holding-dollar"></i>
-                        <span>صرف المستحقات</span>
+                    <button onclick="openMerchantPayoutModal('{{ m.id }}', '{{ m.name }}', '{{ m.store_name }}')" class="tablet-touch-btn flex-1 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black py-2.5 px-3.5 rounded-2xl text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer" title="صرف ودفع مستحقات التاجر">
+                        <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                        <span>صرف المستحقات 💵</span>
                     </button>
                     {% endif %}
-                    <a href="{{ url_for('merchant_statement', merchant_id=m.id) }}" target="_blank" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="كشف حساب ومستحقات مفصل A4">
-                        <i class="fa-solid fa-print"></i>
-                        <span>كشف الحساب 🖨️</span>
+                    <a href="{{ url_for('merchant_statement', merchant_id=m.id) }}" target="_blank" class="tablet-touch-btn py-2.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1 shadow-2xs" title="كشف حساب ومستحقات مفصل A4">
+                        <i class="fa-solid fa-print text-emerald-600"></i>
+                        <span>كشف حساب</span>
+                    </a>
+                    <a href="{{ url_for('merchant_profile', merchant_id=m.id) }}" class="tablet-touch-btn py-2.5 px-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-300 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1 shadow-2xs" title="الملف الشامل 360 وتحليلات التاجر">
+                        <i class="fa-solid fa-user-tie text-indigo-600"></i>
+                        <span>الملف الكامل 👤</span>
                     </a>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button type="button" onclick="openEditMerchantModal('{{ m.id }}', '{{ m.name|replace("'", "\\'") }}', '{{ m.store_name|replace("'", "\\'") }}', '{{ m.phone }}', '{{ m.address|replace("'", "\\'") if m.address else '' }}', '{{ m.notes|replace("'", "\\'") if m.notes else '' }}', '{{ m.default_delivery_fee or 0 }}', '{{ m.category|replace("'", "\\'") if m.category else '' }}')"
+                            class="py-1.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-black transition flex items-center justify-center gap-1 border border-blue-200 cursor-pointer shadow-2xs" title="تعديل بيانات المتجر والبيج">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>تعديل</span>
+                    </button>
                     <a href="{{ url_for('orders_list') }}?merchant_id={{ m.id }}" class="flex-1 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="عرض كل طلبات المحل">
                         <i class="fa-solid fa-list-ul"></i>
                         <span>طلبات المتجر</span>
@@ -200,7 +210,8 @@
                     </a>
                     {% if is_admin %}
                     <form method="POST" action="{{ url_for('delete_merchant', merchant_id=m.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا المتجر؟');" class="inline">
-                        <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200 text-xs font-bold" title="حذف المتجر">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200 text-xs font-bold cursor-pointer" title="حذف المتجر">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </form>
@@ -213,6 +224,68 @@
 
 </div>
 
+
+<!-- MODAL: EDIT MERCHANT -->
+<div id="editMerchantModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-pen text-blue-600"></i> تعديل بيانات المتجر والبيج ✏️
+            </h3>
+            <button onclick="closeModal('editMerchantModal')" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <form method="POST" id="editMerchantForm" action="" class="mt-4 space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم صاحب المتجر *</label>
+                    <input type="text" name="name" id="editMerchantName" required
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المتجر / البيج *</label>
+                    <input type="text" name="store_name" id="editMerchantStoreName" required
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف / الواتساب</label>
+                <input type="text" name="phone" id="editMerchantPhone" dir="ltr"
+                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold font-mono focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">العنوان / المنطقة</label>
+                <input type="text" name="address" id="editMerchantAddress"
+                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">أجرة التوصيل الافتراضية</label>
+                    <input type="number" name="default_delivery_fee" id="editMerchantFee" step="0.5" min="0"
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">تصنيف المتجر / النشاط</label>
+                    <input type="text" name="category" id="editMerchantCategory" placeholder="ألبسة، إلكترونيات..."
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات خاصة</label>
+                <textarea name="notes" id="editMerchantNotes" rows="2" placeholder="ملاحظات..."
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition resize-none"></textarea>
+            </div>
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('editMerchantModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition cursor-pointer">إلغاء</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-2 rounded-xl text-sm transition shadow-md shadow-blue-500/20 cursor-pointer">
+                    <i class="fa-solid fa-save ml-1"></i> حفظ التعديلات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <!-- MODAL: ADD NEW MERCHANT -->
 <div id="newMerchantModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
@@ -226,6 +299,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('add_merchant') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">اسم صاحب المتجر / العميل <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" required placeholder="مثال: أحمد عبد الله" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
@@ -293,6 +367,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('payout_merchant') }}" class="mt-6 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="merchant_id" id="payoutMerchantId">
 
             <!-- Orders Table to select -->
@@ -396,6 +471,7 @@
 
         <!-- Add Merchant Category Form -->
         <form method="POST" action="{{ url_for('add_merchant_category') }}" class="mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label class="block text-xs font-black text-purple-900 flex items-center gap-1.5">
                 <i class="fa-solid fa-plus-circle text-purple-600"></i>
                 <span>إضافة تصنيف جديد للمتجر:</span>
@@ -413,12 +489,14 @@
                 {% for cat in categories %}
                 <div class="p-3 bg-white flex items-center justify-between gap-3 hover:bg-slate-50 transition">
                     <form method="POST" action="{{ url_for('edit_merchant_category', cat_id=cat.id) }}" class="flex items-center gap-2 flex-1">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="text" name="name" value="{{ cat.name }}" required class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-purple-500 focus:bg-white">
                         <button type="submit" class="bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-700 font-bold px-3 py-1.5 rounded-xl text-[11px] transition whitespace-nowrap" title="حفظ وتحديث المتاجر المرتبطة">
                             <i class="fa-solid fa-check"></i> حفظ
                         </button>
                     </form>
                     <form method="POST" action="{{ url_for('delete_merchant_category', cat_id=cat.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا التصنيف؟');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded-lg transition" title="حذف التصنيف">
                             <i class="fa-solid fa-trash-can text-xs"></i>
                         </button>
@@ -440,6 +518,17 @@
 
 {% block scripts %}
 <script>
+    function openEditMerchantModal(id, name, storeName, phone, address, notes, fee, category) {
+        document.getElementById('editMerchantForm').action = '/merchants/' + id + '/edit';
+        document.getElementById('editMerchantName').value = name;
+        document.getElementById('editMerchantStoreName').value = storeName;
+        document.getElementById('editMerchantPhone').value = phone;
+        document.getElementById('editMerchantAddress').value = address;
+        document.getElementById('editMerchantNotes').value = notes;
+        document.getElementById('editMerchantFee').value = fee;
+        document.getElementById('editMerchantCategory').value = category;
+        openModal('editMerchantModal');
+    }
     function openModal(id) {
         document.getElementById(id).classList.remove('hidden');
     }
@@ -670,3 +759,6 @@
     }
 </script>
 {% endblock %}
+
+
+

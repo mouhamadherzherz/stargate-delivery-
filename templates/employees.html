@@ -104,7 +104,7 @@
                         <th class="px-6 py-4">اسم المستخدم</th>
                         <th class="px-6 py-4">الصلاحية والوظيفة</th>
                         <th class="px-6 py-4">رقم الهاتف</th>
-                        <th class="px-6 py-4">العملة</th>
+                        <th class="px-6 py-4">الراتب الأساسي</th>
                         <th class="px-6 py-4">الحالة</th>
                         <th class="px-6 py-4">آخر دخول</th>
                         <th class="px-6 py-4 text-center">الإجراءات</th>
@@ -156,7 +156,7 @@
                             {% if emp.phone %}
                             <div class="flex items-center gap-2" dir="ltr">
                                 <span class="font-mono text-slate-700 font-bold">{{ emp.phone }}</span>
-                                <a href="whatsapp://send?phone={{ emp.phone|clean_phone_for_whatsapp }}" class="text-emerald-500 hover:text-emerald-600" title="مراسلة عبر تطبيق الواتساب المكتبي 📱">
+                                <a href="https://wa.me/{{ emp.phone|clean_phone_for_whatsapp }}" target="_blank" class="text-emerald-500 hover:text-emerald-600" title="مراسلة عبر تطبيق الواتساب المكتبي 📱">
                                     <i class="fa-brands fa-whatsapp text-base"></i>
                                 </a>
                             </div>
@@ -183,12 +183,12 @@
                         </td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center gap-2">
-                                <button onclick="openEditEmployeeModal({{ emp.id }}, '{{ emp.display_name|replace("'", "\\'") }}', '{{ emp.username }}', '{{ emp.role }}', '{{ emp.phone or '' }}', {{ emp.is_active }}, '{{ emp.job_title or '' }}', '{{ emp.job_type or '' }}', 'ل.ل', '{{ (emp.custom_permissions or '')|replace("'", "\\'") }}')"
-                                        class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="تعديل الموظف">
+                                <button type="button" data-emp='{{ emp | tojson }}' onclick="openEditEmployeeFromData(this)" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="تعديل الموظف">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                                 {% if emp.username != 'admin' %}
                                 <form method="POST" action="{{ url_for('delete_employee', emp_id=emp.id) }}" onsubmit="return confirm('هل أنت متأكد تماماً من حذف الموظف [{{ emp.display_name }}]؟ لا يمكن التراجع!')" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="حذف الموظف">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
@@ -224,6 +224,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('add_employee') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل للموظف:</label>
                 <input type="text" name="display_name" required placeholder="مثال: رامي خليل" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500">
@@ -240,15 +241,19 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز PIN للدخول السريع (4 أرقام فأكثر):</label>
-                    <input type="password" name="pin" placeholder="مثال: 123456 (اختياري)" minlength="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-red-500">
+            <!-- PIN Code Field (Golden Highlight - Protected Masked) -->
+            <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-1.5">
+                <label class="block text-xs font-black text-amber-950 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-600"></i> رمز الـ PIN للدخول السريع (مخفي ومحمي):</span>
+                    <span class="text-[10px] text-amber-700">أرقام فقط</span>
+                </label>
+                <div class="relative">
+                    <input type="password" id="add_emp_pin" name="pin" placeholder="••••••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" style="-webkit-text-security: disc;" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-sm font-mono tracking-widest text-amber-950 font-bold focus:ring-2 focus:ring-amber-500 text-center" dir="ltr">
+                    <button type="button" onclick="toggleInputVisibility('add_emp_pin', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-700 hover:text-amber-900 transition">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">تأكيد رمز PIN:</label>
-                    <input type="password" name="confirm_pin" placeholder="تأكيد الرمز" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-red-500">
-                </div>
+                <p class="text-[10px] text-amber-800 font-medium">مشفر ومخفي عن الأنظار لمنع التلصص أثناء الإدخال.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -257,8 +262,8 @@
                     <select name="role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-red-500">
                         <option value="employee">موظف عمليات (افتراضي)</option>
                         <option value="accountant">محاسب ومالية</option>
-<option value="supervisor">مشرف ميداني</option>
-<option value="call_center">كول سنتر واستقبال</option>
+                        <option value="supervisor">مشرف ميداني</option>
+                        <option value="call_center">كول سنتر واستقبال</option>
                         <option value="admin">مدير عام (كامل الصلاحيات)</option>
                     </select>
                 </div>
@@ -276,11 +281,25 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">نوع الوظيفة:</label>
                     <select name="job_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500">
-                        <option value="">— اختر —</option>
                         <option value="دوام كامل">دوام كامل</option>
                         <option value="دوام جزئي">دوام جزئي</option>
                         <option value="عقد">عقد</option>
                         <option value="مؤقت">مؤقت</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 bg-emerald-50/50 p-3 rounded-2xl border border-emerald-200">
+                <div>
+                    <label class="block text-xs font-black text-emerald-900 mb-1">الراتب الأساسي (ل.ل):</label>
+                    <input type="number" step="any" name="salary" placeholder="0" class="w-full bg-white border border-emerald-300 rounded-xl px-4 py-2 text-sm font-bold text-emerald-800 focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-emerald-900 mb-1">نظام صرف الراتب:</label>
+                    <select name="salary_type" class="w-full bg-white border border-emerald-300 rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-emerald-500">
+                        <option value="monthly">شهري (Monthly)</option>
+                        <option value="weekly">أسبوعي (Weekly)</option>
+                        <option value="daily">يومي (Daily)</option>
                     </select>
                 </div>
             </div>
@@ -371,6 +390,7 @@
         </div>
 
         <form id="editEmployeeForm" method="POST" action="" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل:</label>
                 <input type="text" id="edit_display_name" name="display_name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
@@ -394,15 +414,18 @@
                 </div>
             </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">رمز PIN جديد للدخول السريع (6 أرقام أو أكثر):</label>
-                    <input type="password" id="edit_pin" name="pin" placeholder="اتركه فارغاً للإبقاء الحالي" minlength="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500">
+            <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-1.5">
+                <label class="block text-xs font-black text-amber-950 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-600"></i> رمز الـ PIN للدخول السريع (مخفي ومحمي):</span>
+                    <span class="text-[10px] text-amber-700">اتركه فارغاً لعدم التغيير</span>
+                </label>
+                <div class="relative">
+                    <input type="password" id="edit_pin" name="pin" placeholder="اتركه فارغاً للإبقاء على الرمز الحالي" maxlength="8" inputmode="numeric" pattern="[0-9]*" style="-webkit-text-security: disc;" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-sm font-mono tracking-widest text-amber-950 font-bold focus:ring-2 focus:ring-amber-500 text-center" dir="ltr">
+                    <button type="button" onclick="toggleInputVisibility('edit_pin', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-700 hover:text-amber-900 transition">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">تأكيد رمز PIN الجديد:</label>
-                    <input type="password" id="edit_confirm_pin" name="confirm_pin" placeholder="تأكيد الرمز" minlength="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500">
-                </div>
+                <p class="text-[10px] text-amber-700">مشفر ومخفي عن الأنظار لحماية خصوصية الموظف.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -524,10 +547,124 @@
     </div>
 </div>
 
+
+<!-- PAY SALARY MODAL -->
+<div id="paySalaryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-money-bill-wave text-emerald-600"></i>
+                <span>صرف راتب / مستحقات الموظف</span>
+            </h3>
+            <button onclick="closeModal('paySalaryModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="paySalaryForm" method="POST" action="" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div class="text-xs text-slate-400 font-bold">الموظف المستلم:</div>
+                <div id="pay_emp_name" class="text-sm font-black text-slate-800 mt-0.5"></div>
+                <div id="pay_emp_job" class="text-xs text-blue-600 font-bold mt-0.5"></div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">خصم من الخزينة / الصندوق:</label>
+                <select name="treasury_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500">
+                    {% for tr in treasuries %}
+                    <option value="{{ tr.id }}">{{ tr.name }} (الرصيد: {{ tr.balance|format_currency }} ل.ل)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">مبلغ الراتب المصروف (ل.ل):</label>
+                <input type="number" step="any" id="pay_salary_amount" name="amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">عن شهر / فترة:</label>
+                <input type="text" name="period" value="{{ now.strftime('%Y-%m') }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات أو تفاصيل إضافية:</label>
+                <input type="text" name="notes" placeholder="مثال: راتب الشهر كاملاً مع مكافأة" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('paySalaryModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
+                <button type="submit" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-600/20 transition">تأكيد الصرف والخصم 💵</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SALARY HISTORY SECTION -->
+{% if salary_history %}
+<div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4">
+    <div class="flex items-center justify-between">
+        <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i>
+            <span>سجل أحدث عمليات صرف الرواتب والمكافآت 💵</span>
+        </h3>
+        <span class="text-xs bg-emerald-50 text-emerald-700 font-black px-3 py-1 rounded-full border border-emerald-200">
+            {{ salary_history|length }} عملية صرف
+        </span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-right">
+            <thead class="bg-slate-50 border-b border-slate-200 text-xs font-black text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">رقم السند</th>
+                    <th class="px-4 py-3">المستفيد</th>
+                    <th class="px-4 py-3">الخزينة المصروف منها</th>
+                    <th class="px-4 py-3">المبلغ</th>
+                    <th class="px-4 py-3">الفترة</th>
+                    <th class="px-4 py-3">تاريخ الصرف</th>
+                    <th class="px-4 py-3">الملاحظات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-xs">
+                {% for sh in salary_history %}
+                <tr class="hover:bg-slate-50/80">
+                    <td class="px-4 py-3 font-mono font-bold text-slate-600">{{ sh.payment_number }}</td>
+                    <td class="px-4 py-3 font-black text-slate-800">{{ sh.recipient_name or '—' }}</td>
+                    <td class="px-4 py-3 font-bold text-slate-600">{{ sh.treasury_name }}</td>
+                    <td class="px-4 py-3 font-black text-emerald-600">{{ sh.amount|format_currency }} ل.ل</td>
+                    <td class="px-4 py-3 font-bold text-blue-600">{{ sh.period }}</td>
+                    <td class="px-4 py-3 text-slate-400 font-mono">{{ sh.payment_date[:16] }}</td>
+                    <td class="px-4 py-3 text-slate-500">{{ sh.notes or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+    function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+            el.style.display = 'flex';
+        }
+    }
+    function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+            el.style.display = 'none';
+        }
+    }
+
     function filterEmployeesTable() {
         const query = document.getElementById('employeeSearchInput').value.toLowerCase().trim();
         const role = document.getElementById('roleFilterSelect').value;
@@ -558,12 +695,63 @@
         document.querySelectorAll('#editEmployeeModal input[name="permissions"]').forEach(cb => cb.checked = status);
     }
 
-    function openEditEmployeeModal(id, name, username, role, phone, isActive, jobTitle, jobType, currency, customPermissions, notes) {
+    function openPaySalaryModal(id, name, salary, jobTitle) {
+        document.getElementById('paySalaryForm').action = `/employees/${id}/pay-salary`;
+        document.getElementById('pay_emp_name').textContent = name;
+        document.getElementById('pay_emp_job').textContent = jobTitle || 'موظف';
+        document.getElementById('pay_salary_amount').value = salary > 0 ? salary : '';
+        openModal('paySalaryModal');
+    }
+
+    function openEditEmployeeFromData(btn) {
+        try {
+            const emp = JSON.parse(btn.getAttribute('data-emp'));
+            document.getElementById('editEmployeeForm').action = `/employees/${emp.id}/edit`;
+            if (document.getElementById('edit_display_name')) document.getElementById('edit_display_name').value = emp.display_name || '';
+            if (document.getElementById('edit_username_display')) document.getElementById('edit_username_display').textContent = emp.username || '';
+            if (document.getElementById('edit_new_username')) document.getElementById('edit_new_username').value = '';
+            if (document.getElementById('edit_role')) document.getElementById('edit_role').value = emp.role || 'employee';
+            if (document.getElementById('edit_pin')) document.getElementById('edit_pin').value = emp.pin || '';
+            if (document.getElementById('edit_confirm_pin')) document.getElementById('edit_confirm_pin').value = emp.pin || '';
+            if (document.getElementById('edit_notes')) document.getElementById('edit_notes').value = emp.notes || '';
+            if (document.getElementById('edit_phone')) document.getElementById('edit_phone').value = emp.phone || '';
+            if (document.getElementById('edit_is_active')) document.getElementById('edit_is_active').checked = Boolean(emp.is_active);
+            if (document.getElementById('edit_job_title')) document.getElementById('edit_job_title').value = emp.job_title || '';
+            if (document.getElementById('edit_job_type')) document.getElementById('edit_job_type').value = emp.job_type || '';
+            if (document.getElementById('edit_salary')) document.getElementById('edit_salary').value = emp.salary || '';
+            if (document.getElementById('edit_salary_type')) document.getElementById('edit_salary_type').value = emp.salary_type || 'monthly';
+            if (document.getElementById('edit_new_password')) document.getElementById('edit_new_password').value = '';
+            if (document.getElementById('edit_confirm_password')) document.getElementById('edit_confirm_password').value = '';
+
+            const perms = (emp.custom_permissions || '').split(',').map(p => p.trim());
+            const editCheckboxes = document.querySelectorAll('.edit-perm-chk');
+            if (emp.role === 'admin') {
+                editCheckboxes.forEach(cb => cb.checked = true);
+            } else if (!emp.custom_permissions || emp.custom_permissions.trim() === '') {
+                editCheckboxes.forEach(cb => {
+                    cb.checked = ['orders_view', 'orders_create', 'orders_edit', 'customers_manage'].includes(cb.value);
+                });
+            } else {
+                editCheckboxes.forEach(cb => {
+                    cb.checked = perms.includes(cb.value);
+                });
+            }
+
+            openModal('editEmployeeModal');
+        } catch (e) {
+            console.error("Error opening edit employee modal:", e);
+        }
+    }
+
+    function openEditEmployeeModal(id, name, username, role, phone, isActive, jobTitle, jobType, currency, customPermissions, pin, salary, salaryType, notes) {
         document.getElementById('editEmployeeForm').action = `/employees/${id}/edit`;
+        if (document.getElementById('edit_salary')) document.getElementById('edit_salary').value = salary || '';
+        if (document.getElementById('edit_salary_type')) document.getElementById('edit_salary_type').value = salaryType || 'monthly';
         document.getElementById('edit_display_name').value = name;
         document.getElementById('edit_username_display').textContent = username;
         document.getElementById('edit_new_username').value = '';
         document.getElementById('edit_role').value = role;
+    if(document.getElementById('edit_pin')) document.getElementById('edit_pin').value = pin;
         if (document.getElementById('edit_notes')) document.getElementById('edit_notes').value = notes || '';
         document.getElementById('edit_phone').value = phone;
         document.getElementById('edit_is_active').checked = Boolean(isActive);
@@ -616,5 +804,63 @@
             status.className = 'text-[11px] block font-bold text-rose-600';
         }
     }
+
+    function toggleInputVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            input.style.webkitTextSecurity = 'none';
+            if (icon) icon.className = 'fa-solid fa-eye-slash text-xs';
+        } else {
+            input.type = 'password';
+            input.style.webkitTextSecurity = 'disc';
+            if (icon) icon.className = 'fa-solid fa-eye text-xs';
+        }
+    }
 </script>
+
+<!-- SALARY HISTORY SECTION -->
+{% if salary_history %}
+<div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4">
+    <div class="flex items-center justify-between">
+        <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i>
+            <span>سجل أحدث عمليات صرف الرواتب والمكافآت 💵</span>
+        </h3>
+        <span class="text-xs bg-emerald-50 text-emerald-700 font-black px-3 py-1 rounded-full border border-emerald-200">
+            {{ salary_history|length }} عملية صرف
+        </span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-right">
+            <thead class="bg-slate-50 border-b border-slate-200 text-xs font-black text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">رقم السند</th>
+                    <th class="px-4 py-3">المستفيد</th>
+                    <th class="px-4 py-3">الخزينة المصروف منها</th>
+                    <th class="px-4 py-3">المبلغ</th>
+                    <th class="px-4 py-3">الفترة</th>
+                    <th class="px-4 py-3">تاريخ الصرف</th>
+                    <th class="px-4 py-3">الملاحظات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-xs">
+                {% for sh in salary_history %}
+                <tr class="hover:bg-slate-50/80">
+                    <td class="px-4 py-3 font-mono font-bold text-slate-600">{{ sh.payment_number }}</td>
+                    <td class="px-4 py-3 font-black text-slate-800">{{ sh.recipient_name or '—' }}</td>
+                    <td class="px-4 py-3 font-bold text-slate-600">{{ sh.treasury_name }}</td>
+                    <td class="px-4 py-3 font-black text-emerald-600">{{ sh.amount|format_currency }} ل.ل</td>
+                    <td class="px-4 py-3 font-bold text-blue-600">{{ sh.period }}</td>
+                    <td class="px-4 py-3 text-slate-400 font-mono">{{ sh.payment_date[:16] }}</td>
+                    <td class="px-4 py-3 text-slate-500">{{ sh.notes or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

@@ -11,6 +11,7 @@
 
     <!-- Main Settings Form -->
     <form method="POST" action="{{ url_for('save_settings') }}" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- Company Info & Dual Currency Card -->
         <div class="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
@@ -494,7 +495,8 @@
                     </h4>
                     <p class="text-[11px] text-blue-700 mt-1">رفع ملف نسخة سابقة (.db) لاسترجاع الشحنات والحسابات في هذا البرنامج فوراً.</p>
                 </div>
-                <form method="POST" action="{{ url_for('backup_db') }}" enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
+                <form method="POST" action="{{ url_for('restore_db') }}" enctype="multipart/form-data" class="flex items-center gap-2 flex-wrap">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="file" name="backup_file" accept=".db" required class="text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                     <button type="submit" onclick="return confirm('هل أنت متأكد من استعادة هذه النسخة؟ سيتم استبدال البيانات الحالية بالنسخة المرفوعة.')" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-3.5 py-1.5 rounded-xl text-xs transition shadow-sm">
                         استعادة 📥
@@ -552,6 +554,7 @@
 
         <!-- Google Drive Form -->
         <form method="POST" action="{{ url_for('save_gdrive_settings') }}" enctype="multipart/form-data" class="space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Toggle Enable -->
                 <div class="sm:col-span-1 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
@@ -652,6 +655,64 @@
         </div>
     </div>
 
+    <!-- SUBSCRIPTION STATUS & STARGATE EXPERTS SUPPORT CARD -->
+    <div class="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 rounded-3xl p-6 lg:p-8 border-2 border-indigo-500/40 shadow-xl text-white space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-4 border-b border-white/10 pb-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg shadow-amber-500/25">
+                    <i class="fa-solid fa-certificate"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="font-black text-lg text-white">ترخيص واشتراك النظام 🛡️</h3>
+                        <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-0.5 rounded-full font-bold">
+                            نشط ومحمي 100%
+                        </span>
+                    </div>
+                    <p class="text-xs text-indigo-200 mt-0.5">معلومات صلاحية الاشتراك والدعم الفني المباشر من المطورين</p>
+                </div>
+            </div>
+            <div class="text-left">
+                <span class="text-[11px] text-indigo-300 block font-bold">معرّف الجهاز (Hardware ID):</span>
+                <span class="font-mono text-xs font-black bg-black/40 px-3 py-1 rounded-xl text-amber-300 border border-white/10">{{ guid }}</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- License Remaining -->
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-hourglass-half text-amber-400"></i>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-slate-400">مدة صلاحية الاشتراك:</span>
+                        <span class="text-sm font-black text-amber-300 font-mono">{{ license_remaining_text }}</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('activate_license') }}" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-2 rounded-xl transition">
+                    تجديد الكود
+                </a>
+            </div>
+
+            <!-- System Documentation & Architecture -->
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-book-open text-cyan-400"></i>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-slate-400">دليل التشغيل والتوثيق:</span>
+                        <span class="text-sm font-black text-white">Stargate Enterprise Docs</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('user_guide_view') }}" target="_blank" class="text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-3.5 py-2 rounded-xl transition">
+                    عرض الدليل
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- DANGER ZONE: CLEAR / WIPE ALL DATA CARD -->
     <div class="bg-rose-50/60 p-6 lg:p-8 rounded-3xl border-2 border-rose-200 shadow-sm space-y-4">
         <div class="flex items-center gap-3 text-rose-800">
@@ -696,11 +757,14 @@
         </p>
 
         <form id="wipeFormElement" method="POST" action="{{ url_for('reset_data') }}" onsubmit="submitWipeForm(event)" class="pt-2 space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="wipe_mode" id="wipeModeInput" value="all">
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">أدخل رمز مرور المدير (PIN) للتأكيد:</label>
-                <input type="password" name="admin_pin" id="wipeAdminPin" placeholder="أدخل رمز سر المدير للتأكيد..." value="" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-center text-sm font-mono font-bold focus:ring-2 focus:ring-rose-500">
+                <input type="password" name="admin_pin" id="wipeAdminPin" placeholder="أدخل رمز المدير (مثلاً: 20122020)" value="" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-center text-sm font-mono font-bold focus:ring-2 focus:ring-rose-500">
+                <p class="text-[11px] text-slate-400 mt-1">الرمز المعتمد لإدارة النظام: <span class="font-mono font-bold text-slate-600">20122020</span> أو <span class="font-mono font-bold text-slate-600">19701313</span></p>
+                <div id="wipeErrorMsg" class="hidden mt-2 p-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 text-center"></div>
             </div>
 
             <div class="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
@@ -722,6 +786,13 @@
 <script>
     function openWipeModal(mode) {
         document.getElementById('wipeModeInput').value = mode;
+        const errDiv = document.getElementById('wipeErrorMsg');
+        if (errDiv) {
+            errDiv.classList.add('hidden');
+            errDiv.innerText = '';
+        }
+        const pinInput = document.getElementById('wipeAdminPin');
+        if (pinInput) pinInput.value = '';
         const desc = document.getElementById('wipeModalDesc');
         if (mode === 'operational') {
             desc.textContent = 'سيتم حذف جميع الشحنات والطلبات وحركات الخزينة والتسويات، مع الحفاظ على أسماء التجار والمناديب وإعدادات الشركة.';
@@ -729,6 +800,7 @@
             desc.textContent = 'تحذير: سيتم مسح كافة البيانات 100% (الشحنات، التجار، المناديب، الخزائن، السندات) وإرجاع النظام لحالة الصفر التام!';
         }
         document.getElementById('wipeConfirmModal').classList.remove('hidden');
+        if (pinInput) setTimeout(() => pinInput.focus(), 100);
     }
 
     function closeWipeModal() {
@@ -739,6 +811,9 @@
         e.preventDefault();
         const form = e.target;
         const btn = document.getElementById('wipeSubmitBtn');
+        const errDiv = document.getElementById('wipeErrorMsg');
+        if (errDiv) errDiv.classList.add('hidden');
+
         const originalHtml = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري المسح والتصفير...</span>';
@@ -752,21 +827,32 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
-            const data = await res.json();
-            if (data.success) {
+            const data = await res.json().catch(() => null);
+            if (res.ok && data && data.success) {
                 btn.className = "bg-emerald-600 text-white font-black px-6 py-2.5 rounded-xl text-sm transition flex items-center gap-1.5";
                 btn.innerHTML = '<i class="fa-solid fa-circle-check text-sm"></i> <span>تم المسح والتصفير بنجاح!</span>';
                 setTimeout(() => {
                     window.location.href = '/settings';
                 }, 700);
             } else {
-                alert(data.message || 'فشل مسح البيانات، تأكد من رمز المرور.');
+                const msg = (data && data.message) ? data.message : 'فشل مسح البيانات، تأكد من رمز مرور المدير.';
+                if (errDiv) {
+                    errDiv.innerText = '❌ ' + msg;
+                    errDiv.classList.remove('hidden');
+                } else {
+                    alert(msg);
+                }
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }
         } catch (err) {
             console.error('Wipe form error:', err);
-            form.submit();
+            if (errDiv) {
+                errDiv.innerText = '❌ خطأ في الاتصال بالخادم: ' + err.message;
+                errDiv.classList.remove('hidden');
+            }
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
         }
     }
 
@@ -1058,3 +1144,4 @@
     }
 </script>
 {% endblock %}
+

@@ -7,3 +7,8 @@ __pycache__/
 _internal/
 dist/
 build/
+*.zip
+scratch/
+*.gz
+data/backups/
+data/*.key

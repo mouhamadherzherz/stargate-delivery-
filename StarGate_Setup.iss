@@ -1,20 +1,19 @@
 ; =====================================================================
-; Stargate Delivery System - Inno Setup Script
-; يُنشئ برنامج تثبيت رسمي لنظام ويندوز
+; Stargate Delivery System - Inno Setup 7 Script
 ; =====================================================================
 
-#define MyAppName "Stargate Delivery System"
-#define MyAppVersion "2.0"
+#define MyAppName      "Stargate Delivery System"
+#define MyAppVersion   "3.9.6"
 #define MyAppPublisher "Stargate Tech"
-#define MyAppExeName "StargateDelivery.exe"
-#define MyInstallDir "C:\StargateDelivery"
+#define MyAppExeName   "StargateDelivery.exe"
+#define MyDistDir      "dist\StargateDelivery"
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={#MyInstallDir}
+DefaultDirName=C:\StargateDelivery
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir=.\installer_output
@@ -26,56 +25,32 @@ WizardStyle=modern
 DisableDirPage=yes
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64
+CloseApplications=yes
 
 [Languages]
-Name: "arabic"; MessagesFile: "compiler:Default.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "إنشاء اختصار على سطح المكتب"; GroupDescription: "اختصارات:"; Flags: checked
-Name: "startmenuicon"; Description: "إنشاء اختصار في قائمة ابدأ"; GroupDescription: "اختصارات:"; Flags: checked
+Name: "desktopicon"; Description: "Create desktop shortcut"; GroupDescription: "Shortcuts:"
+Name: "startupicon"; Description: "Run at Windows startup"; GroupDescription: "Auto-start:"
 
 [Dirs]
-; إنشاء مجلد البيانات بشكل آمن - لن يُحذف أو يُستبدل عند التحديث
-Name: "{#MyInstallDir}\data"; Flags: uninsneveruninstall
+Name: "{app}\data";       Permissions: users-full; Flags: uninsneveruninstall
+Name: "{app}\db_backups"; Permissions: users-full; Flags: uninsneveruninstall
 
 [Files]
-; نسخ الملف التنفيذي والملفات المساعدة
-Source: "dist\StargateDelivery.exe"; DestDir: "{#MyInstallDir}"; Flags: ignoreversion
-Source: "static\*"; DestDir: "{#MyInstallDir}\static"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "templates\*"; DestDir: "{#MyInstallDir}\templates"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; قاعدة البيانات: لا تُنسخ إذا كانت موجودة مسبقاً (حماية البيانات عند التحديث)
-Source: "data\stargate_production.db"; DestDir: "{#MyInstallDir}\data"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "{#MyDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "data\stargate_empty.db"; DestDir: "{app}\data"; DestName: "stargate_production.db"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Icons]
-; اختصار سطح المكتب
-Name: "{userdesktop}\{#MyAppName}"; Filename: "{#MyInstallDir}\{#MyAppExeName}"; IconFilename: "{#MyInstallDir}\static\icons\stargate_logo.ico"; Tasks: desktopicon
-; اختصار قائمة ابدأ
-Name: "{group}\{#MyAppName}"; Filename: "{#MyInstallDir}\{#MyAppExeName}"; IconFilename: "{#MyInstallDir}\static\icons\stargate_logo.ico"; Tasks: startmenuicon
-Name: "{group}\إلغاء التثبيت"; Filename: "{uninstallexe}"
+Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{group}\{#MyAppName}";       Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
+Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: startupicon
 
-[Run]
-; تشغيل البرنامج مباشرة بعد التثبيت (اختياري)
-Filename: "{#MyInstallDir}\{#MyAppExeName}"; Description: "تشغيل Stargate الآن"; Flags: nowait postinstall skipifsilent
+
 
 [UninstallDelete]
-; حذف الملفات المؤقتة عند إلغاء التثبيت (مع الحفاظ على مجلد data)
-Type: filesandordirs; Name: "{#MyInstallDir}\__pycache__"
-Type: filesandordirs; Name: "{#MyInstallDir}\*.log"
-
-[Code]
-// التحقق من عدم تشغيل البرنامج أثناء التثبيت
-function InitializeSetup(): Boolean;
-var
-  ResultCode: Integer;
-begin
-  Result := True;
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssInstall then begin
-    // إنشاء مجلد البيانات إذا لم يكن موجوداً
-    ForceDirectories(ExpandConstant('{#MyInstallDir}\data'));
-  end;
-end;
+Type: filesandordirs; Name: "{app}\__pycache__"
+Type: filesandordirs; Name: "{app}\update_temp"
+Type: files;          Name: "{app}\*.log"

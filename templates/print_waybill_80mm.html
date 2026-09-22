@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوليصة شحن حرارية - {{ order.tracking_number }}</title>
+    <style>
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 76mm;
+            margin: 0 auto;
+            padding: 4mm 2mm;
+            background: #fff;
+            color: #000;
+            font-size: 13px;
+            direction: rtl;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+        }
+        .header h2 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+            font-weight: 900;
+        }
+        .header p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+        .tracking-box {
+            text-align: center;
+            background: #eee;
+            padding: 6px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .tracking-box .code {
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .section {
+            border-bottom: 1px solid #ccc;
+            padding: 5px 0;
+            margin-bottom: 5px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .label {
+            font-weight: bold;
+            color: #333;
+        }
+        .val {
+            font-weight: 600;
+        }
+        .total-box {
+            border: 2px solid #000;
+            text-align: center;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 6px;
+            background: #f9f9f9;
+        }
+        .total-box .title {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .total-box .amount {
+            font-size: 22px;
+            font-weight: 900;
+            margin-top: 4px;
+            color: #000;
+        }
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 10px;
+            color: #555;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+
+    <div class="no-print" style="margin-bottom: 10px; text-align: center;">
+        <button onclick="window.print()" style="padding: 8px 16px; font-size: 14px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">🖨️ طباعة الإيصال الحراري (80mm)</button>
+    </div>
+
+    <div class="header">
+        <h2>{{ settings.company_name or 'StarGate Delivery' }}</h2>
+        <p>هاتف: {{ settings.phone or '07-740000' }} | {{ settings.address or 'صور - لبنان' }}</p>
+        <p>التاريخ: {{ order.created_at[:16] if order.created_at else '' }}</p>
+    </div>
+
+    <div class="tracking-box">
+        <svg id="barcode"></svg>
+        <div class="code">{{ order.tracking_number }}</div>
+    </div>
+
+    <div class="section">
+        <div class="row">
+            <span class="label">نوع الخدمة:</span>
+            <span class="val">
+                {% if order.service_type == 'taxi' %}🚗 مشوار تاكسي
+                {% elif order.service_type == 'home_service' %}🛠️ ورشة صيانة
+                {% elif order.service_type == 'procurement' %}🛒 شراء حر
+                {% else %}🛵 توصيل طلبية{% endif %}
+            </span>
+        </div>
+        {% if order.merchant_name %}
+        <div class="row">
+            <span class="label">المتجر / المصدر:</span>
+            <span class="val">{{ order.merchant_name }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <div class="row">
+            <span class="label">الزبون المستلم:</span>
+            <span class="val">{{ order.recipient_name or 'غير محدد' }}</span>
+        </div>
+        <div class="row">
+            <span class="label">رقم الهاتف:</span>
+            <span class="val" style="font-size: 14px; font-weight: bold;">{{ order.recipient_phone or '-' }}</span>
+        </div>
+        <div class="row">
+            <span class="label">المنطقة والحي:</span>
+            <span class="val">{{ order.recipient_city or 'صور' }}</span>
+        </div>
+        {% if order.recipient_address %}
+        <div class="row">
+            <span class="label">العنوان التفصيلي:</span>
+            <span class="val">{{ order.recipient_address }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- تفاصيل الأصناف والمحتويات -->
+    <div class="section">
+        <span class="label">محتويات الطرد / الأصناف:</span>
+        {% if order_items and order_items|length > 0 %}
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11px;">
+            <thead>
+                <tr style="border-bottom: 1px solid #000; text-align: right;">
+                    <th style="padding: 2px;">الصنف</th>
+                    <th style="padding: 2px; text-align: center;">العدد</th>
+                    <th style="padding: 2px; text-align: left;">المجموع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for itm in order_items %}
+                <tr style="border-bottom: 1px dashed #ddd;">
+                    <td style="padding: 3px 2px; font-weight: bold;">{{ itm.product_name }}</td>
+                    <td style="padding: 3px 2px; text-align: center;">{{ itm.quantity }}</td>
+                    <td style="padding: 3px 2px; text-align: left; font-family: monospace;">{{ "{:,.0f}".format(itm.subtotal) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="font-size: 12px; font-weight: bold; margin-top: 3px;">
+            {{ order.items_detail or order.item_description or 'طرد تجاري' }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- التفصيل المالي -->
+    <div class="section" style="font-size: 11px;">
+        <div class="row">
+            <span>قيمة البضاعة:</span>
+            <span class="val">{{ "{:,.0f}".format(order.order_price or 0) }} ل.ل</span>
+        </div>
+        {% if order.delivery_fee %}
+        <div class="row">
+            <span>أجرة التوصيل:</span>
+            <span class="val">{{ "{:,.0f}".format(order.delivery_fee or 0) }} ل.ل</span>
+        </div>
+        {% endif %}
+        {% if order.discount_amount %}
+        <div class="row" style="color: #c00; font-weight: bold;">
+            <span>الخصم الممنوح:</span>
+            <span class="val">-{{ "{:,.0f}".format(order.discount_amount or 0) }} ل.ل</span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if order.notes %}
+    <div class="section">
+        <span class="label">الملاحظات:</span>
+        <div style="font-size: 11px; margin-top: 2px;">{{ order.notes }}</div>
+    </div>
+    {% endif %}
+
+    <div class="total-box">
+        <div class="title">المبلغ المطلـوب تحصيـله من الزبـون</div>
+        <div class="amount">
+            {% if order.payment_method == 'whish' %}
+                <div style="font-size: 14px; color: #6b21a8;">مدفوع إلكترونياً (Whish)</div>
+                0 ل.ل
+            {% else %}
+                {% set total = (order.order_price or 0) + (order.delivery_fee or 0) %}
+                {{ "{:,.0f}".format(total) }} ل.ل
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>شكراً لتعاملكم مع {{ settings.company_name or 'StarGate' }}</p>
+        <p>نظام ستارجيت الذكي للتوصيل والخدمات السريعة</p>
+    </div>
+
+    <script>
+        window.onload = function() {
+            try {
+                JsBarcode("#barcode", "{{ order.tracking_number }}", {
+                    format: "CODE128",
+                    width: 2,
+                    height: 40,
+                    displayValue: false
+                });
+            } catch(e){}
+            setTimeout(function() {
+                window.print();
+            }, 300);
+        };
+    </script>
+</body>
+</html>

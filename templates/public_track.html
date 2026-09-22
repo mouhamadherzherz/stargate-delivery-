@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>تتبع الشحنة | {{ order.tracking_number if order else 'البوابة العامة' }} - {{ settings.company_name or 'Stargate Delivery' }}</title>
+    <!-- Local Offline Tailwind CSS -->
+    <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
+    <!-- Modern Font Stack -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Local Font Awesome Icons -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <style>
+        body {
+            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0b0f19 0%, #0f172a 50%, #1e1b4b 100%);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+        .step-active {
+            box-shadow: 0 0 20px rgba(0, 181, 255, 0.4);
+        }
+        .step-done {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-cyan-500 selection:text-white">
+
+    <!-- ═══ Top Brand Header ═══ -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-3xl mx-auto px-4 py-3.5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white shadow-lg shrink-0"
+                     style="background: linear-gradient(135deg, #00b5ff, #1e1b54);">
+                    <i class="fa-solid fa-box-fast text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-base md:text-lg tracking-tight text-white leading-tight">
+                        {{ settings.company_name or 'Stargate Delivery' }}
+                    </h1>
+                    <p class="text-[11px] text-cyan-400 font-semibold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                        بوابة التتبع المباشر للشحنات
+                    </p>
+                </div>
+            </div>
+
+            {% if settings.company_phone %}
+            <a href="tel:{{ settings.company_phone }}"
+               class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-2 rounded-xl flex items-center gap-2 transition shadow-sm">
+                <i class="fa-solid fa-phone text-emerald-400"></i>
+                <span class="hidden sm:inline">خدمة العملاء:</span>
+                <span class="font-mono font-bold" dir="ltr">{{ settings.company_phone }}</span>
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- ═══ Main Content Container ═══ -->
+    <main class="max-w-3xl mx-auto w-full px-4 py-6 md:py-8 flex-grow space-y-6">
+
+        {% if not order %}
+        <!-- ═══ Search / Not Found State ═══ -->
+        <div class="glass-card rounded-3xl p-6 md:p-10 text-center max-w-lg mx-auto space-y-5">
+            {% if tracking_number %}
+            <div class="w-20 h-20 bg-rose-500/10 text-rose-400 rounded-3xl flex items-center justify-center mx-auto border border-rose-500/20 shadow-lg shadow-rose-500/10">
+                <i class="fa-solid fa-box-open text-3xl"></i>
+            </div>
+            <div class="space-y-1">
+                <h2 class="text-lg md:text-xl font-black text-white">لم نتمكن من العثور على الشحنة</h2>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    الرقم <span class="font-mono text-amber-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-amber-500/30">{{ tracking_number }}</span> غير مسجل حالياً. يرجى التأكد من كتابة الرقم بدقة.
+                </p>
+            </div>
+            {% else %}
+            <div class="w-20 h-20 bg-cyan-500/10 text-cyan-400 rounded-3xl flex items-center justify-center mx-auto border border-cyan-500/20 shadow-lg shadow-cyan-500/10">
+                <i class="fa-solid fa-magnifying-glass-location text-3xl"></i>
+            </div>
+            <div class="space-y-1">
+                <h2 class="text-lg md:text-xl font-black text-white">تتبع موقع ومسار طردك المباشر</h2>
+                <p class="text-xs text-slate-400">أدخل رقم الشحنة أو الباركود المسجل على بوليصة التوصيل</p>
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('orders.public_tracking') }}" method="GET" class="space-y-3 pt-2">
+                <div class="relative">
+                    <input type="text" name="q" value="{{ tracking_number or '' }}" required autofocus
+                           placeholder="اكتب رقم الشحنة هنا (مثال: STG-1025)"
+                           class="w-full bg-slate-950/80 border-2 border-slate-700 focus:border-cyan-500 rounded-2xl px-4 py-3.5 text-sm font-mono font-bold text-center text-white placeholder-slate-500 focus:outline-none transition">
+                </div>
+                <button type="submit"
+                        class="w-full py-3.5 px-6 rounded-2xl font-black text-sm text-white shadow-xl transition flex items-center justify-center gap-2 cursor-pointer"
+                        style="background: linear-gradient(135deg, #00b5ff, #0084c7); box-shadow: 0 4px 20px rgba(0, 181, 255, 0.3);">
+                    <i class="fa-solid fa-radar"></i>
+                    <span>تتبع الشحنة الآن</span>
+                </button>
+            </form>
+        </div>
+
+        {% else %}
+        <!-- ═══ Found Order View ═══ -->
+        <div class="glass-card rounded-3xl p-5 md:p-8 space-y-6">
+
+            <!-- 1. Header with Tracking Number & QR -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-4 md:p-5 rounded-2xl border border-slate-800">
+                <div>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">رقم بوليصة الشحن (Tracking ID)</span>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-2xl md:text-3xl font-black text-cyan-400 font-mono tracking-wider">{{ order.tracking_number }}</h2>
+                        <button onclick="navigator.clipboard.writeText('{{ order.tracking_number }}'); alert('تم نسخ رقم الشحنة');"
+                                class="text-slate-400 hover:text-cyan-300 p-1.5 rounded-lg text-xs" title="نسخ">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
+                    <span class="text-xs text-slate-400 mt-1 block">تاريخ التسجيل: {{ order.created_at or 'اليوم' }}</span>
+                </div>
+
+                {% if qr_code_base64 %}
+                <div class="flex items-center gap-2.5 bg-slate-950/80 p-2 rounded-2xl border border-slate-700/60 shrink-0">
+                    <img src="{{ qr_code_base64 }}" alt="QR Code" class="w-16 h-16 rounded-xl bg-white p-1">
+                    <div class="text-[10px] text-slate-400 text-right space-y-0.5">
+                        <p class="font-bold text-slate-300">امسح الكود</p>
+                        <p>للمتابعة من هاتفك</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 2. Interactive 4-Stage Timeline -->
+            {% set s = order.status %}
+            <div class="bg-slate-900/50 p-5 md:p-6 rounded-2xl border border-slate-800 space-y-4">
+                <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-timeline text-cyan-400"></i>
+                    <span>مراحل مسار الشحنة</span>
+                </h3>
+
+                <!-- Timeline Bar -->
+                <div class="grid grid-cols-4 gap-2 md:gap-4 relative text-center">
+                    <!-- Connecting line -->
+                    <div class="absolute top-5 left-8 right-8 h-1 bg-slate-800 -z-0 hidden sm:block"></div>
+
+                    <!-- Stage 1: Registered -->
+                    <div class="flex flex-col items-center gap-2 relative z-10">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black step-done bg-emerald-500 text-white shadow-md">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-200">تم التسجيل</p>
+                            <span class="text-[10px] text-slate-500 hidden sm:block">استلام الطلب</span>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2: In Warehouse / Sorting -->
+                    {% set is_stage_2 = s in ['pending', 'in_warehouse', 'assigned', 'out_for_delivery', 'delivered'] %}
+                    <div class="flex flex-col items-center gap-2 relative z-10">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black {% if is_stage_2 %}step-done bg-emerald-500 text-white{% else %}bg-slate-800 text-slate-500 border border-slate-700{% endif %}">
+                            <i class="fa-solid fa-warehouse"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold {% if is_stage_2 %}text-slate-200{% else %}text-slate-500{% endif %}">مركز الفرز</p>
+                            <span class="text-[10px] text-slate-500 hidden sm:block">تجهيز الطرد</span>
+                        </div>
+                    </div>
+
+                    <!-- Stage 3: Out for Delivery with Courier -->
+                    {% set is_stage_3 = s in ['assigned', 'out_for_delivery', 'delivered'] %}
+                    {% set is_stage_3_active = s in ['assigned', 'out_for_delivery'] %}
+                    <div class="flex flex-col items-center gap-2 relative z-10">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black {% if s == 'delivered' %}step-done bg-emerald-500 text-white{% elif is_stage_3_active %}step-active bg-cyan-500 text-white animate-pulse{% else %}bg-slate-800 text-slate-500 border border-slate-700{% endif %}">
+                            <i class="fa-solid fa-motorcycle"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold {% if is_stage_3 %}text-cyan-300{% else %}text-slate-500{% endif %}">مع المندوب</p>
+                            <span class="text-[10px] text-slate-500 hidden sm:block">بالطريق إليك</span>
+                        </div>
+                    </div>
+
+                    <!-- Stage 4: Delivered or Returned -->
+                    {% set is_stage_4 = s == 'delivered' %}
+                    {% set is_returned = s in ['returned', 'canceled', 'rejected'] %}
+                    <div class="flex flex-col items-center gap-2 relative z-10">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black {% if is_stage_4 %}step-done bg-emerald-500 text-white{% elif is_returned %}bg-rose-500 text-white{% else %}bg-slate-800 text-slate-500 border border-slate-700{% endif %}">
+                            {% if is_returned %}
+                            <i class="fa-solid fa-rotate-left"></i>
+                            {% else %}
+                            <i class="fa-solid fa-house-chimney-check"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold {% if is_stage_4 %}text-emerald-400{% elif is_returned %}text-rose-400{% else %}text-slate-500{% endif %}">
+                                {% if is_returned %}مرتجع / ملغى{% else %}تم التسليم{% endif %}
+                            </p>
+                            <span class="text-[10px] text-slate-500 hidden sm:block">الوجهة النهائية</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Current Live Status Banner -->
+            <div class="p-5 md:p-6 rounded-2xl text-center space-y-2 border shadow-lg"
+                 style="background: {% if s == 'delivered' %}rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);{% elif s in ['assigned', 'out_for_delivery'] %}rgba(0,181,255,0.12);border-color:rgba(0,181,255,0.3);{% elif is_returned %}rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.3);{% else %}rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.3);{% endif %}">
+                {% if s == 'delivered' %}
+                <div class="text-emerald-400 space-y-1">
+                    <i class="fa-solid fa-circle-check text-4xl mb-1"></i>
+                    <h3 class="text-xl font-black">تم تسليم الشحنة بنجاح 🎉</h3>
+                    <p class="text-xs text-slate-300">تم تسليم الطرد للمستلم بتاريخ: <span class="font-bold text-white">{{ order.delivered_at or 'اليوم' }}</span></p>
+                </div>
+                {% elif s in ['assigned', 'out_for_delivery'] %}
+                <div class="text-cyan-400 space-y-1">
+                    <i class="fa-solid fa-truck-fast text-4xl mb-1 animate-pulse"></i>
+                    <h3 class="text-xl font-black">الشحنة في طريقها إليك الآن 🛵</h3>
+                    <p class="text-xs text-slate-300">الطرد برفقة مندوب التوصيل وسيتواصل معك خلال وقت قصير.</p>
+                </div>
+                {% elif is_returned %}
+                <div class="text-rose-400 space-y-1">
+                    <i class="fa-solid fa-circle-xmark text-4xl mb-1"></i>
+                    <h3 class="text-xl font-black">الشحنة مرتجعة / ملغاة</h3>
+                    <p class="text-xs text-slate-300">تعذر تسليم الطرد أو تم إلغاؤه من قبل الراسل أو الإدارة.</p>
+                </div>
+                {% else %}
+                <div class="text-amber-400 space-y-1">
+                    <i class="fa-solid fa-boxes-packing text-4xl mb-1"></i>
+                    <h3 class="text-xl font-black">قيد المعالجة والتجهيز 📦</h3>
+                    <p class="text-xs text-slate-300">تم تسجيل الطلب في النظام وجاري تجهيزه وتسليمه لشباب الدليفري.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 4. Courier Contact Section (If Assigned) -->
+            {% if order.courier_name and s in ['assigned', 'out_for_delivery'] %}
+            <div class="bg-gradient-to-r from-amber-500/15 via-slate-900/60 to-cyan-500/15 p-4 rounded-2xl border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xl shadow-lg shadow-amber-500/20 shrink-0">
+                        <i class="fa-solid fa-motorcycle"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold text-amber-400 block uppercase">سائق الدليفري المكلف</span>
+                        <h4 class="text-sm font-black text-white">{{ order.courier_name }}</h4>
+                        <p class="text-xs text-slate-400 font-mono" dir="ltr">{{ order.courier_phone or 'هاتف غير مسجل' }}</p>
+                    </div>
+                </div>
+
+                {% if order.courier_phone %}
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <a href="tel:{{ order.courier_phone }}"
+                       class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shadow-emerald-600/25">
+                        <i class="fa-solid fa-phone"></i>
+                        <span>اتصال</span>
+                    </a>
+                    <a href="https://wa.me/{{ order.courier_phone|replace('+','')|replace(' ','') }}" target="_blank"
+                       class="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg">
+                        <i class="fa-brands fa-whatsapp text-sm"></i>
+                        <span>واتساب</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- 5. Destination & Address Privacy Mask -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-2">
+                    <span class="text-xs text-slate-400 font-bold block">وجهة التوصيل</span>
+                    <p class="font-bold text-slate-200 flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-location-dot text-cyan-400"></i>
+                        <span>{{ order.display_address or order.recipient_city or 'لبنان' }}</span>
+                    </p>
+
+                    {% if order.full_address_masked %}
+                    <form method="GET" action="{{ url_for('orders.public_tracking', tracking_number=order.tracking_number) }}" class="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <input type="text" name="phone_suffix" maxlength="4" placeholder="آخر 4 أرقام من الهاتف..."
+                               class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-center font-mono text-white focus:outline-none focus:border-cyan-400 flex-1">
+                        <button type="submit"
+                                class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <i class="fa-solid fa-eye text-[10px]"></i>
+                            <span>إظهار التفاصيل</span>
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-bold pt-1">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>تم التحقق من رقم الهاتف وإظهار العنوان الكامل</span>
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block mb-1">نوع الخدمة والتوصيل</span>
+                        <p class="font-bold text-slate-200 flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-bolt text-amber-400"></i>
+                            <span>{{ order.service_type or 'توصيل قياسي عادي' }}</span>
+                        </p>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                        <span>رابط المتابعة المباشر:</span>
+                        <a href="{{ track_url or ('/track/' ~ order.tracking_number) }}" class="font-mono text-cyan-400 hover:underline text-[11px]">مشاركة الرابط 🔗</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Search Another Order Button -->
+            <div class="pt-2 text-center">
+                <a href="{{ url_for('orders.public_tracking') }}" class="text-xs text-slate-400 hover:text-cyan-300 inline-flex items-center gap-1.5 font-bold transition">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>البحث عن شحنة أخرى</span>
+                </a>
+            </div>
+
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="bg-slate-900/80 border-t border-slate-800/80 p-4 text-center text-xs text-slate-500">
+        <p>© 2026 {{ settings.company_name or 'Stargate Delivery System' }}. نظام إدارة ومتابعة التوصيل المتطور.</p>
+    </footer>
+
+</body>
+</html>

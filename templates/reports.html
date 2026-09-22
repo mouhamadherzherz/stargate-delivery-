@@ -184,6 +184,154 @@
         </div>
     </div>
 
+    <!-- Department Breakdown Section (التقارير الشاملة حسب الأقسام والتخصصات) -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-base font-black">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </span>
+                <div>
+                    <h3 class="font-black text-slate-900 text-lg">التقرير المالي والتشغيلي للأقسام (دليفري / صيانة / تاكسي / شراء حر)</h3>
+                    <p class="text-xs text-slate-500 font-bold">مقارنة أداء وإيرادات كل قسم بشكل مستقل ومفصل</p>
+                </div>
+            </div>
+            <span class="text-xs bg-indigo-50 text-indigo-800 font-black px-3 py-1 rounded-full border border-indigo-200">
+                تقسيم شامل للأقسام 📊
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- 1. دليفري محلات -->
+            {% set deliv_data = department_stats.get('delivery', {}) %}
+            <div class="p-4 rounded-2xl border-2 border-purple-200 bg-purple-50/40 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="font-black text-xs text-purple-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-store text-purple-600"></i> دليفري المحلات والبيجات
+                    </span>
+                    <span class="text-xs font-mono font-bold bg-purple-200/80 text-purple-900 px-2 py-0.5 rounded-md">
+                        {{ deliv_data.total_orders or 0 }} طلب
+                    </span>
+                </div>
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>طلبات مسلّمة:</span>
+                        <span class="font-bold text-emerald-700 font-mono">{{ deliv_data.delivered_count or 0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>أجور التوصيل:</span>
+                        <span class="font-black text-purple-800 font-mono">{{ (deliv_data.total_fees or 0)|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>عمولات السائقين:</span>
+                        <span class="font-bold text-slate-700 font-mono">{{ (deliv_data.total_driver_comm or 0)|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-purple-200 font-black text-purple-950">
+                        <span>صافي ربح الشركة:</span>
+                        <span class="font-mono text-emerald-600">{{ ((deliv_data.total_fees or 0) - (deliv_data.total_driver_comm or 0))|format_currency }} ل.ل</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. مهن وصيانة -->
+            {% set maint_data = department_stats.get('home_service', {}) %}
+            <div class="p-4 rounded-2xl border-2 border-emerald-200 bg-emerald-50/40 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="font-black text-xs text-emerald-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wrench text-emerald-600"></i> الحرفيين والمهن والصيانة
+                    </span>
+                    <span class="text-xs font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-md">
+                        {{ maint_data.total_orders or 0 }} طلب
+                    </span>
+                </div>
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>أعمال منجزة:</span>
+                        <span class="font-bold text-emerald-700 font-mono">{{ maint_data.delivered_count or 0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>أجور ومصنعيات:</span>
+                        <span class="font-black text-slate-800 font-mono">{{ (maint_data.total_goods_value or 0)|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>عمولة الشركة الصافية:</span>
+                        <span class="font-black text-emerald-700 font-mono">{{ (maint_data.total_fees or 0)|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-emerald-200 text-[11px] text-emerald-800 font-bold">
+                        <span>ملاحظة:</span>
+                        <span>انتقال ذاتي (بدون كلفة سائق)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. تاكسي ركاب -->
+            {% set taxi_data = department_stats.get('taxi', {}) %}
+            <div class="p-4 rounded-2xl border-2 border-amber-200 bg-amber-50/40 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="font-black text-xs text-amber-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-taxi text-amber-600"></i> تاكسي ركاب ومشاوير
+                    </span>
+                    <span class="text-xs font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-md">
+                        {{ taxi_data.total_orders or 0 }} مشوار
+                    </span>
+                </div>
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>مشاوير مكتملة:</span>
+                        <span class="font-bold text-emerald-700 font-mono">{{ taxi_data.delivered_count or 0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>إجمالي قيمة المشاوير:</span>
+                        <span class="font-black text-amber-900 font-mono">{{ (taxi_data.total_fees or 0)|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>مستحقات السائقين:</span>
+                        <span class="font-bold text-slate-700 font-mono">{{ (taxi_data.total_driver_comm or 0)|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-amber-200 font-black text-amber-950">
+                        <span>عمولة المكتب الصافية:</span>
+                        <span class="font-mono text-emerald-600">{{ ((taxi_data.total_fees or 0) - (taxi_data.total_driver_comm or 0))|format_currency }} ل.ل</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. شراء حر وطرود -->
+            {% set proc_data = department_stats.get('procurement', {}) %}
+            {% set pers_data = department_stats.get('person_delivery', {}) %}
+            {% set other_tot = (proc_data.total_orders or 0) + (pers_data.total_orders or 0) %}
+            {% set other_fees = (proc_data.total_fees or 0) + (pers_data.total_fees or 0) %}
+            {% set other_comm = (proc_data.total_driver_comm or 0) + (pers_data.total_driver_comm or 0) %}
+            <div class="p-4 rounded-2xl border-2 border-blue-200 bg-blue-50/40 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="font-black text-xs text-blue-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-basket-shopping text-blue-600"></i> الشراء الحر والطرود
+                    </span>
+                    <span class="text-xs font-mono font-bold bg-blue-200/80 text-blue-900 px-2 py-0.5 rounded-md">
+                        {{ other_tot }} طلب
+                    </span>
+                </div>
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>مكتمل ومسلّم:</span>
+                        <span class="font-bold text-emerald-700 font-mono">{{ (proc_data.delivered_count or 0) + (pers_data.delivered_count or 0) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>أجور الخدمة:</span>
+                        <span class="font-black text-blue-900 font-mono">{{ other_fees|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>أجرة المندوب:</span>
+                        <span class="font-bold text-slate-700 font-mono">{{ other_comm|format_currency }} ل.ل</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-blue-200 font-black text-blue-950">
+                        <span>صافي الشركة:</span>
+                        <span class="font-mono text-emerald-600">{{ (other_fees - other_comm)|format_currency }} ل.ل</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 3. Daily Drivers Cash Closing Section (تسكير اليومية وكشف عهدة الكاش) -->
     <div class="bg-white rounded-3xl border-2 border-amber-300/80 shadow-md overflow-hidden">
         <div class="p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

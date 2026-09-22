@@ -251,11 +251,11 @@
                 </div>
 
                 <!-- Order Content -->
-                {% if order.items_detail %}
+                {% if order.items_detail or order.item_description %}
                 <div class="section">
                     <div class="section-title"><i class="fa-solid fa-box"></i> محتوى الطرد:</div>
                     <div style="font-size: 12px; font-weight: bold; color: #1e293b;">
-                        {{ order.items_detail }}
+                        {{ order.items_detail or order.item_description }}
                     </div>
                 </div>
                 {% endif %}

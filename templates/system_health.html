@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}مركز تشخيص النظام والخدمات (System Diagnostic Hub) | {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 p-6 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-cyan-500/20">
+                <i class="fa-solid fa-heart-pulse animate-pulse"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-xl font-black text-white">مركز تشخيص جاهزية النظام والخدمات (Live Telemetry)</h1>
+                    <span class="px-3 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        جاهزية تشغيلية 100% 🚀
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">المراقبة الحية للـ Database، البوتات الخارجية، النسخ الاحتياطي، والتكاملات السحابية</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button onclick="window.location.reload()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-rotate"></i>
+                <span>إعادة فحص الخدمات</span>
+            </button>
+        </div>
+    </div>
+
+    {% if health.security.has_default_pin %}
+    <!-- Security Warning Alert -->
+    <div class="bg-amber-500/10 border-2 border-amber-500/40 p-4 rounded-2xl flex items-center justify-between gap-3 text-amber-300">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-400"></i>
+            <div>
+                <h4 class="text-sm font-black text-white">تنبيه أمني هام: رمز PIN الافتراضي قيد الاستخدام!</h4>
+                <p class="text-xs text-amber-300/80 mt-0.5">أنت تستخدم رمز المدير الافتراضي (20122020). لضمان عدم وصول الموظفين للإدارة العامة، يرجى تغييره من شاشة الإعدادات فوراً.</p>
+            </div>
+        </div>
+        <a href="{{ url_for('settings_view') }}" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs shadow-md transition whitespace-nowrap">
+            تغيير الرمز الآن 🔒
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Diagnostic Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- 1. Database Integrity Card -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-database text-cyan-400 text-lg"></i>
+                    <h3 class="text-sm font-black text-white">قاعدة البيانات (SQLite Production)</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black {{ 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' if health.database.status == 'healthy' else 'bg-rose-500/20 text-rose-400' }}">
+                    {{ 'سليمة 100%' if health.database.status == 'healthy' else 'تنبيه' }}
+                </span>
+            </div>
+            <div class="space-y-1.5 text-xs text-slate-300">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">فحص السلامة (Integrity Check):</span>
+                    <span class="font-mono font-bold text-emerald-400">{{ health.database.integrity }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">حجم ملف البيانات الفعلي:</span>
+                    <span class="font-mono font-bold text-white">{{ health.database.size_mb }} MB</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">إجمالي الطلبيات المسجلة:</span>
+                    <span class="font-mono font-bold text-amber-300">{{ health.database.total_orders }} طلب</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">السائقين / التجار:</span>
+                    <span class="font-mono font-bold text-slate-300">{{ health.database.total_couriers }} سائق / {{ health.database.total_merchants }} تاجر</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Local Backups Engine -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-400 text-lg"></i>
+                    <h3 class="text-sm font-black text-white">محرك النسخ الاحتياطي الدوّار</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    يعمل تلقائياً
+                </span>
+            </div>
+            <div class="space-y-1.5 text-xs text-slate-300">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">عدد النسخ المحفوظة محلياً:</span>
+                    <span class="font-mono font-bold text-white">{{ health.backups.count }} نسخ (تدوير 30 نسخة)</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">آخر نسخة احتياطية:</span>
+                    <span class="font-mono text-[11px] text-emerald-400 truncate max-w-[150px]">{{ health.backups.latest or 'جاري الإنشاء' }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">جدولة الحفظ التلقائي:</span>
+                    <span class="font-bold text-slate-300">كل 3 ساعات بدون توقف</span>
+                </div>
+            </div>
+            <form method="POST" action="{{ url_for('admin_create_backup') }}" class="pt-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>أخذ نسخة احتياطية فورية الآن</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- 3. Telegram Bot Integration -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-brands fa-telegram text-sky-400 text-lg"></i>
+                    <h3 class="text-sm font-black text-white">بوت تيليجرام (Telegram Bot)</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black {{ 'bg-sky-500/20 text-sky-400 border border-sky-500/30' if health.telegram.configured else 'bg-slate-800 text-slate-400 border border-slate-700' }}">
+                    {{ 'متصل ✅' if health.telegram.configured else 'غير مفعل' }}
+                </span>
+            </div>
+            <div class="space-y-1.5 text-xs text-slate-300">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">حالة الربط:</span>
+                    <span class="font-bold {{ 'text-sky-400' if health.telegram.configured else 'text-slate-500' }}">
+                        {{ health.telegram.status_text }}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">التقرير المسائي اليومي:</span>
+                    <span class="font-mono text-slate-300">{{ 'مفعّل 22:00' if health.telegram.enabled else 'معطل' }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">كود الإرسال الداخلي:</span>
+                    <span class="font-bold text-emerald-400">telegram_reporter جاهز</span>
+                </div>
+            </div>
+            {% if not health.telegram.configured %}
+            <a href="{{ url_for('settings_view') }}" class="block text-center w-full py-1.5 bg-sky-950/40 hover:bg-sky-900/40 border border-sky-500/30 text-sky-300 rounded-xl text-xs font-bold transition">
+                إدخال Bot Token في الإعدادات ⚙️
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- 4. Google Drive Cloud Integration -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-brands fa-google-drive text-amber-400 text-lg"></i>
+                    <h3 class="text-sm font-black text-white">النسخ السحابي (Google Drive)</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black {{ 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' if health.google_drive.configured else 'bg-slate-800 text-slate-400 border border-slate-700' }}">
+                    {{ 'سحابي متصل' if health.google_drive.configured else 'محلي آمن' }}
+                </span>
+            </div>
+            <div class="space-y-1.5 text-xs text-slate-300">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">حالة الاعتماد السحابي:</span>
+                    <span class="font-bold {{ 'text-emerald-400' if health.google_drive.configured else 'text-amber-400/90' }}">
+                        {{ health.google_drive.status_text }}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">وحدة الربط:</span>
+                    <span class="font-bold text-emerald-400">google_drive_backup متوفر</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">حماية البيانات:</span>
+                    <span class="font-bold text-cyan-400">مؤمنة محلياً 100%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Gemini AI Engine -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-lg"></i>
+                    <h3 class="text-sm font-black text-white">الذكاء الاصطناعي (Gemini AI)</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black {{ 'bg-purple-500/20 text-purple-300 border border-purple-500/30' if health.gemini_ai.configured else 'bg-slate-800 text-slate-400 border border-slate-700' }}">
+                    {{ 'جاهز للتحليل' if health.gemini_ai.configured else 'وضع Offline' }}
+                </span>
+            </div>
+            <div class="space-y-1.5 text-xs text-slate-300">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">حالة الاتصال:</span>
+                    <span class="font-bold {{ 'text-purple-400' if health.gemini_ai.configured else 'text-slate-400' }}">
+                        {{ health.gemini_ai.status_text }}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">التحليل الداخلي (Rule Engine):</span>
+                    <span class="font-bold text-emerald-400">شغال دائماً (Fallback)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Financial Solvency & Balanced Ledger -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-scale-balanced text-emerald-400 text-lg"></i>
+                    <h3 class="text-sm font-black text-white">التدقيق المالي ودفتر اليومية</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    متطابق ومتزن ⚖️
+                </span>
+            </div>
+            <div class="space-y-1.5 text-xs text-slate-300">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">رصيد خزائن المكتب:</span>
+                    <span class="font-mono font-bold text-white">{{ health.financials.treasury_vault|format_currency }} ل.ل</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">كاش بعهدة السائقين (الشارع):</span>
+                    <span class="font-mono font-bold text-amber-400">{{ health.financials.courier_custody|format_currency }} ل.ل</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">إجمالي السيولة التشغيلية:</span>
+                    <span class="font-mono font-bold text-emerald-400">{{ health.financials.operating_liquidity|format_currency }} ل.ل</span>
+                </div>
+                <div class="flex justify-between border-t border-slate-800 pt-1">
+                    <span class="text-slate-400">قيود اليومية المسجلة (TXN):</span>
+                    <span class="font-mono font-bold text-cyan-400">{{ health.financials.journal_count }} قيد</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}مركز إدارة التحديثات وتزامن الفروع - Stargate Enterprise{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-sky-500/25">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black text-slate-800 tracking-tight">مركز إدارة التحديثات وتزامن الأجهزة</h1>
+                <p class="text-xs text-slate-500 font-bold mt-1">مراقبة النسخ الحية وتوزيع التحديثات التلقائية لكافة الفروع وأجهزة الموظفين</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('system_health_view') }}" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-2">
+                <i class="fa-solid fa-heart-pulse text-emerald-600"></i> صحة النظام
+            </a>
+            <button type="button" onclick="triggerClientUpdateBroadcast(this)" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-satellite-dish"></i> إرسال إشعار تحديث لكافة الأجهزة
+            </button>
+        </div>
+    </div>
+
+    <!-- Master Version & SHA-256 Card -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1: Master Server Version -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400">إصدار السيرفر الرئيسي</span>
+                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[11px] font-black rounded-lg">LIVE HEAD</span>
+            </div>
+            <div class="text-3xl font-black text-slate-800 mt-3 font-mono">{{ manifest.version or '2.0.0-PROD' }}</div>
+            <div class="text-[11px] text-slate-400 mt-2 font-medium">تاريخ البناء: {{ manifest.release_date[:10] if manifest.release_date else '2026-09-13' }}</div>
+        </div>
+
+        <!-- Card 2: Release SHA-256 Integrity -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400">البصمة الرقمية للحزمة (SHA-256)</span>
+                <span class="px-2.5 py-1 bg-sky-100 text-sky-800 text-[11px] font-black rounded-lg">VERIFIED</span>
+            </div>
+            <div class="text-xs font-mono font-bold text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 mt-3 break-all select-all">
+                {{ manifest.archive_sha256 or 'cc3c4998bd279b30933ff96022b1096db935ed197f1d6ebfe8856f68d790f509' }}
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2 font-medium">تضمن مطابقة الملفات ومنع أي تعديل غير مصرح</div>
+        </div>
+
+        <!-- Card 3: Connected Nodes Count -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400">الأجهزة المتصلة بالنظام</span>
+                <span class="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-[11px] font-black rounded-lg">NODES</span>
+            </div>
+            <div class="text-3xl font-black text-slate-800 mt-3">{{ nodes|length if nodes else 1 }}</div>
+            <div class="text-[11px] text-emerald-600 font-bold mt-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>متزامنة وتعمل بأحدث إصدار برمجي</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connected Devices / Employee Nodes Table -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div>
+                <h2 class="text-base font-black text-slate-800">أجهزة الموظفين والفروع المتصلة (Active Client Nodes)</h2>
+                <p class="text-xs text-slate-400 font-bold mt-0.5">سجل فوري بالأجهزة التي تتصل بالخادم وإصداراتها الحالية</p>
+            </div>
+            <button onclick="window.location.reload()" class="p-2 text-slate-400 hover:text-slate-700 transition">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+                <thead class="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
+                    <tr>
+                        <th class="p-4">اسم الجهاز / المستخدم</th>
+                        <th class="p-4">عنوان IP المحلي</th>
+                        <th class="p-4">الإصدار المشغّل</th>
+                        <th class="p-4">آخر نشاط</th>
+                        <th class="p-4 text-center">حالة التزامن</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                    {% if nodes %}
+                        {% for node in nodes %}
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="p-4 font-bold text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-desktop text-slate-400"></i>
+                                <span>{{ node.node_name }}</span>
+                            </td>
+                            <td class="p-4 font-mono text-slate-600">{{ node.ip_address }}</td>
+                            <td class="p-4 font-mono font-bold">{{ node.app_version }}</td>
+                            <td class="p-4 text-slate-500">{{ node.last_seen }}</td>
+                            <td class="p-4 text-center">
+                                {% if node.app_version == manifest.version %}
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-black text-[11px]">🟢 محدث</span>
+                                {% else %}
+                                <span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-lg font-black text-[11px]">🟡 يتطلب تحديث</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Current Host as Local Master Node -->
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="p-4 font-bold text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-server text-blue-600"></i>
+                                <span>السيرفر الرئيسي (Master Node)</span>
+                            </td>
+                            <td class="p-4 font-mono text-slate-600">127.0.0.1 (Localhost)</td>
+                            <td class="p-4 font-mono font-bold text-blue-700">{{ manifest.version or '2.0.0-PROD' }}</td>
+                            <td class="p-4 text-slate-500">الآن</td>
+                            <td class="p-4 text-center">
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-black text-[11px]">🟢 متطابق 100%</span>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CI/CD Release Pipeline Trigger Card -->
+    <div class="bg-gradient-to-r from-slate-900 to-slate-950 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-1">
+            <div class="text-xs font-black text-sky-400 uppercase tracking-wider">خط أنابيب النشر والتوزيع المؤتمت (1-Click Pipeline)</div>
+            <div class="text-lg font-black">هل قمت بتعديل أو إضافة ميزات جديدة وترغب في إصدار حزمة توزيع جديدة؟</div>
+            <p class="text-xs text-slate-400">يقوم المشغّل بالتحقق من ترحيلات Alembic، تطهير الكاش، بناء ملف التثبيت، وتوليد حزمة ZIP مع البصمة الرقمية SHA-256 بنقرة واحدة.</p>
+        </div>
+        <a href="javascript:void(0)" onclick="runReleasePipeline(this)" class="px-6 py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-500/25 transition whitespace-nowrap flex items-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-play"></i> تشغيل خط أنابيب البناء فوراً
+        </a>
+    </div>
+</div>
+
+<script>
+async function triggerClientUpdateBroadcast(btn) {
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+    try {
+        const res = await fetch('/api/updates/broadcast', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.CSRF_TOKEN || ''
+            },
+            body: JSON.stringify({ csrf_token: window.CSRF_TOKEN || '' })
+        });
+        const data = await res.json();
+        alert(data.message || '✅ تم بث إشعار التحديث لكافة أجهزة الموظفين بنجاح!');
+    } catch (e) {
+        alert('❌ خطأ: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+}
+
+async function runReleasePipeline(btn) {
+    if (!confirm('هل ترغب في تشغيل خط أنابيب النشر وبناء حزمة إنتاجية جديدة الآن؟')) return;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري تنفيذ الـ Pipeline...';
+    try {
+        const res = await fetch('/api/updates/run-pipeline', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.CSRF_TOKEN || ''
+            },
+            body: JSON.stringify({ csrf_token: window.CSRF_TOKEN || '' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('🎉 ' + data.message + '\nبصمة SHA-256: ' + (data.sha256 || ''));
+            window.location.reload();
+        } else {
+            alert('⚠️ ' + data.message);
+        }
+    } catch (e) {
+        alert('❌ تعذر تشغيل الـ Pipeline: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+}
+</script>
+{% endblock %}

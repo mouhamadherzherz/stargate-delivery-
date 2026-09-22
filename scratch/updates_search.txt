@@ -1,0 +1,175 @@
+221:                         cursor.execute("UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?",
+232:                         cursor.execute("UPDATE products SET stock_quantity = MAX(0.0, stock_quantity - ?) WHERE id = ?",
+284:                 UPDATE orders 
+293:                 cursor.execute("UPDATE couriers SET current_cash_custody = current_cash_custody + ? WHERE id = ?",
+299:                 update_treasury_balance(cursor, main_tr['id'], company_owed_cash, 'income',
+307:                 update_treasury_balance(cursor, tr['id'], actual_collected, 'income',
+325:             cursor.execute("UPDATE orders SET status=?, delivered_at=NULL, actual_delivered_at=NULL, collected_amount=0 WHERE id=?",
+335:                 cursor.execute("UPDATE couriers SET current_cash_custody = MAX(0, current_cash_custody - ?) WHERE id = ?",
+340:                 update_treasury_balance(cursor, main_tr['id'], prev_owed_cash, 'expense',
+347:                 update_treasury_balance(cursor, tr['id'], prev_owed_cash, 'expense',
+356:                 UPDATE orders 
+362:                 cursor.execute("UPDATE couriers SET current_cash_custody = current_cash_custody + ? WHERE id = ?",
+368:                 UPDATE orders 
+377:             cursor.execute("UPDATE orders SET status=?, actual_pickup_at=COALESCE(actual_pickup_at, CURRENT_TIMESTAMP) WHERE id=?", (new_status, order['id']))
+381:             cursor.execute("UPDATE orders SET status=? WHERE id=?", (new_status, order['id']))
+622:                 conn.execute("UPDATE settings SET activation_code = ?", (activation_code,))
+978: def update_treasury_balance(cursor, treasury_id, amount, txn_type, category, description, related_id=None, created_by=None, allow_negative=False, currency='ل.ل', settlement_id=None, exchange_rate=None):
+1012:     # 2. Check Overdraft Protection & update balances
+1026:         cursor.execute("UPDATE treasuries SET balance = ?, balance_lbp = ?, balance_usd = ? WHERE id = ?", (new_bal, new_lbp, new_usd, treasury_id))
+1036:         cursor.execute("UPDATE treasuries SET balance = ?, balance_lbp = ?, balance_usd = ? WHERE id = ?", (new_bal, new_lbp, new_usd, treasury_id))
+1536:             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+1979:             updated_by TEXT,
+2169:                     out = service.files().update(fileId=files[0]['id'], media_body=media).execute()
+3051:                 cur.execute("UPDATE employees SET password_hash = ?, must_change_password = 0 WHERE id = ?", (new_hash, user_id))
+3055:                     cur.execute("UPDATE employees SET password_hash = ?, must_change_password = 0 WHERE id = ?", (new_hash, user_id))
+3057:                     cur.execute("UPDATE employees SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+3060:                 cur.execute("UPDATE settings SET admin_pin = ? WHERE id = 1", (new_pin_hash,))
+3068:             log_audit("update_admin_credentials", "security", user_id, "تم تعيين كلمة مرور ورمز PIN جديدين للمدير بنجاح عبر معالج الأمان.")
+3282:                 cur.execute("UPDATE employees SET password_hash = ?, pin = '000000' WHERE username = 'admin' OR id = 1", (new_pw,))
+3283:                 conn.execute("UPDATE settings SET admin_pin = '000000' WHERE id = 1")
+3380:                     cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
+3446:             cur.execute("UPDATE employees SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (emp['id'],))
+3562:         cur.execute("UPDATE employees SET password_hash = ? WHERE username IN ('stargate', 'admin')",
+3692:         updates = [
+3704:             updates.append("username = ?")
+3708:             updates.append("password_hash = ?")
+3712:             updates.append("pin = ?")
+3713:             updates.append("pin_code = ?")
+3717:         sql = f"UPDATE employees SET {', '.join(updates)} WHERE id = ?"
+4146:                     ON CONFLICT(name) DO UPDATE SET usage_count = usage_count + 1
+4158:                         UPDATE customers 
+4323:                     cursor.execute("UPDATE products SET stock_quantity = MAX(0.0, stock_quantity - ?) WHERE id = ?", (qty, p_id))
+4341:                 UPDATE orders 
+4353:                         update_treasury_balance(cursor, tr['id'], paid_amount, 'income',
+4359:                         update_treasury_balance(cursor, main_tr['id'], paid_amount, 'income',
+4381:                     cursor.execute("UPDATE customers SET name = COALESCE(NULLIF(?, ''), name), city = COALESCE(NULLIF(?, ''), city), address = COALESCE(NULLIF(?, ''), address) WHERE id = ?",
+4448:                 cur.execute("UPDATE orders SET courier_id = ?, status = CASE WHEN status = 'pending' THEN 'assigned' ELSE status END WHERE id = ?", (new_courier_id, order_id))
+4454:                 cur.execute("UPDATE orders SET courier_id = NULL, status = CASE WHEN status = 'assigned' THEN 'pending' ELSE status END WHERE id = ?", (order_id,))
+4464:                     cur.execute("UPDATE couriers SET current_cash_custody = MAX(0, current_cash_custody - ?) WHERE id = ?", (owed_cash, old_courier_id))
+4466:                     cur.execute("UPDATE couriers SET current_cash_custody = current_cash_custody + ? WHERE id = ?", (owed_cash, new_courier_id))
+4488:                 cur.execute("UPDATE orders SET return_status = 'returned_to_hub', return_collected_at = CURRENT_TIMESTAMP WHERE id = ?", (order_id,))
+4491:                 cur.execute("UPDATE orders SET return_status = 'pending', return_collected_at = NULL WHERE id = ?", (order_id,))
+4502: @app.route('/orders/<int:order_id>/update-status', methods=['POST'])
+4506: def update_order_status(order_id):
+4537:         cursor.execute('UPDATE orders SET payment_method = ? WHERE id = ?', (pm, order_id))
+4539:             cursor.execute('UPDATE orders SET notes = ? WHERE id = ?', (custom_notes, order_id))
+4616:                     ON CONFLICT(name) DO UPDATE SET usage_count = usage_count + 1
+4707:                     cursor.execute("UPDATE couriers SET current_cash_custody = MAX(0, current_cash_custody - ?) WHERE id = ?", (owed_cash, old_courier_id))
+4709:                     cursor.execute("UPDATE couriers SET current_cash_custody = current_cash_custody + ? WHERE id = ?", (owed_cash, new_courier_id))
+4749:             cursor.execute(f"UPDATE orders SET {', '.join(fields)} WHERE id = ?", params)
+4809:                 cursor.execute("UPDATE couriers SET current_cash_custody = MAX(0, current_cash_custody - ?) WHERE id = ?",
+4860:     cursor.execute(f"UPDATE orders SET courier_id = ?, status = ? WHERE id IN ({placeholders})", params)
+4899:         UPDATE orders
+5221:     UPDATE merchants SET name=?, store_name=?, category=?, phone=?, address=?, default_delivery_fee=?, payment_type=?
+5364:                 cursor.execute("UPDATE orders SET second_merchant_settlement_id = ?, is_settled_with_second_merchant = 1 WHERE id = ?",
+5367:                 cursor.execute("UPDATE orders SET merchant_settlement_id = ?, is_settled_with_merchant = 1 WHERE id = ?",
+5373:             update_treasury_balance(cursor, treasury_id, net_payout, 'expense', 'merchant_settlement',
+5537:         UPDATE service_providers
+5559:         UPDATE orders SET is_commission_collected = 1
+5676:         cursor.execute("UPDATE couriers SET name=?, phone=?, vehicle_type=?, commission_value=?, status=?, salary=?, salary_type=?, pin=?, pin_code=? WHERE id=?",
+5679:         cursor.execute("UPDATE couriers SET name=?, phone=?, vehicle_type=?, commission_value=?, status=?, salary=?, salary_type=? WHERE id=?",
+5845:             cursor.execute("UPDATE orders SET is_settled_with_courier = 1, courier_settlement_id = ? WHERE id = ?",
+5871:         cursor.execute("UPDATE couriers SET current_cash_custody = ? WHERE id = ?", (new_custody, courier_id))
+5885:             update_treasury_balance(
+5899:             update_treasury_balance(
+6034:     cursor.execute("UPDATE customers SET name=?, phone=?, city=?, address=?, notes=? WHERE id=?",
+6319:         update_treasury_balance(cursor, treasury_id, amount, txn_type, category, description, currency=currency)
+6384:         update_treasury_balance(cursor, main_tr['id'], amount, 'income', 'رصيد افتتاحي وفكة', f'تغذية درج المحل: {notes}')
+6420:             update_treasury_balance(cursor, main_tr['id'], amount_to_withdraw, 'transfer_out', 'سحب للإدارة', f"سحب إلى {owner_tr['name']} - {notes}")
+6421:             update_treasury_balance(cursor, owner_tr['id'], amount_to_withdraw, 'transfer_in', 'سحب للإدارة', f"مستلم من {main_tr['name']} - {notes}")
+6459:         update_treasury_balance(cursor, owner_tr['id'], amount, 'transfer_out', 'تغذية درج المحل', f"تحويل إلى {main_tr['name']} - {notes}")
+6460:         update_treasury_balance(cursor, main_tr['id'], amount, 'transfer_in', 'تغذية درج المحل', f"مستلم من {owner_tr['name']} - {notes}")
+6494:         update_treasury_balance(cursor, owner_tr['id'], amount, 'expense', 'مسحوبات وأرباح شخصية للمالك', description)
+6523:         update_treasury_balance(cursor, owner_tr['id'], amount, 'income', 'إيداع خاص', description)
+6548:                 update_treasury_balance(cursor, owner_tr['id'], amount, 'expense', category, description)
+6582:             update_treasury_balance(cursor, main_tr['id'], diff, 'income', 'زيادة صندوق', f"فارق جرد يومي (فائض نقدي): {notes}")
+6587:             update_treasury_balance(cursor, main_tr['id'], loss, 'expense', 'عجز صندوق', f"فارق جرد يومي (عجز نقدي): {notes}")
+6623:             update_treasury_balance(cursor, from_id, amount, 'transfer_out', 'تحويل', f"تحويل إلى {dest['name']} - {description}", currency=currency)
+6624:             update_treasury_balance(cursor, to_id, amount, 'transfer_in', 'تحويل', f"تحويل من {src['name']} - {description}", currency=currency)
+6689:         cursor.execute("UPDATE treasuries SET name=?, type=?, notes=? WHERE id=?", (name, vault_type, notes, vault_id))
+6866:         cursor.execute("UPDATE merchant_categories SET name = ? WHERE id = ?", (new_name, cat_id))
+6868:         cursor.execute("UPDATE merchants SET category = ? WHERE category = ?", (new_name, old_name))
+6920:             cursor.execute("UPDATE merchants SET category = 'عام' WHERE category = ?", (old_name,))
+6985:         cursor.execute("UPDATE expense_categories SET name = ? WHERE id = ?", (new_name, cat_id))
+8032:         update_treasury_balance(cur, treasury_id, amount, 'expense', 'رواتب وأجور',
+8117:         update_treasury_balance(cur, treasury_id, amount, 'expense', 'رواتب وأجور',
+8190:     UPDATE settings SET
+8193:         telegram_daily_time=?, currency=?, secondary_currency=?, updated_at=CURRENT_TIMESTAMP
+8212:             cursor.execute("UPDATE settings SET admin_pin=? WHERE id=1", (hash_password(new_pin),))
+8214:             logger.info("Admin PIN updated and securely hashed via settings.")
+8218:     # Update Admin Password if provided
+8238:                 cursor.execute("UPDATE employees SET password_hash = ? WHERE id = 1", (hash_password(admin_new_pw),))
+8275:     cursor.execute("UPDATE settings SET gdrive_enabled=?, gdrive_folder_id=?, gdrive_credentials_json=? WHERE id=1",
+8801:         cursor.execute(f"UPDATE orders SET courier_id = ?, status = CASE WHEN status = 'pending' THEN 'out_for_delivery' ELSE status END WHERE id IN ({placeholders})", [courier_id] + id_list)
+8972:         cursor.execute("UPDATE treasuries SET balance = 0.0")
+9001:         cursor.execute("UPDATE couriers SET current_cash_custody = 0.0")
+9003:         cursor.execute("UPDATE treasuries SET balance = 0.0")
+9067: # ===================== CENTRALIZED UPDATE DASHBOARD & CLIENT SYNC =====================
+9069: @app.route('/admin/updates/dashboard')
+9071: def updates_dashboard_view():
+9107:     return render_template('updates_dashboard.html', manifest=manifest, nodes=nodes, active_page='updates')
+9110: @app.route('/api/updates/check', methods=['GET', 'POST'])
+9111: def api_updates_check():
+9142:             ON CONFLICT(node_name) DO UPDATE SET
+9161:     update_available = (client_version != master_version)
+9167:         'update_available': update_available,
+9172: @app.route('/api/updates/broadcast', methods=['POST'])
+9174: def api_updates_broadcast():
+9193: @app.route('/api/updates/run-pipeline', methods=['POST'])
+9195: def api_updates_run_pipeline():
+9298:             ("update_url", "TEXT DEFAULT ''"),
+9348:                     cursor.execute("UPDATE employees SET pin = ?, pin_code = ? WHERE id = ?", (hashed_pin, hashed_pin, emp_row['id']))
+9353:             cursor.execute("UPDATE settings SET admin_pin = ? WHERE id = 1", (hash_password('20122020'),))
+9451:         cursor.execute("UPDATE treasuries SET balance_lbp = balance WHERE (balance_lbp = 0.0 OR balance_lbp IS NULL) AND balance > 0")
+10073:     # 1. Update orders as settled
+10076:     cursor.execute(f"UPDATE orders SET is_settled_with_courier = 1 WHERE id IN ({id_placeholders})", order_ids)
+10079:     update_treasury_balance(cursor, treasury_id, net_deposit_lbp, 'income', 'تسوية باركود سائق', f"تسوية سريعة لـ {len(orders)} طلبات بالباركود للسائق #{courier_id}")
+10083:         cursor.execute("UPDATE couriers SET current_cash_custody = MAX(0, current_cash_custody - ?) WHERE id = ?", (tot_cash_lbp, courier_id))
+10125:     update_treasury_balance(cursor, treasury_id, amount_lbp, 'expense', 'رواتب وأجور', f"صرف {payment_type} بقيمة {amount_lbp:,.0f} ل.ل - {notes}")
+10170:             ON CONFLICT(name) DO UPDATE SET
+10494:         cur.execute("UPDATE couriers SET pin = ? WHERE id = ?", (pin, courier['id']))
+10515: @app.route('/courier/app/orders/<int:order_id>/update', methods=['POST'])
+10516: def courier_app_update_order(order_id):
+10557:         cur.execute("UPDATE couriers SET current_lat = ?, current_lng = ?, last_ping_at = CURRENT_TIMESTAMP WHERE id = ?", (lat, lng, courier_id))
+10892:             UPDATE products 
+10898:         log_audit(cur, 'edit_product', 'product', prod_id, f'Updated {name}')
+10932:     cur.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", (new_stock, prod_id))
+10944:     cur.execute("UPDATE products SET is_active = 0 WHERE id = ?", (prod_id,))
+11332:     # 2. Couriers with active deliveries but no location update > 2 hours
+11781:     cur.execute("UPDATE orders SET courier_id = ?, status = 'assigned' WHERE id = ?", (courier_id, order['id']))
+11813:     # 1. Update treasury balance (income)
+11814:     update_treasury_balance(cursor, treasury_id, amount_received, 'courier_deposit', 'courier_custody',
+11818:     cursor.execute("UPDATE couriers SET current_cash_custody = MAX(0.0, current_cash_custody - ?) WHERE id = ?", (amount_received, courier_id))
+11874: @app.route('/admin/updates', methods=['GET', 'POST'])
+11875: def admin_updates():
+11881:     cur.execute("SELECT update_url FROM settings WHERE id = 1")
+11883:     current_url = row['update_url'] if row and row['update_url'] else ""
+11885:     import ota_updater
+11886:     current_version = ota_updater.CURRENT_VERSION
+11888:     update_available = False
+11889:     update_data = None
+11890:     update_msg = ""
+11896:             new_url = request.form.get('update_url', '').strip()
+11897:             cur.execute("UPDATE settings SET update_url = ? WHERE id = 1", (new_url,))
+11900:             return redirect(url_for('admin_updates'))
+11904:                 update_available, update_data, update_msg = ota_updater.check_for_updates(current_url)
+11905:                 if update_available:
+11908:                     flash(update_msg, "success" if "أحدث إصدار" in update_msg else "warning")
+11913:             if 'update_file' not in request.files:
+11915:                 return redirect(url_for('admin_updates'))
+11917:             file = request.files['update_file']
+11920:                 return redirect(url_for('admin_updates'))
+11923:                 zip_path = os.path.join(BASE_DIR, "local_update.zip")
+11928:                     import ota_updater
+11930:                     temp_dir = os.path.join(BASE_DIR, "update_temp")
+11931:                     print("Extracting local update...")
+11947:                         if len(sub_contents) == 1 and sub_contents[0] == "Updates_Source":
+11948:                             source_dir = os.path.join(source_dir, "Updates_Source")
+11952: title Stargate Local Updater
+11991:                     ota_updater.download_and_install_update(download_url, BASE_DIR)
+11996:     return render_template('admin_updates.html', 
+11998:                            update_url=current_url,
+11999:                            update_available=update_available,
+12000:                            update_data=update_data,
+12001:                            update_msg=update_msg)

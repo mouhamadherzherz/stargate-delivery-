@@ -1,27 +1,56 @@
 {% extends 'base.html' %}
-
+{% block title %}شباب الدليفري والكاش | {{ company_name }}{% endblock %}
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-4">
 
-    <!-- Header & Add Courier Action -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div>
-            <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
-                <span>شباب الدليفري والكاش</span>
-                <span class="text-2xl">🛵</span>
-            </h2>
-            <p class="text-sm text-slate-500 mt-1">متابعة كاش الأوردرات مع الشباب بالشارع وتسكير اليومية وتوريد المصاري للصندوق.</p>
+    <!-- ═══ Premium Couriers Header ═══ -->
+    <div class="relative overflow-hidden rounded-3xl p-5 lg:p-6" style="background:linear-gradient(135deg,#1e1b54 0%,#0f172a 50%,#1a1040 100%);border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+        <!-- Glow orbs -->
+        <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl pointer-events-none" style="background:rgba(0,181,255,0.12);"></div>
+        <div class="absolute -left-12 -bottom-12 w-48 h-48 rounded-full blur-3xl pointer-events-none" style="background:rgba(255,122,0,0.10);"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <!-- Title Section -->
+            <div class="space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white text-xl shrink-0" style="background:linear-gradient(135deg,#ff7a00,#e06c00);box-shadow:0 4px 15px rgba(255,122,0,0.3);">
+                        <i class="fa-solid fa-motorcycle"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl lg:text-2xl font-black text-white tracking-tight">شباب الدليفري والكاش 🛵</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">متابعة كاش الأوردرات مع الشباب بالشارع وتسكير اليومية وتوريد المصاري للصندوق.</p>
+                    </div>
+                </div>
+                <!-- Live Stats Pills -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                        {{ couriers|selectattr('status','equalto','active')|list|length }} شغالين
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full" style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;">
+                        <i class="fa-solid fa-coins text-[9px]"></i>
+                        {{ couriers|length }} كابتن مسجل
+                    </span>
+                </div>
+            </div>
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button onclick="openModal('courierAppLinkModal')" class="inline-flex items-center gap-2 font-black px-4 py-2.5 rounded-2xl text-xs transition active:scale-95" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;">
+                    <i class="fa-solid fa-mobile-screen-button text-amber-400 text-sm"></i>
+                    <span>رابط تطبيق السائقين 📱</span>
+                </button>
+                {% if is_admin %}
+                <button onclick="openModal('newCourierModal')" class="inline-flex items-center gap-2 font-black px-5 py-2.5 rounded-2xl text-xs text-slate-950 transition active:scale-95 shadow-lg" style="background:linear-gradient(135deg,#ff7a00,#e06c00);box-shadow:0 4px 15px rgba(255,122,0,0.3);">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>إضافة شب دليفري جديد</span>
+                </button>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#64748b;">
+                    <i class="fa-solid fa-lock text-amber-500"></i> إضافة سائق مقتصرة على المدير
+                </span>
+                {% endif %}
+            </div>
         </div>
-        {% if is_admin %}
-        <button onclick="openModal('newCourierModal')" class="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF7A00] to-[#E06C00] hover:from-[#E06C00] hover:to-[#C55F00] text-white font-black px-5 py-2.5 rounded-xl shadow-md shadow-[#FF7A00]/20 transition">
-            <i class="fa-solid fa-user-plus"></i>
-            <span>إضافة شب دليفري جديد</span>
-        </button>
-        {% else %}
-        <span class="text-xs bg-slate-100 text-slate-500 px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 border border-slate-200">
-            <i class="fa-solid fa-lock text-amber-500"></i> إضافة وتعديل السائقين مقتصر على المدير
-        </span>
-        {% endif %}
     </div>
 
     <!-- Quick Search Filter Bar -->
@@ -41,92 +70,212 @@
         </div>
     </div>
 
-    <!-- Couriers Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="couriersGrid">
+    
+    <!-- Quick Touch Filter Pills for Couriers -->
+    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto touch-scroll-x select-none">
+        <span class="text-xs font-black text-slate-500 shrink-0 ml-1">
+            <i class="fa-solid fa-hand-pointer text-amber-500"></i> فلترة سريعة:
+        </span>
+        <button type="button" onclick="setCourierQuickFilter('all')" id="btnFilterAll" class="tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black bg-[#1E1B54] text-white shadow-xs">
+            🔘 جميع السائقين
+        </button>
+        <button type="button" onclick="setCourierQuickFilter('active')" id="btnFilterActive" class="tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100">
+            🟢 الشغالين حالياً
+        </button>
+        <button type="button" onclick="setCourierQuickFilter('with_cash')" id="btnFilterCash" class="tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100">
+            💰 عليهم كاش للتسكير
+        </button>
+    </div>
+
+
+    <!-- ═══ Premium Couriers Cards Grid ═══ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="couriersGrid">
         {% for c in couriers %}
-        <div class="courier-card bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition"
+        <div class="courier-card group relative overflow-hidden rounded-3xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
+             style="background:white;border-color:{{ 'rgba(5,150,105,0.2)' if c.current_cash_custody and c.current_cash_custody > 0 else 'rgba(226,232,240,0.8)' }};"
              data-name="{{ c.name|lower }}"
              data-phone="{{ c.phone }}"
              data-vehicle="{{ c.vehicle_type or '' }}"
              data-status="{{ c.status }}">
-            <div>
+
+            <!-- Top Color Bar -->
+            <div class="h-1 w-full" style="background:{{ 'linear-gradient(90deg,#f59e0b,#d97706)' if c.current_cash_custody and c.current_cash_custody > 0 else ('linear-gradient(90deg,#10b981,#059669)' if c.status == 'active' else 'linear-gradient(90deg,#94a3b8,#64748b)') }};"></div>
+
+            <div class="p-5">
                 <!-- Top Info -->
-                <div class="flex items-start justify-between">
+                <div class="flex items-start justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-xl font-bold">
-                            {% if c.vehicle_type == 'car' %}
-                                <i class="fa-solid fa-car-side"></i>
+                        <!-- Avatar -->
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl font-black shrink-0 shadow-md"
+                             style="background:{{ 'linear-gradient(135deg,#d97706,#b45309)' if c.vehicle_type in ['car','taxi_car'] else ('linear-gradient(135deg,#7c3aed,#6d28d9)' if c.vehicle_type == 'van' else 'linear-gradient(135deg,#ff7a00,#e06c00)') }};">
+                            {% if c.vehicle_type in ['car', 'taxi_car'] %}
+                                <i class="fa-solid fa-car-side text-lg"></i>
                             {% elif c.vehicle_type == 'van' %}
-                                <i class="fa-solid fa-van-shuttle"></i>
+                                <i class="fa-solid fa-van-shuttle text-lg"></i>
                             {% else %}
-                                <i class="fa-solid fa-motorcycle"></i>
+                                <i class="fa-solid fa-motorcycle text-lg"></i>
                             {% endif %}
                         </div>
                         <div>
-                            <h3 class="font-bold text-slate-800 text-base leading-tight">{{ c.name }}</h3>
-                            <a href="tel:{{ c.phone }}" class="text-xs text-slate-400 hover:text-red-600 font-mono flex items-center gap-1 mt-0.5" dir="ltr">
-                                <i class="fa-solid fa-phone text-[10px]"></i> {{ c.phone }}
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h3 class="font-black text-slate-800 text-sm leading-tight">{{ c.name }}</h3>
+                                {% if c.vehicle_type in ['car','taxi_car'] %}
+                                    <span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">🚗 سيارة</span>
+                                {% elif c.vehicle_type == 'taxi_moto' %}
+                                    <span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">🛵 سكوتر</span>
+                                {% elif c.vehicle_type == 'van' %}
+                                    <span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">🚐 فان</span>
+                                {% else %}
+                                    <span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">🛵 موتو</span>
+                                {% endif %}
+                            </div>
+                            <a href="tel:{{ c.phone }}" class="text-[11px] text-slate-400 hover:text-emerald-600 font-mono flex items-center gap-1 mt-0.5 transition" dir="ltr">
+                                <i class="fa-solid fa-phone text-[9px]"></i> {{ c.phone }}
                             </a>
+                            <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-mono font-black" style="background:#fef9c3;border:1px solid #fde68a;color:#92400e;" title="PIN تطبيق السائق">
+                                    <i class="fa-solid fa-key text-[8px] text-amber-600"></i> {{ c.pin or c.pin_code or '---' }}
+                                </span>
+                                <a href="https://wa.me/{{ c.phone|replace('+', '')|replace(' ', '') }}?text={{ ('مرحباً ' + c.name)|urlencode }}" target="_blank"
+                                   class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg transition" style="background:#dcfce7;border:1px solid #bbf7d0;color:#166534;">
+                                    <i class="fa-brands fa-whatsapp"></i> إرسال التطبيق
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ 'bg-emerald-100 text-emerald-800' if c.status == 'active' else 'bg-slate-100 text-slate-600' }}">
-                        {{ 'شغّال' if c.status == 'active' else 'موقّف' }}
+
+                    <!-- Status Badge -->
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black shrink-0"
+                          style="background:{{ 'rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#065f46;' if c.status == 'active' else 'rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.3);color:#475569;' }}">
+                        {% if c.status == 'active' %}
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>شغّال
+                        {% else %}
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>موقّف
+                        {% endif %}
                     </span>
                 </div>
 
-                <!-- Financial Stats inside Card -->
-                <div class="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                <!-- Financial Stats Box (تفاصيل الحساب الكاملة: كم معه وكم نريد منه) -->
+                <div class="rounded-2xl p-4 space-y-2.5" style="background:{{ 'linear-gradient(135deg,rgba(251,191,36,0.08),rgba(217,119,6,0.06))' if (c.unsettled_cash and c.unsettled_cash > 0) or (c.current_cash_custody and c.current_cash_custody > 0) else '#f8fafc' }};border:1px solid {{ 'rgba(251,191,36,0.25)' if (c.unsettled_cash and c.unsettled_cash > 0) or (c.current_cash_custody and c.current_cash_custody > 0) else 'rgba(226,232,240,0.8)' }};">
+                    
+                    <!-- 1. Cash in Hand / Street (كم معه بالشارع) -->
                     <div class="flex items-center justify-between">
-                        <span class="text-xs text-amber-900 font-black">كاش بعهدة السائق (معلق للتسكير):</span>
-                        <div class="text-right">
-                            <span class="text-base font-black text-rose-600 font-mono block">{{ c.current_cash_custody|format_currency }} {{ currency }}</span>
-                            <span class="text-[11px] text-amber-700 font-bold font-mono">≈ {{ c.current_cash_custody|to_usd(exchange_rate) }}</span>
+                        <span class="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                            <i class="fa-solid fa-money-bill-wave text-emerald-600 text-[11px]"></i>
+                            الكاش المحصل (كم معه):
+                        </span>
+                        <div class="text-left font-mono">
+                            <div class="text-sm font-black text-emerald-700">{{ c.unsettled_cash|format_currency }} <span class="text-[10px] font-normal">{{ currency }}</span></div>
+                            <div class="text-[10px] text-slate-400">≈ {{ c.unsettled_cash|to_usd(exchange_rate) }}</div>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between border-t border-slate-200/60 pt-2 text-xs">
-                        <span class="text-slate-600 font-bold">طلبات مسلّمة بانتظار تسكير الحساب:</span>
-                        <span class="font-bold text-slate-800">{{ c.unsettled_delivered_count }} طلب</span>
+
+                    <!-- 2. Courier Commission (كم له عمولة) -->
+                    <div class="flex items-center justify-between border-t pt-1.5" style="border-color:rgba(0,0,0,0.05);">
+                        <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                            <i class="fa-solid fa-motorcycle text-amber-500 text-[11px]"></i>
+                            عمولة السائق المستحقة (له):
+                        </span>
+                        <div class="text-left font-mono">
+                            <span class="text-xs font-black text-amber-600">{{ c.pending_driver_commissions|format_currency }} {{ currency }}</span>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-slate-500">عمولات التوصيل للشب:</span>
-                        <span class="font-bold text-emerald-600 font-mono">{{ c.pending_driver_commissions|format_currency }} {{ currency }} ({{ c.pending_driver_commissions|to_usd(exchange_rate) }})</span>
+
+                    <!-- 3. Net Required for Office (كم نريد منه صافي) -->
+                    <div class="flex items-center justify-between border-t pt-2 p-2 rounded-xl" style="background:rgba(255,255,255,0.7);border:1px solid rgba(0,0,0,0.06);">
+                        <span class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-vault text-blue-600 text-[11px]"></i>
+                            الصافي المطلوب للمكتب:
+                        </span>
+                        <div class="text-left font-mono">
+                            {% if c.net_due_to_office > 0 %}
+                            <div class="text-base font-black text-emerald-800">{{ c.net_due_to_office|format_currency }} <span class="text-[10px] font-normal">{{ currency }}</span></div>
+                            <div class="text-[9px] text-emerald-600 font-bold">توريد للخزينة 📥</div>
+                            {% elif c.net_due_to_courier > 0 %}
+                            <div class="text-base font-black text-purple-700">{{ c.net_due_to_courier|format_currency }} <span class="text-[10px] font-normal">{{ currency }}</span></div>
+                            <div class="text-[9px] text-purple-600 font-bold">صرف للسائق 📤</div>
+                            {% else %}
+                            <span class="text-xs font-bold text-slate-400">0 {{ currency }}</span>
+                            {% endif %}
+                        </div>
                     </div>
+
+                    <!-- 4. Orders Stats -->
+                    <div class="flex items-center justify-between text-[10px] text-slate-500 border-t pt-2" style="border-color:rgba(0,0,0,0.05);">
+                        <span class="flex items-center gap-1 font-bold text-slate-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {{ c.unsettled_count }} طلب مسلّم معلق
+                        </span>
+                        <span class="flex items-center gap-1 font-bold text-blue-600">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            {{ c.active_orders_count }} بالشارع للتوصيل
+                        </span>
+                    </div>
+
+                    {% if c.current_cash_custody and c.current_cash_custody > 0 and c.current_cash_custody != c.unsettled_cash %}
+                    <div class="text-[10px] text-rose-600 font-mono text-center bg-rose-50 border border-rose-200 rounded-lg py-1 px-2">
+                        عهدة نقدية سابقة بذمته: {{ c.current_cash_custody|format_currency }} {{ currency }}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
+            <div class="px-5 pb-5 flex flex-col gap-2">
                 <div class="flex items-center gap-2">
                     {% if has_permission('couriers_settle') %}
-                    <button onclick="openSettlementModal('{{ c.id }}', '{{ c.name }}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5" title="تصفية حساب واستلام الكاش المورد">
+                    <button onclick="openSettlementModal('{{ c.id }}', '{{ c.name }}')" class="tablet-touch-btn flex-1 font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 cursor-pointer" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1c1917;box-shadow:0 4px 12px rgba(217,119,6,0.25);">
                         <i class="fa-solid fa-receipt"></i>
-                        <span>تسكير اليومية واستلام الكاش</span>
+                        <span>تسكير اليومية 💵</span>
                     </button>
                     {% endif %}
-                    <a href="{{ url_for('couriers_list', courier_id=c.id) }}" target="_blank" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="عرض وطباعة كشف حساب السائق وتفاصيل الكاش">
-                        <i class="fa-solid fa-file-lines"></i>
-                        <span>كشف الحساب 🖨️</span>
+                    <a href="{{ url_for('courier_statement_view', courier_id=c.id) }}" class="tablet-touch-btn py-2.5 px-3.5 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;">
+                        <i class="fa-solid fa-print text-blue-600"></i>
+                        <span>كشف 🖨️</span>
                     </a>
                 </div>
+                {% if c.current_cash_custody and c.current_cash_custody > 0 %}
+                <button type="button" onclick="openHandoverModal('{{ c.id }}', '{{ c.name|replace("'", "\\'") }}', {{ c.current_cash_custody }})" class="tablet-touch-btn w-full font-black py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 cursor-pointer" style="background:linear-gradient(135deg,#059669,#0d9488);color:white;box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    <span>استلام وتصفير العهدة ({{ c.current_cash_custody|format_currency }} ل.ل) ⚡</span>
+                </button>
+                {% endif %}
                 <div class="flex items-center gap-2">
-                    <a href="{{ url_for('orders_list') }}?courier_id={{ c.id }}" class="flex-1 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="عرض كل أوردرات الشب">
-                        <i class="fa-solid fa-list-ul"></i>
-                        <span>كل طلبات السائق</span>
+                    <a href="{{ url_for('orders_list') }}?courier_id={{ c.id }}" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition" style="background:#f1f5f9;color:#475569;">
+                        <i class="fa-solid fa-list-ul"></i> الطلبات
                     </a>
                     {% if is_admin %}
+                    <button onclick="openPayCourierSalaryModal('{{ c.id }}', '{{ c.name|replace("'", "\'") }}', {{ c.salary or 0 }})" class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> راتب
+                    </button>
+                    <button type="button" onclick="openEditCourierModal('{{ c.id }}', '{{ c.name|replace("'", "\\'") }}', '{{ c.phone }}', '{{ c.vehicle_type }}', '{{ c.commission_value }}', '{{ c.status }}', '{{ c.salary or 0 }}', '{{ c.salary_type or "monthly" }}', '{{ c.pin or c.pin_code or "" }}')" class="p-1.5 rounded-xl transition" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;">
+                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    </button>
                     <form method="POST" action="{{ url_for('delete_courier', courier_id=c.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا السائق؟');" class="inline">
-                        <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200 text-xs font-bold" title="حذف السائق">
-                            <i class="fa-solid fa-trash"></i>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="p-1.5 rounded-xl transition" style="background:#fff1f2;border:1px solid #fecdd3;color:#e11d48;">
+                            <i class="fa-solid fa-trash text-xs"></i>
                         </button>
                     </form>
                     {% endif %}
                 </div>
             </div>
         </div>
+        {% else %}
+        <div class="col-span-full py-16 text-center">
+            <div class="flex flex-col items-center gap-3 text-slate-400">
+                <div class="w-16 h-16 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,#f8fafc,#f1f5f9);border:2px dashed #cbd5e1;">
+                    <i class="fa-solid fa-motorcycle text-3xl text-slate-300"></i>
+                </div>
+                <span class="text-base font-bold text-slate-500">لا يوجد سائقون مسجلون بعد</span>
+                {% if is_admin %}
+                <button onclick="openModal('newCourierModal')" class="text-sm font-black text-orange-600 hover:text-orange-700 underline">إضافة أول سائق ⚡</button>
+                {% endif %}
+            </div>
+        </div>
         {% endfor %}
     </div>
 
-</div>
 
 <!-- MODAL: ADD NEW COURIER -->
 <div id="newCourierModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -141,6 +290,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('add_courier') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" required placeholder="مثال: شربل خليل" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 font-bold">
@@ -151,13 +301,28 @@
                 <input type="text" name="phone" required placeholder="03xxxxxx أو 70xxxxxx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 text-left font-mono" dir="ltr">
             </div>
 
+            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1">
+                <label class="block text-xs font-black text-amber-900 mb-1 flex items-center justify-between">
+                    <span>رمز الدخول لتطبيق السائق (PIN - محمي ومخفي) 🔑</span>
+                    <span class="text-[10px] text-amber-700">4 إلى 6 أرقام</span>
+                </label>
+                <div class="relative">
+                    <input type="password" name="pin" id="addCourierPin" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" style="-webkit-text-security: disc;" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-sm font-mono tracking-widest text-amber-900 font-bold focus:ring-2 focus:ring-amber-500 text-center">
+                    <button type="button" onclick="toggleInputVisibility('addCourierPin', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-700 hover:text-amber-900 transition">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-amber-700">مشفر ومخفي عن الأنظار لمنع التلصص.</p>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">نوع المركبة</label>
-                    <select name="vehicle_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
-                        <option value="motorcycle">دراجة نارية</option>
-                        <option value="car">سيارة صالون</option>
-                        <option value="van">سيارة حمل / فان</option>
+                    <select name="vehicle_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                        <option value="motorcycle">🛵 دراجة نارية (دليفري محلات وطلبيات)</option>
+                        <option value="car">🚗 سيارة تاكسي ركاب (سائق تاكسي)</option>
+                        <option value="taxi_moto">🏍️ سكوتر / دراجة تاكسي (تاكسي ركاب سريع)</option>
+                        <option value="van">🚐 فان بضائع / شحن ثقيل</option>
                     </select>
                 </div>
                 <div>
@@ -198,6 +363,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('settle_courier') }}" class="mt-6 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="courier_id" id="settlementCourierId">
 
             <!-- Orders Table to select -->
@@ -284,6 +450,248 @@
     </div>
 </div>
 
+
+<!-- PAY COURIER SALARY MODAL -->
+<div id="payCourierSalaryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-hand-holding-dollar text-emerald-600"></i>
+                <span>صرف راتب / مكافأة سائق</span>
+            </h3>
+            <button onclick="closeModal('payCourierSalaryModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="payCourierSalaryForm" method="POST" action="" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div class="text-xs text-slate-400 font-bold">السائق المستلم:</div>
+                <div id="pay_courier_name" class="text-sm font-black text-slate-800 mt-0.5"></div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">خصم من الخزينة / الصندوق:</label>
+                <select name="treasury_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500">
+                    {% for tr in treasuries %}
+                    <option value="{{ tr.id }}">{{ tr.name }} (الرصيد: {{ tr.balance|format_currency }} ل.ل)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ المصروف (ل.ل):</label>
+                <input type="number" step="any" id="pay_courier_amount" name="amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">عن شهر / فترة:</label>
+                <input type="text" name="period" value="{{ now.strftime('%Y-%m') }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات أو تفاصيل إضافية:</label>
+                <input type="text" name="notes" placeholder="مثال: راتب الشهر الأساسي أو مكافأة إضافية" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('payCourierSalaryModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">إلغاء</button>
+                <button type="submit" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-600/20 transition">تأكيد الصرف والخصم 💵</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openPayCourierSalaryModal(courierId, courierName, salary) {
+    document.getElementById('payCourierSalaryForm').action = `/couriers/${courierId}/pay-salary`;
+    document.getElementById('pay_courier_name').textContent = courierName;
+    document.getElementById('pay_courier_amount').value = salary > 0 ? salary : '';
+    openModal('payCourierSalaryModal');
+}
+</script>
+
+
+<!-- MODAL: EDIT COURIER & PIN -->
+<div id="editCourierModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-blue-600"></i> تعديل بيانات السائق والـ PIN
+            </h3>
+            <button onclick="closeModal('editCourierModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="editCourierForm" method="POST" action="" class="mt-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل <span class="text-rose-500">*</span></label>
+                <input type="text" id="editCourierName" name="name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 font-bold">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف (واتساب) <span class="text-rose-500">*</span></label>
+                <input type="text" id="editCourierPhone" name="phone" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 text-left font-mono" dir="ltr">
+            </div>
+
+            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1">
+                <label class="block text-xs font-black text-amber-900 mb-1 flex items-center justify-between">
+                    <span>تغيير أو تحديد رمز الـ PIN للسائق (مخفي ومحمي) 🔑</span>
+                    <span class="text-[10px] text-amber-700">اتركه فارغاً للإبقاء</span>
+                </label>
+                <div class="relative">
+                    <input type="password" id="editCourierPin" name="pin" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" style="-webkit-text-security: disc;" class="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-sm font-mono tracking-widest text-amber-900 font-bold focus:ring-2 focus:ring-amber-500 text-center">
+                    <button type="button" onclick="toggleInputVisibility('editCourierPin', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-700 hover:text-amber-900 transition">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-amber-700">اتركه فارغاً للإبقاء على الرمز الحالي، أو اكتب رمزاً جديداً لتغييره فوراً.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نوع المركبة</label>
+                    <select id="editCourierVehicle" name="vehicle_type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                        <option value="motorcycle">🛵 دراجة نارية</option>
+                        <option value="car">🚗 سيارة تاكسي</option>
+                        <option value="taxi_moto">🏍️ سكوتر تاكسي</option>
+                        <option value="van">🚐 فان بضائع</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">حالة السائق</label>
+                    <select id="editCourierStatus" name="status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                        <option value="active">شغّال نشط</option>
+                        <option value="inactive">موقّف مؤقتاً</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">عمولة التوصيل</label>
+                    <input type="number" step="any" id="editCourierCommission" name="commission_value" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الراتب الثابت</label>
+                    <input type="number" step="any" id="editCourierSalary" name="salary" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeModal('editCourierModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition">إلغاء</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-sm transition">حفظ التعديلات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: DRIVER APP ACCESS INFO -->
+<div id="courierAppLinkModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-lg font-black">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-800">تطبيق السائقين عبر الهاتف المحمول</h3>
+                    <p class="text-[11px] text-slate-400">طريقة تشغيل وتثبيت التطبيق على هواتف شباب الدليفري</p>
+                </div>
+            </div>
+            <button onclick="closeModal('courierAppLinkModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <div class="p-3.5 bg-slate-900 text-slate-100 rounded-2xl space-y-2">
+                <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-link"></i> رابط تطبيق السائق (للهواتف المتصلة بالواي فاي / الراوتر):
+                </span>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="courierAppLanUrlInput" readonly value="{{ request.host_url.rstrip('/') }}/courier/app" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white text-left font-bold" dir="ltr">
+                    <button onclick="copyLanUrl()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-2 rounded-xl text-xs transition flex items-center gap-1">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>نسخ</span>
+                    </button>
+                </div>
+                <p id="copyFeedback" class="text-[10px] text-emerald-400 font-bold hidden">تم نسخ الرابط بنجاح!</p>
+            </div>
+
+            <div class="space-y-2 text-xs text-slate-600 leading-relaxed font-medium">
+                <div class="flex items-start gap-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+                    <span>يفتح السائق الرابط من متصفح هاتفه (Chrome على أندرويد أو Safari على آيفون).</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+                    <span>يختار اسمه من القائمة ويكتب <strong>رمز الـ PIN</strong> الخاص به للدخول.</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+                    <span><strong>تثبيت كتطبيق:</strong> من خيارات المتصفح يضغط السائق على <em>"إضافة إلى الشاشة الرئيسية (Add to Home Screen)"</em> ليتحول التطبيق لأيقونة هاتف تفتح بكبسة واحدة.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end">
+            <button type="button" onclick="closeModal('courierAppLinkModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2 rounded-xl text-xs transition">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== COURIER CASH HANDOVER MODAL ===================== -->
+<div id="handoverModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-500/30">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900">استلام وتصفير عهدة السائق</h3>
+                    <p class="text-xs text-slate-500" id="handoverCourierName">المندوب: ...</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('handoverModal')" class="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('courier_handover_cash') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="courier_id" id="handoverCourierId" value="">
+
+            <div>
+                <label class="block text-xs font-black text-slate-700 mb-1">المبلغ المستلم فعلياً (ل.ل):</label>
+                <input type="number" step="any" name="amount_received" id="handoverAmountInput" required
+                       class="w-full bg-slate-50 border-2 border-emerald-300 focus:border-emerald-600 rounded-xl px-4 py-2.5 text-lg font-black font-mono text-center text-emerald-900 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-black text-slate-700 mb-1">إيداع في أي خزينة / صندوق:</label>
+                <select name="treasury_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-black text-slate-800">
+                    {% for t in treasuries %}
+                    <option value="{{ t.id }}" {% if t.is_default == 1 %}selected{% endif %}>{{ t.name }} (الرصيد: {{ t.balance|format_currency }} ل.ل)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-amber-600 text-base shrink-0"></i>
+                <span>بمجرد الضغط، سيتم خصم هذا المبلغ من عهدة السائق وإيداعه في الخزينة المحددة فوراً.</span>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeModal('handoverModal')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">إلغاء</button>
+                <button type="submit" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-600/25">استلام وتصفير العهدة ✅</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</div><!-- /.space-y-4 -->
 {% endblock %}
 
 {% block scripts %}
@@ -293,6 +701,60 @@
     }
     function closeModal(id) {
         document.getElementById(id).classList.add('hidden');
+    }
+
+    function openPayCourierSalaryModal(courierId, courierName, salary) {
+        document.getElementById('payCourierSalaryForm').action = `/couriers/${courierId}/pay-salary`;
+        document.getElementById('pay_courier_name').textContent = courierName;
+        document.getElementById('pay_courier_amount').value = salary > 0 ? salary : '';
+        openModal('payCourierSalaryModal');
+    }
+
+    function openEditCourierModal(id, name, phone, vehicle, comm, status, salary, salaryType, pin) {
+        document.getElementById('editCourierForm').action = '/couriers/' + id + '/edit';
+        document.getElementById('editCourierName').value = name;
+        document.getElementById('editCourierPhone').value = phone;
+        document.getElementById('editCourierVehicle').value = vehicle;
+        document.getElementById('editCourierStatus').value = status;
+        document.getElementById('editCourierCommission').value = comm;
+        document.getElementById('editCourierSalary').value = salary;
+        document.getElementById('editCourierPin').value = pin;
+        openModal('editCourierModal');
+    }
+
+    function copyLanUrl() {
+        const input = document.getElementById('courierAppLanUrlInput');
+        if (input) {
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                const fb = document.getElementById('copyFeedback');
+                if (fb) {
+                    fb.classList.remove('hidden');
+                    setTimeout(() => fb.classList.add('hidden'), 2500);
+                }
+            });
+        }
+    }
+
+    function openHandoverModal(courierId, courierName, custody) {
+        document.getElementById('handoverCourierId').value = courierId;
+        document.getElementById('handoverCourierName').textContent = 'المندوب: ' + courierName;
+        document.getElementById('handoverAmountInput').value = custody;
+        openModal('handoverModal');
+    }
+
+    function toggleInputVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            input.style.webkitTextSecurity = 'none';
+            if (icon) icon.className = 'fa-solid fa-eye-slash text-xs';
+        } else {
+            input.type = 'password';
+            input.style.webkitTextSecurity = 'disc';
+            if (icon) icon.className = 'fa-solid fa-eye text-xs';
+        }
     }
 
     let loadedOrders = [];
@@ -330,21 +792,50 @@
         let html = '';
         loadedOrders.forEach(o => {
             const isWhish = (o.payment_method === 'whish');
-            const colAmt = Number(o.collected_amount || 0);
+            const mpt = o.merchant_payment_type || (o.is_paid_to_merchant == 1 ? 'prepaid_by_customer' : 'deferred');
+            const isPaidByCourier = (mpt === 'paid_by_courier');
+            const isPrepaid = (mpt === 'prepaid_by_customer');
+            const isPaidByCompany = (mpt === 'paid_by_company');
+
+            let companyDue = 0;
+            if (isPaidByCourier || isPrepaid) {
+                companyDue = Number(o.delivery_fee || 0);
+            } else {
+                companyDue = Number(o.collected_amount || (Number(o.order_price || 0) + Number(o.delivery_fee || 0)));
+            }
+
             const commAmt = Number(o.courier_commission || 0);
+
+            let typeBadge = '';
+            if (isPaidByCourier) {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 block mt-0.5">🛵 مال السائق الخاص (يحتفظ بالبضاعة)</span>';
+            } else if (isPaidByCompany) {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-purple-100 text-purple-900 border border-purple-300 block mt-0.5">🏢 سلفة شركة (تسكير للشركة)</span>';
+            } else if (isPrepaid) {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 block mt-0.5">🟢 واصل سلفاً (تحصيل توصيل فقط)</span>';
+            } else {
+                typeBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200 block mt-0.5">📋 آجل لمستحقات التاجر</span>';
+            }
+
             html += `
                 <tr class="hover:bg-slate-50">
                     <td class="p-2.5 text-center">
                         <input type="checkbox" name="order_ids" value="${o.id}" checked onchange="calculateSettlementTotals()" class="order-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                     </td>
-                    <td class="p-2.5 font-mono font-bold text-blue-600">${o.tracking_number || '-'}</td>
+                    <td class="p-2.5 font-mono font-bold text-blue-600">
+                        ${o.tracking_number || '-'}
+                        ${typeBadge}
+                    </td>
                     <td class="p-2.5 font-bold">${o.merchant_name || '-'}</td>
                     <td class="p-2.5">
                         ${isWhish ? 
                             '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">💳 بطاقة Whish</span>' : 
                             '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">💵 كاش</span>'}
                     </td>
-                    <td class="p-2.5 font-bold ${isWhish ? 'text-slate-400 line-through' : 'text-emerald-600'}">${colAmt.toLocaleString()}</td>
+                    <td class="p-2.5 font-bold ${isWhish ? 'text-slate-400 line-through' : 'text-emerald-600'}">
+                        ${companyDue.toLocaleString()}
+                        ${(isPaidByCourier || isPrepaid) ? '<span class="text-[9px] text-slate-400 block font-normal">(توصيل فقط)</span>' : ''}
+                    </td>
                     <td class="p-2.5 font-bold text-amber-600">${commAmt.toLocaleString()}</td>
                     <td class="p-2.5">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
@@ -374,7 +865,12 @@
             if (order) {
                 const isWhish = (order.payment_method === 'whish');
                 if (!isWhish && order.status === 'delivered') {
-                    totalCashCollected += Number(order.collected_amount || 0);
+                    const mpt = order.merchant_payment_type || (order.is_paid_to_merchant == 1 ? 'prepaid_by_customer' : 'deferred');
+                    if (mpt === 'paid_by_courier' || mpt === 'prepaid_by_customer') {
+                        totalCashCollected += Number(order.delivery_fee || 0);
+                    } else {
+                        totalCashCollected += Number(order.collected_amount || (Number(order.order_price || 0) + Number(order.delivery_fee || 0)));
+                    }
                 }
                 if (order.status === 'delivered') {
                     totalCommissions += Number(order.courier_commission || 0);
@@ -460,4 +956,29 @@
         });
     }
 </script>
+
+<script>
+function openHandoverModal(courierId, courierName, custody) {
+    document.getElementById('handoverCourierId').value = courierId;
+    document.getElementById('handoverCourierName').textContent = 'المندوب: ' + courierName;
+    document.getElementById('handoverAmountInput').value = custody;
+    openModal('handoverModal');
+}
+
+function toggleInputVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        input.style.webkitTextSecurity = 'none';
+        if (icon) icon.className = 'fa-solid fa-eye-slash text-xs';
+    } else {
+        input.type = 'password';
+        input.style.webkitTextSecurity = 'disc';
+        if (icon) icon.className = 'fa-solid fa-eye text-xs';
+    }
+}
+</script>
+
+</div><!-- /.space-y-4 -->
 {% endblock %}
