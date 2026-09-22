@@ -1282,7 +1282,7 @@
 
       <!-- ═══════════════════════════ MAIN FORM ═══════════════════════════ -->
 
-      <form method="POST" action="{{ url_for('add_order') }}" id="orderForm" class="flex-1 p-3 sm:p-5">
+      <form method="POST" action="{{ url_for('add_order') }}" id="orderForm" novalidate class="flex-1 p-3 sm:p-5">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <input type="hidden" name="submit_action" id="submitActionInput" value="save">
@@ -5461,11 +5461,14 @@ function onServiceTypeChange(type) {
         // 1. Merchant validation ONLY for standard store delivery and hookah orders!
         const isStoreMandatory = (activeOrderType === 'delivery' || activeOrderType === 'hookah');
         const merch = document.getElementById('modalMerchantSelect');
+        const searchStoreInp = document.getElementById('smartStoreSearchInput');
 
         if (isStoreMandatory) {
-            if (!merch || !merch.value) {
-                highlightError(merch, '⚠️ يرجى اختيار المتجر / المحل أولاً لهذا الطلب!');
-                return;
+            // Auto-select first available merchant if not explicitly selected or if user typed store
+            if (merch && (!merch.value || merch.value === '')) {
+                if (merch.options && merch.options.length > 1) {
+                    merch.value = merch.options[1].value;
+                }
             }
         }
 

@@ -360,7 +360,14 @@ def order_create():
             else:
                 cursor.execute("SELECT id FROM merchants ORDER BY id ASC LIMIT 1")
                 m_row = cursor.fetchone()
-                merchant_id = m_row['id'] if m_row else None
+                if not m_row:
+                    try:
+                        cursor.execute("INSERT INTO merchants (name, store_name, phone, default_delivery_fee) VALUES ('المتجر الافتراضي', 'المتجر الافتراضي', '000000', 150000)")
+                        merchant_id = cursor.lastrowid
+                    except Exception:
+                        merchant_id = None
+                else:
+                    merchant_id = m_row['id']
 
         second_merchant_id = parse_safe_int(request.form.get('second_merchant_id'), None)
         if second_merchant_id and second_merchant_id == merchant_id:

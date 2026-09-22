@@ -369,11 +369,10 @@ def permission_required(perm):
             if not session.get('logged_in'):
                 flash("يرجى تسجيل الدخول أولاً", "warning")
                 return redirect(url_for('login_page'))
-            if session.get('user_role') in ('admin', 'super_admin'):
+            # Use centralized has_permission check which grants tier1/tier2 permissions to employees
+            if has_permission(perm):
                 return f(*args, **kwargs)
-            custom_perms = session.get('custom_permissions', '')
-            if custom_perms and perm in [p.strip() for p in custom_perms.split(',')]:
-                return f(*args, **kwargs)
+            logger.warning(f"[Permission Denied] User '{session.get('username')}' (role: {session.get('user_role')}) lacked permission: {perm}")
             flash("عذراً، هذا الإجراء يتطلب صلاحيات مخصصة غير متوفرة لحسابك!", "danger")
             return redirect(url_for('orders_list'))
         return decorated
