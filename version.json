@@ -1,9 +1,9 @@
 {
-    "version": "3.9.10",
-    "release_date": "2026-09-20",
+    "version": "3.9.11",
+    "release_date": "2026-09-22",
     "is_critical": true,
     "min_version": "2.0.0",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.10/Stargate_Update.zip",
-    "changelog": "• إلغاء الدخول التلقائي السريع وإلغاء مسمى الدخول المؤسسي، وفرض التحقق الإلزامي من اسم المستخدم وكلمة السر أو رمز PIN لجميع المستخدمين\n• تطوير محرك اختيار وبحث المتاجر السريع والذكي (Smart Store Autocomplete) مع أزرار سريعة لأكثر المتاجر طلباً\n• كشف وتفصيل حساب السائقين المالي الشامل (الكاش المقبوض معه بالشارع، عمولة السائق، الصافي المطلوب للمكتب)\n• تمكين الموظفين من تعيين وإسناد السائقين وإعادة الطلب للمكتب وتسكير اليومية",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.11/Stargate_Update.zip",
+    "changelog": "• معالجة وتحديث قفل النظام وتأمين مسار التحديث التلقائي لكافة أجهزة الموظفين\n• فحص ومطابقة جداول قاعدة البيانات تلقائياً وتفعيل الحماية القصوى على سجلات الطلبات\n• تعزيز الاتصال والتحديث المباشر أونلاين عبر السحابة وFirebase OTA\n• تحسينات الأداء وسرعة المعالجة وتكامل التوصيل",
     "published_by": "Stargate Master Enterprise"
 }
