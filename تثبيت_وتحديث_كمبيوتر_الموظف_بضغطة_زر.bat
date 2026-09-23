@@ -14,6 +14,10 @@ echo -------------------------------------------------------------------------
 
 set "INSTALL_DIR=C:\StargateDelivery"
 set "SOURCE_DIR=%~dp0Stargate Delivery System"
+if not exist "%SOURCE_DIR%" (
+    if exist "%~dp0templates" set "SOURCE_DIR=%~dp0"
+    if exist "%~dp0Update_Package\Updates_Source" set "SOURCE_DIR=%~dp0Update_Package\Updates_Source"
+)
 
 if not exist "%SOURCE_DIR%" (
     echo [!] خطأ: لم يتم العثور على مجلد ملفات البرنامج في الفلاشة!
