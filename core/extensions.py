@@ -65,9 +65,17 @@ if not logger.handlers:
         logger.addHandler(_rfh)
     except Exception:
         pass
-    _sh = logging.StreamHandler()
-    _sh.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
-    logger.addHandler(_sh)
+    try:
+        # Wrap stream in utf-8 wrapper if needed on Windows
+        import sys
+        if hasattr(sys.stderr, 'reconfigure'):
+            try: sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+            except Exception: pass
+        _sh = logging.StreamHandler(sys.stderr)
+        _sh.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
+        logger.addHandler(_sh)
+    except Exception:
+        pass
 
 # ===================== GLOBAL DEFAULTS =====================
 DEFAULT_EXCHANGE_RATE = 89500.0

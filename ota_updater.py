@@ -195,6 +195,15 @@ timeout /t 3 /nobreak >nul
 echo جاري نسخ الملفات الجديدة...
 robocopy "{source_dir}" "{base_dir}" /E /IS /IT /XF "*.db*" "*.sqlite*" "*.wal*" "*.shm*" /XD "data" "db_backups" >nul
 
+if exist "{base_dir}\_internal" (
+    robocopy "{source_dir}\core" "{base_dir}\_internal\core" /E /IS /IT >nul 2>&1
+    robocopy "{source_dir}\routes" "{base_dir}\_internal\routes" /E /IS /IT >nul 2>&1
+    robocopy "{source_dir}\templates" "{base_dir}\_internal\templates" /E /IS /IT >nul 2>&1
+    robocopy "{source_dir}\static" "{base_dir}\_internal\static" /E /IS /IT >nul 2>&1
+    copy /Y "{source_dir}\*.py" "{base_dir}\_internal\" >nul 2>&1
+    copy /Y "{source_dir}\version.json" "{base_dir}\_internal\" >nul 2>&1
+)
+
 echo جاري تنظيف الملفات المؤقتة...
 rmdir /S /Q "{temp_dir}" >nul 2>&1
 del /F /Q "{zip_path}" >nul 2>&1
