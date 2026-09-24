@@ -59,6 +59,9 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
 app.jinja_env.auto_reload = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+# Strict session and cookie isolation from Stargate Cafe
+app.config['SESSION_COOKIE_NAME'] = 'stargate_delivery_session_v8'
+app.config['REMEMBER_COOKIE_NAME'] = 'stargate_delivery_remember_v8'
 
 # Ensure database schema is 100% up-to-date on startup
 try:
@@ -488,6 +491,9 @@ def start_local_backup_daemon():
 
 
 def claim_master_port(target_port=8085):
+    # Safety guard: Stargate Delivery MUST NEVER use or kill port 5000 (reserved exclusively for Stargate Cafe)
+    if target_port in (5000, 5001):
+        target_port = 8085
     import socket, subprocess
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         is_occupied = (s.connect_ex(('127.0.0.1', target_port)) == 0)
