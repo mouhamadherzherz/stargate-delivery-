@@ -1,8 +1,8 @@
 {
-    "version": "3.9.17",
-    "release_date": "2026-09-23",
+    "version": "3.9.18",
+    "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🚀 تحديث شامل ومعتمد - Stargate Delivery v3.9.17:\n- إصلاح شامل ومؤكد لكافة شاشات وأوردرات النظام بدون توقف للسيرفر\n- ترقية ومعالجة مخطط قاعدة البيانات تلقائياً وحماية البيانات بنسبة 100%\n- إصلاح مسارات وتوجيهات الماسح الصوتي السريع والرادار والطباعة\n- دعم كامل لمزامنة مجلد _internal للنسخ المستقلة EXE بدون إنترنت وعبر OTA\n- إصلاح تام لتسجيل الأحداث والترميز باللغة العربية ومنع أخطاء charmap\n- تحسين استقرار وسرعة استجابة السيرفر لجميع المستخدمين والمشتركين",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.17/Stargate_Update.zip",
+    "changelog": "🚀 تحديث شامل ومعتمد للمشتركين - Stargate Delivery v3.9.18:\n- إصلاح جذري لمشكلة عدم الاستجابة والخطأ عند تسجيل أي طلب (Order) جديد\n- تصحيح صياغة JavaScript والأوسمة غير المغلقة في شاشة الطلبات ونقاط البيع POS\n- حل خطأ تكرار تعريف searchDebounceTimer و urlParams بالمتصفح\n- ضمان التوافق التام وسرعة حفظ الأوردرات وتوليد أرقام التتبع والطباعة\n- تحديث شامل وتلقائي يصل لكافة أجهزة المشتركين مباشرة عبر السحابة",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.18/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }

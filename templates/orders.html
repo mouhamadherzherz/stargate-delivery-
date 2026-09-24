@@ -4980,10 +4980,9 @@ function recommendCourier(area) {
 
 
     // Auto open modal or WhatsApp if requested in URL
+    const urlParams = new URLSearchParams(window.location.search);
 
     function handleAutoOpenOrder() {
-
-        const urlParams = new URLSearchParams(window.location.search);
 
         if (urlParams.get('open_new') === '1' || urlParams.get('open_add') === '1') {
 
@@ -7061,7 +7060,6 @@ function onServiceTypeChange(type) {
 
 
     // Auto-open WhatsApp modal if redirected after save_and_whatsapp
-        const urlParams = new URLSearchParams(window.location.search);
         const openWa = urlParams.get('open_wa');
         const waType = urlParams.get('wa_type') || 'customer';
         if (openWa) {
@@ -7695,7 +7693,7 @@ function renderPosItems() {
                         '<button type="button" onclick="updatePosQty(' + idx + ', -1)" class="w-5 h-5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex items-center justify-center font-bold">-</button>' +
                         '<span class="w-8 text-center font-bold text-white">' + it.quantity + '</span>' +
                         '<button type="button" onclick="updatePosQty(' + idx + ', 1)" class="w-5 h-5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex items-center justify-center font-bold">+</button>' +
-                    </div>' +
+                    '</div>' +
                 '</td>' +
                 '<td class="p-2.5 font-mono font-black text-emerald-400">' +
                     Number(lineTotal).toLocaleString() + ' ل.ل' +
