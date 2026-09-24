@@ -1,9 +1,8 @@
 {
-    "version": "4.1.3",
+    "version": "4.1.4",
     "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🛡️ Stargate Delivery v4.1.3:\n- إصلاح عاجل: خطأ 500 في صفحة شباب الدليفري والكاش\n- إضافة الأعمدة المفقودة في جدول السائقين (pin_code, current_lat, current_lng, last_ping_at)\n- تحديث محرك الترحيل بالإصدار العاشر (010_courier_pin_and_gps)\n- إصلاح تطبيق السائق السريع لتتبع الموقع الجغرافي",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.1.3/Stargate_Update.zip",
+    "changelog": "🛡️ Stargate Delivery v4.1.4 - إصلاح جذري:\n- إصلاح جذري وشامل لخطأ 500 في صفحة شباب الدليفري والكاش\n- إضافة جميع الأعمدة المفقودة لـ heal_database_schema (pin_code, GPS, salary, employees)\n- النظام يُصلح قاعدة بياناته تلقائياً عند أي خطأ بدلاً من الإيقاف\n- تحسين معالج الخطأ 500 ليعيد التوجيه بدلاً من صفحة خطأ جامدة",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.1.4/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }
-

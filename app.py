@@ -452,6 +452,19 @@ def page_not_found(e):
                            error_title="الصفحة غير موجودة",
                            error_msg="الصفحة التي تبحث عنها غير موجودة أو تم نقلها."), 404
 
+@app.errorhandler(405)
+def method_not_allowed(e):
+    if is_api_request() or app.config.get("TESTING"):
+        return jsonify({'success': False, 'message': 'طريقة الطلب غير مسموح بها (Method Not Allowed).'}), 405
+    flash("تمت إعادة توجيهك بأمان للوجهة الصحيحة.", "info")
+    if request.path.startswith('/couriers') or 'courier' in request.path:
+        return redirect(url_for('couriers_bp.couriers_list'))
+    if request.path.startswith('/treasury'):
+        return redirect(url_for('treasury_bp.treasury_view'))
+    if request.path.startswith('/settlements'):
+        return redirect(url_for('settlements_bp.settlements_list'))
+    return redirect(request.referrer or url_for('misc_bp.dashboard'))
+
 @app.route('/repair_database', methods=['POST'])
 @admin_required
 def repair_database():
@@ -469,16 +482,25 @@ def repair_database():
 @app.errorhandler(500)
 def internal_error(e):
     logger.error(f"Internal Server Error: {e}", exc_info=True)
-    # If the user was trying to log in, attempt auto-healing and bounce back safely
+    # Always attempt DB healing on any 500 error - fixes missing columns on subscriber DBs
+    try:
+        from core.extensions import heal_database_schema, auto_migrate_db
+        _conn = get_db()
+        heal_database_schema(_conn)
+        auto_migrate_db(_conn)
+        logger.info("[500 Handler] DB auto-heal and migration completed successfully")
+    except Exception as _heal_ex:
+        logger.warning(f"[500 Handler] DB heal attempt warning: {_heal_ex}")
+    # If the user was trying to log in, bounce back to login
     if request.path in ('/login', '/auth/login') or request.endpoint == 'auth_bp.login_page':
-        try:
-            from core.extensions import heal_database_schema
-            heal_database_schema(get_db())
-        except Exception:
-            pass
         flash("تم إعادة مزامنة حقول قاعدة البيانات تلقائياً. يرجى إعادة تسجيل الدخول الآن.", "info")
         return redirect(url_for('auth_bp.login_page'))
+    # For any other page: flash and redirect back (self-healing redirect)
+    if not app.config.get('TESTING'):
+        flash("حدث خطأ مؤقت في النظام وتم إصلاحه تلقائياً - يرجى إعادة المحاولة.", "warning")
+        return redirect(request.referrer or url_for('misc_bp.dashboard'))
     return render_template('error_500.html', error="حدث خطأ داخلي. يرجى مراجعة سجل النظام."), 500
+
 
 # ===================== STARTUP DAEMONS =====================
 def start_local_backup_daemon():

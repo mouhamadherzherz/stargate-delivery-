@@ -52,7 +52,7 @@ couriers_bp = Blueprint('couriers_bp', __name__)
 # Replace @app.route with @couriers_bp.route below
 
 # --- /couriers -> couriers_list ---
-@couriers_bp.route('/couriers')
+@couriers_bp.route('/couriers', methods=['GET', 'POST'])
 @login_required
 def couriers_list():
     conn = get_db()
@@ -119,9 +119,11 @@ def courier_unsettled_api(courier_id):
 
 
 # --- /couriers/add -> add_courier ---
-@couriers_bp.route('/couriers/add', methods=['POST'])
+@couriers_bp.route('/couriers/add', methods=['GET', 'POST'])
 @admin_required
 def add_courier():
+    if request.method == 'GET':
+        return redirect(url_for('couriers_list'))
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
     vtype = request.form.get('vehicle_type', 'motorcycle')
@@ -143,9 +145,11 @@ def add_courier():
 
 
 # --- /couriers/<int:courier_id>/edit -> edit_courier ---
-@couriers_bp.route('/couriers/<int:courier_id>/edit', methods=['POST'])
+@couriers_bp.route('/couriers/<int:courier_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_courier(courier_id):
+    if request.method == 'GET':
+        return redirect(url_for('couriers_list'))
     name = request.form.get('name', '').strip()
     phone = request.form.get('phone', '').strip()
     vtype = request.form.get('vehicle_type', 'motorcycle')
@@ -174,11 +178,11 @@ def edit_courier(courier_id):
 
 
 # --- /couriers/<int:courier_id>/delete -> delete_courier ---
-@couriers_bp.route('/couriers/<int:courier_id>/delete', methods=['POST'])
-
+@couriers_bp.route('/couriers/<int:courier_id>/delete', methods=['GET', 'POST'])
 @admin_required
-
 def delete_courier(courier_id):
+    if request.method == 'GET':
+        return redirect(url_for('couriers_list'))
 
     conn = get_db()
 
@@ -198,10 +202,12 @@ def delete_courier(courier_id):
 
 
 # --- /couriers/settle -> settle_courier ---
-@couriers_bp.route('/couriers/settle', methods=['POST'])
+@couriers_bp.route('/couriers/settle', methods=['GET', 'POST'])
 @login_required
 @permission_required('couriers_settle')
 def settle_courier():
+    if request.method == 'GET':
+        return redirect(url_for('couriers_list'))
 
     courier_id = parse_safe_int(request.form.get('courier_id'), 0)
 
@@ -658,11 +664,11 @@ def courier_statement_view(courier_id):
 
 
 # --- /couriers/<int:courier_id>/pay-salary -> pay_courier_salary ---
-@couriers_bp.route('/couriers/<int:courier_id>/pay-salary', methods=['POST'])
-
+@couriers_bp.route('/couriers/<int:courier_id>/pay-salary', methods=['GET', 'POST'])
 @admin_required
-
 def pay_courier_salary(courier_id):
+    if request.method == 'GET':
+        return redirect(url_for('couriers_list'))
 
     treasury_id = parse_safe_int(request.form.get('treasury_id'), 1)
 
@@ -746,10 +752,12 @@ def pay_courier_salary(courier_id):
 
 
 # --- /couriers/settle-barcode -> barcode_settlement ---
-@couriers_bp.route('/couriers/settle-barcode', methods=['POST'])
+@couriers_bp.route('/couriers/settle-barcode', methods=['GET', 'POST'])
 @login_required
 @permission_required('couriers_settle')
 def barcode_settlement():
+    if request.method == 'GET':
+        return redirect(url_for('couriers_list'))
     tracking_numbers = request.form.getlist('tracking_numbers')
     raw_input = request.form.get('raw_barcodes', '')
     courier_id = parse_safe_int(request.form.get('courier_id'), 0)
@@ -935,9 +943,11 @@ def export_courier_statement_excel(courier_id):
 
 
 # --- /finance/courier-handover -> courier_handover_cash ---
-@couriers_bp.route('/finance/courier-handover', methods=['POST'])
+@couriers_bp.route('/finance/courier-handover', methods=['GET', 'POST'])
 @login_required
 def courier_handover_cash():
+    if request.method == 'GET':
+        return redirect(url_for('couriers_list'))
     courier_id = parse_safe_int(request.form.get('courier_id'))
     amount_received = parse_safe_float(request.form.get('amount_received'))
     treasury_id = parse_safe_int(request.form.get('treasury_id'))

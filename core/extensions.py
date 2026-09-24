@@ -1267,7 +1267,23 @@ def heal_database_schema(conn):
                 ('status', "TEXT DEFAULT 'active'"),
                 ('salary', 'REAL DEFAULT 0.0'),
                 ('salary_type', "TEXT DEFAULT 'monthly'"),
-                ('pin', 'TEXT')
+                ('pin', 'TEXT'),
+                ('pin_code', 'TEXT DEFAULT NULL'),
+                ('current_lat', 'TEXT DEFAULT NULL'),
+                ('current_lng', 'TEXT DEFAULT NULL'),
+                ('last_ping_at', 'TIMESTAMP DEFAULT NULL'),
+                ('last_lat_lng', 'TEXT DEFAULT NULL'),
+                ('last_location_update', 'TIMESTAMP DEFAULT NULL')
+            ],
+            'employees': [
+                ('pin_code', 'TEXT DEFAULT NULL'),
+                ('phone', 'TEXT DEFAULT NULL'),
+                ('job_title', 'TEXT DEFAULT NULL'),
+                ('job_type', "TEXT DEFAULT 'fulltime'"),
+                ('notes', 'TEXT DEFAULT NULL'),
+                ('currency', "TEXT DEFAULT 'LBP'"),
+                ('salary', 'REAL DEFAULT 0.0'),
+                ('salary_type', "TEXT DEFAULT 'monthly'")
             ],
             'merchants': [
                 ('store_name', 'TEXT'),
