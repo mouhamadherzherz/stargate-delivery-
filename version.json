@@ -1,8 +1,8 @@
 {
-    "version": "4.1.4",
+    "version": "4.1.5",
     "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🛡️ Stargate Delivery v4.1.4 - إصلاح جذري:\n- إصلاح جذري وشامل لخطأ 500 في صفحة شباب الدليفري والكاش\n- إضافة جميع الأعمدة المفقودة لـ heal_database_schema (pin_code, GPS, salary, employees)\n- النظام يُصلح قاعدة بياناته تلقائياً عند أي خطأ بدلاً من الإيقاف\n- تحسين معالج الخطأ 500 ليعيد التوجيه بدلاً من صفحة خطأ جامدة",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.1.4/Stargate_Update.zip",
+    "changelog": "🛡️ Stargate Delivery v4.1.5 - الإصلاح النهائي الشامل:\n- إعادة بناء قاعدة البيانات الافتراضية (stargate_empty.db) بالكامل مع 23 جدولاً\n- جميع الأعمدة الجديدة مضمونة من اليوم الأول للتثبيت\n- إصلاح جذري لخطأ 500 في صفحة شباب الدليفري والكاش\n- معالج الخطأ 500 يُصلح قاعدة البيانات تلقائياً ويُعيد التوجيه",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.1.5/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }
