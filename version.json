@@ -1,8 +1,8 @@
 {
-    "version": "4.1.1",
+    "version": "4.1.2",
     "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🛡️ Stargate Delivery v4.1.1:\n- إصلاح جدول تصنيفات المصاريف expense_categories التلقائي لفتح صفحة الصندوق والمصاريف\n- إصلاح وضبط أزرار الفلترة السريعة لشباب الدليفري والكاش (جميع السائقين / الشغالين / عليهم كاش للتسكير)\n- إزالة تنبيهات الاختبار عند تعديل الخزائن وتحسين استجابة النوافذ المنبثقة",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.1.1/Stargate_Update.zip",
+    "changelog": "🛡️ Stargate Delivery v4.1.2:\n- إصلاح شامل لصفحة شباب الدليفري والكاش وفلاتر التحصيل والسائقين\n- إصلاح جداول الصندوق والمصاريف والسندات التلقائية (expense_categories, settlements, salary_payments)\n- إصلاح صفحة التقارير والمتاجر والتصنيفات (merchant_categories)\n- تحسين استقرار وتوافقية واجهات الإدارة والنظام المالي",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.1.2/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }

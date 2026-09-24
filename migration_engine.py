@@ -304,6 +304,57 @@ def upgrade_009(conn):
         for d_cat in default_cats:
             cur.execute("INSERT OR IGNORE INTO expense_categories (name) VALUES (?)", (d_cat,))
 
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS settlements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        settlement_number TEXT UNIQUE,
+        type TEXT DEFAULT 'courier',
+        target_id INTEGER,
+        treasury_id INTEGER,
+        orders_count INTEGER DEFAULT 0,
+        total_order_amount REAL DEFAULT 0.0,
+        total_delivery_fees REAL DEFAULT 0.0,
+        total_commissions REAL DEFAULT 0.0,
+        total_return_fees REAL DEFAULT 0.0,
+        total_collected REAL DEFAULT 0.0,
+        net_amount REAL DEFAULT 0.0,
+        payment_method TEXT DEFAULT 'cash',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS salary_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_number TEXT UNIQUE,
+        recipient_type TEXT DEFAULT 'employee',
+        recipient_id INTEGER,
+        employee_id INTEGER,
+        courier_id INTEGER,
+        treasury_id INTEGER,
+        amount REAL DEFAULT 0.0,
+        amount_lbp REAL DEFAULT 0.0,
+        amount_usd REAL DEFAULT 0.0,
+        payment_type TEXT DEFAULT 'salary',
+        period TEXT,
+        payment_date TEXT,
+        notes TEXT,
+        created_by TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS merchant_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    _safe_add_column(cur, "couriers", "commission_value", "REAL DEFAULT 0.0")
+    _safe_add_column(cur, "couriers", "salary", "REAL DEFAULT 0.0")
+    _safe_add_column(cur, "couriers", "salary_type", "TEXT DEFAULT 'monthly'")
+    _safe_add_column(cur, "merchants", "category", "TEXT DEFAULT NULL")
+
 
 
 

@@ -839,8 +839,17 @@ def get_merchant_categories(conn=None):
         should_close = True
     try:
         cursor = conn.cursor()
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS merchant_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
         cursor.execute("SELECT id, name FROM merchant_categories ORDER BY name ASC")
         return [dict(r) for r in cursor.fetchall()]
+    except Exception:
+        return []
     finally:
         if should_close:
             pass
@@ -982,14 +991,50 @@ def heal_database_schema(conn):
         """)
 
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS audit_logs (
+        CREATE TABLE IF NOT EXISTS merchant_categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            action TEXT NOT NULL,
-            entity_type TEXT,
-            entity_id INTEGER,
-            details TEXT,
-            user_id INTEGER,
-            ip_address TEXT,
+            name TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS settlements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            settlement_number TEXT UNIQUE,
+            type TEXT DEFAULT 'courier',
+            target_id INTEGER,
+            treasury_id INTEGER,
+            orders_count INTEGER DEFAULT 0,
+            total_order_amount REAL DEFAULT 0.0,
+            total_delivery_fees REAL DEFAULT 0.0,
+            total_commissions REAL DEFAULT 0.0,
+            total_return_fees REAL DEFAULT 0.0,
+            total_collected REAL DEFAULT 0.0,
+            net_amount REAL DEFAULT 0.0,
+            payment_method TEXT DEFAULT 'cash',
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS salary_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            payment_number TEXT UNIQUE,
+            recipient_type TEXT DEFAULT 'employee',
+            recipient_id INTEGER,
+            employee_id INTEGER,
+            courier_id INTEGER,
+            treasury_id INTEGER,
+            amount REAL DEFAULT 0.0,
+            amount_lbp REAL DEFAULT 0.0,
+            amount_usd REAL DEFAULT 0.0,
+            payment_type TEXT DEFAULT 'salary',
+            period TEXT,
+            payment_date TEXT,
+            notes TEXT,
+            created_by TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
@@ -1217,12 +1262,16 @@ def heal_database_schema(conn):
             'couriers': [
                 ('current_cash_custody', 'REAL DEFAULT 0.0'),
                 ('commission_rate', 'REAL DEFAULT 0.0'),
+                ('commission_value', 'REAL DEFAULT 0.0'),
                 ('vehicle_type', "TEXT DEFAULT 'motorcycle'"),
                 ('status', "TEXT DEFAULT 'active'"),
+                ('salary', 'REAL DEFAULT 0.0'),
+                ('salary_type', "TEXT DEFAULT 'monthly'"),
                 ('pin', 'TEXT')
             ],
             'merchants': [
                 ('store_name', 'TEXT'),
+                ('category', 'TEXT DEFAULT NULL'),
                 ('category_id', 'INTEGER'),
                 ('delivery_fee_discount', 'REAL DEFAULT 0.0'),
                 ('is_active', 'INTEGER DEFAULT 1')
