@@ -1,60 +1,61 @@
 @echo off
-chcp 65001 > nul
-echo ============================================================
-echo   Stargate Delivery System - Desktop Build Script
-echo ============================================================
-echo.
+setlocal EnableExtensions
+chcp 65001 >nul
+cd /d "%~dp0"
 
-cd /d D:\STARGATE\repo
+echo ============================================================
+echo   Stargate Delivery - Windows Desktop Build
+echo ============================================================
 
-echo [1/4] تثبيت المتطلبات...
-pip install pywebview pyinstaller --quiet
-if %errorlevel% neq 0 (
-    echo [ERROR] فشل تثبيت المتطلبات!
-    pause
-    exit /b 1
+where py >nul 2>nul
+if errorlevel 1 (
+  echo [ERROR] Python 3 is not installed or is not on PATH.
+  exit /b 1
 )
 
-echo [2/4] تجميع التطبيق بـ PyInstaller...
-pyinstaller --clean --noconfirm ^
-    --noconsole ^
-    --onefile ^
-    --icon="static\icons\stargate_logo.ico" ^
-    --name="StargateDelivery" ^
-    --add-data="templates;templates" ^
-    --add-data="static;static" ^
-    --add-data="config.py;." ^
-    --hidden-import=webview ^
-    --hidden-import=webview.platforms.winforms ^
-    --hidden-import=clr ^
-    --hidden-import=flask ^
-    --hidden-import=jinja2 ^
-    --hidden-import=sqlite3 ^
-    --hidden-import=werkzeug ^
-    --hidden-import=requests ^
-    app.py
+if not exist .venv (
+  echo [1/5] Creating virtual environment...
+  py -3 -m venv .venv
+  if errorlevel 1 exit /b 1
+)
+call .venv\Scripts\activate.bat
 
-if %errorlevel% neq 0 (
-    echo [ERROR] فشل التجميع!
-    pause
-    exit /b 1
+echo [2/5] Installing desktop build dependencies...
+python -m pip install --upgrade pip
+python -m pip install -r requirements-desktop.txt
+if errorlevel 1 exit /b 1
+
+echo [3/5] Validating Python source...
+python -m compileall -q app.py core routes services
+if errorlevel 1 exit /b 1
+
+echo [4/5] Building executable...
+if exist build rmdir /s /q build
+if exist dist rmdir /s /q dist
+pyinstaller --clean --noconfirm --onefile --windowed ^
+  --name StargateDelivery ^
+  --icon="static\icons\stargate_logo.ico" ^
+  --add-data="templates;templates" ^
+  --add-data="static;static" ^
+  --add-data="core;core" ^
+  --add-data="routes;routes" ^
+  --add-data="services;services" ^
+  --hidden-import=webview ^
+  --hidden-import=webview.platforms.edgechromium ^
+  --hidden-import=webview.platforms.winforms ^
+  --hidden-import=sqlite3 ^
+  app.py
+if errorlevel 1 exit /b 1
+
+echo [5/5] Preparing portable distribution...
+if not exist release mkdir release
+copy /Y "dist\StargateDelivery.exe" "release\StargateDelivery.exe" >nul
+if not exist "release\data" mkdir "release\data"
+if not exist "release\README.txt" (
+  >"release\README.txt" echo Stargate Delivery Desktop
+  >>"release\README.txt" echo Run StargateDelivery.exe. User data is stored in the data folder.
 )
 
-echo [3/4] نسخ الملف التنفيذي إلى مجلد الإنتاج...
-if not exist "C:\StargateDelivery" mkdir "C:\StargateDelivery"
-if not exist "C:\StargateDelivery\data" mkdir "C:\StargateDelivery\data"
-copy /Y "dist\StargateDelivery.exe" "C:\StargateDelivery\StargateDelivery.exe"
-
-echo [4/4] تحديث المتطلبات...
-copy /Y "requirements.txt" "C:\StargateDelivery\requirements.txt"
-xcopy /E /I /Y "static" "C:\StargateDelivery\static" > nul
-xcopy /E /I /Y "templates" "C:\StargateDelivery\templates" > nul
-
-echo.
-echo ============================================================
-echo   تم البناء بنجاح!
-echo   الملف التنفيذي: C:\StargateDelivery\StargateDelivery.exe
-echo   لإنشاء مثبت رسمي: افتح StarGate_Setup.iss بـ Inno Setup
-echo ============================================================
-echo.
-pause
+echo Build completed: %CD%\release\StargateDelivery.exe
+echo Optional: open StargateDelivery.iss with Inno Setup to create an installer.
+exit /b 0

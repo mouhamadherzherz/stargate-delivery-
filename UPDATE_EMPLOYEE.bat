@@ -59,8 +59,6 @@ set "SOURCE_DIR=%~dp0Update_Package\Updates_Source"
 if not exist "%SOURCE_DIR%" (
     if exist "%~dp0Stargate Delivery System" (
         set "SOURCE_DIR=%~dp0Stargate Delivery System"
-    ) else (
-        set "SOURCE_DIR=%~dp0"
     )
 )
 

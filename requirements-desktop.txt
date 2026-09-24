@@ -1,0 +1,7 @@
+# Runtime dependencies
+-r requirements.txt
+
+# Desktop window and Windows executable packaging
+pywebview>=5.4.1
+pyinstaller>=6.11.0
+waitress>=3.0.0

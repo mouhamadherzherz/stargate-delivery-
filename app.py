@@ -63,6 +63,8 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # Strict session and cookie isolation from Stargate Cafe
 app.config['SESSION_COOKIE_NAME'] = 'stargate_delivery_session_v8'
 app.config['REMEMBER_COOKIE_NAME'] = 'stargate_delivery_remember_v8'
+if getattr(sys, 'frozen', False) or '--desktop' in sys.argv:
+    app.config['SESSION_COOKIE_SECURE'] = False
 
 # ===================== GLOBAL DEFAULTS (kept for backward compat) =====================
 DEFAULT_EXCHANGE_RATE = 89500.0

@@ -627,6 +627,14 @@ def courier_app_login():
             valid_pin = True
     elif str(saved_pin).startswith(('scrypt:', 'pbkdf2:', 'argon2:')):
         valid_pin = check_password_hash(str(saved_pin), pin)
+    elif str(saved_pin) == str(pin):
+        valid_pin = True
+        try:
+            h_pin = hash_password(pin)
+            cur.execute("UPDATE couriers SET pin = ?, pin_code = ? WHERE id = ?", (h_pin, h_pin, courier['id']))
+            conn.commit()
+        except Exception:
+            pass
 
     if not valid_pin:
         cur.execute("SELECT id, name, phone FROM couriers WHERE status = 'active' ORDER BY name ASC")

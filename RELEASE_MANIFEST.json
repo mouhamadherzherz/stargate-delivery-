@@ -1,11 +1,11 @@
 {
   "release_name": "Stargate Delivery System - Enterprise Edition",
   "version": "2.0.0-PROD",
-  "release_date": "2026-09-24T18:35:08.348526",
+  "release_date": "2026-09-24T20:19:46.998300",
   "architecture": "Unified Flask/Waitress WSGI + SQLite WAL Multi-Ledger",
   "schema_revisions_applied": 6,
   "archive_file": "STARGATE_Enterprise_Full_System.zip",
-  "archive_size_bytes": 31339225,
-  "archive_sha256": "fae954482f209fdd871bf6f31492e7f9a183680f9dd6455bb15e7899e4a22781",
+  "archive_size_bytes": 34206335,
+  "archive_sha256": "13f4ae1cd81c66a048afa3d536220c27540930c44559b262b8b95a1499b16a9c",
   "status": "Production Ready (100% Certified)"
 }
