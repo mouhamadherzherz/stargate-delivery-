@@ -356,6 +356,28 @@ def upgrade_009(conn):
     _safe_add_column(cur, "merchants", "category", "TEXT DEFAULT NULL")
 
 
+def upgrade_010(conn):
+    """rev: 010_courier_pin_and_gps | PIN code alias and real-time GPS columns for courier app."""
+    cur = conn.cursor()
+    # pin_code is an alias for pin used by the courier app and auth routes
+    _safe_add_column(cur, "couriers", "pin_code", "TEXT DEFAULT NULL")
+    # Copy existing pin values to pin_code
+    cur.execute("UPDATE couriers SET pin_code = pin WHERE pin IS NOT NULL AND pin_code IS NULL")
+    # Real-time GPS tracking columns used by courier_app_ping_location
+    _safe_add_column(cur, "couriers", "current_lat", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "couriers", "current_lng", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "couriers", "last_ping_at", "TIMESTAMP DEFAULT NULL")
+    # Additional employee columns for salary system
+    _safe_add_column(cur, "employees", "pin_code", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "employees", "phone", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "employees", "job_title", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "employees", "job_type", "TEXT DEFAULT 'fulltime'")
+    _safe_add_column(cur, "employees", "notes", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "employees", "currency", "TEXT DEFAULT 'LBP'")
+    _safe_add_column(cur, "employees", "salary", "REAL DEFAULT 0.0")
+    _safe_add_column(cur, "employees", "salary_type", "TEXT DEFAULT 'monthly'")
+
+
 
 
 def _calculate_checksum(func):
@@ -428,6 +450,13 @@ REVISIONS = [
         "down_rev": "008",
         "upgrade": upgrade_009,
         "checksum": _calculate_checksum(upgrade_009)
+    },
+    {
+        "rev": "010",
+        "name": "010_courier_pin_and_gps",
+        "down_rev": "009",
+        "upgrade": upgrade_010,
+        "checksum": _calculate_checksum(upgrade_010)
     }
 ]
 
