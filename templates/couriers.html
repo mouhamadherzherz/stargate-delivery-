@@ -96,7 +96,8 @@
              data-name="{{ c.name|lower }}"
              data-phone="{{ c.phone }}"
              data-vehicle="{{ c.vehicle_type or '' }}"
-             data-status="{{ c.status }}">
+             data-status="{{ c.status }}"
+             data-cash="{{ 1 if ((c.unsettled_cash and c.unsettled_cash > 0) or (c.current_cash_custody and c.current_cash_custody > 0)) else 0 }}">
 
             <!-- Top Color Bar -->
             <div class="h-1 w-full" style="background:{{ 'linear-gradient(90deg,#f59e0b,#d97706)' if c.current_cash_custody and c.current_cash_custody > 0 else ('linear-gradient(90deg,#10b981,#059669)' if c.status == 'active' else 'linear-gradient(90deg,#94a3b8,#64748b)') }};"></div>
@@ -934,6 +935,22 @@ function openPayCourierSalaryModal(courierId, courierName, salary) {
         }
     }
 
+    let currentQuickFilter = 'all';
+
+    function setCourierQuickFilter(type) {
+        currentQuickFilter = type;
+        const btnAll = document.getElementById('btnFilterAll');
+        const btnActive = document.getElementById('btnFilterActive');
+        const btnCash = document.getElementById('btnFilterCash');
+
+        // Reset pill styles
+        if (btnAll) btnAll.className = 'tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black ' + (type === 'all' ? 'bg-[#1E1B54] text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200');
+        if (btnActive) btnActive.className = 'tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black ' + (type === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100');
+        if (btnCash) btnCash.className = 'tablet-touch-btn px-4 py-2 rounded-xl text-xs font-black ' + (type === 'with_cash' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100');
+
+        filterCouriersList();
+    }
+
     function filterCouriersList() {
         const query = (document.getElementById('courierSearchInput').value || '').trim().toLowerCase();
         const status = document.getElementById('courierStatusFilter').value;
@@ -944,11 +961,19 @@ function openPayCourierSalaryModal(courierId, courierName, salary) {
             const phone = card.getAttribute('data-phone') || '';
             const vehicle = card.getAttribute('data-vehicle') || '';
             const cardStatus = card.getAttribute('data-status') || '';
+            const hasCash = card.getAttribute('data-cash') === '1';
 
             const matchesQuery = !query || name.includes(query) || phone.includes(query) || vehicle.includes(query);
             const matchesStatus = !status || cardStatus === status;
 
-            if (matchesQuery && matchesStatus) {
+            let matchesQuick = true;
+            if (currentQuickFilter === 'active') {
+                matchesQuick = (cardStatus === 'active');
+            } else if (currentQuickFilter === 'with_cash') {
+                matchesQuick = hasCash;
+            }
+
+            if (matchesQuery && matchesStatus && matchesQuick) {
                 card.classList.remove('hidden');
             } else {
                 card.classList.add('hidden');
@@ -979,6 +1004,4 @@ function toggleInputVisibility(inputId, btn) {
     }
 }
 </script>
-
-</div><!-- /.space-y-4 -->
 {% endblock %}

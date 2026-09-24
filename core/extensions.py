@@ -1069,6 +1069,24 @@ def heal_database_schema(conn):
         """)
 
         cur.execute("""
+        CREATE TABLE IF NOT EXISTS expense_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        # Default expense categories if empty
+        try:
+            cur.execute("SELECT COUNT(*) FROM expense_categories")
+            if cur.fetchone()[0] == 0:
+                default_cats = ['مصاريف تشغيلية', 'بنزين ومحروقات', 'صيانة دراجات وسيارات', 'رواتب وأجور', 'إيجار وفواتير', 'قرطاسية ومطبوعات', 'أخرى']
+                for d_cat in default_cats:
+                    cur.execute("INSERT OR IGNORE INTO expense_categories (name) VALUES (?)", (d_cat,))
+        except Exception:
+            pass
+
+        cur.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             action TEXT NOT NULL,
@@ -1076,6 +1094,12 @@ def heal_database_schema(conn):
             entity_id INTEGER,
             details TEXT,
             user_role TEXT,
+            created_by TEXT,
+            ip_address TEXT,
+            user_agent TEXT,
+            before_json TEXT,
+            after_json TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)

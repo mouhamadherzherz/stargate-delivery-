@@ -287,10 +287,23 @@ def upgrade_009(conn):
     _safe_add_column(cur, "audit_log", "user_agent", "TEXT DEFAULT NULL")
     _safe_add_column(cur, "audit_log", "before_json", "TEXT DEFAULT NULL")
     _safe_add_column(cur, "audit_log", "after_json", "TEXT DEFAULT NULL")
-    _safe_add_column(cur, "audit_log", "timestamp", "TIMESTAMP DEFAULT NULL")
     _safe_create_index(cur, "idx_treasury_idempotency", "treasury_transactions", "idempotency_key")
     _safe_create_index(cur, "idx_treasury_created", "treasury_transactions", "created_at")
     _safe_create_index(cur, "idx_audit_created", "audit_log", "timestamp")
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS expense_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    cur.execute("SELECT COUNT(*) FROM expense_categories")
+    if cur.fetchone()[0] == 0:
+        default_cats = ['مصاريف تشغيلية', 'بنزين ومحروقات', 'صيانة دراجات وسيارات', 'رواتب وأجور', 'إيجار وفواتير', 'قرطاسية ومطبوعات', 'أخرى']
+        for d_cat in default_cats:
+            cur.execute("INSERT OR IGNORE INTO expense_categories (name) VALUES (?)", (d_cat,))
+
 
 
 
