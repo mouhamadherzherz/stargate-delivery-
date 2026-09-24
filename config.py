@@ -26,6 +26,9 @@ class BaseConfig:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    # Distinct session cookie name to completely isolate Delivery from Cafe (port 5000 / localhost)
+    SESSION_COOKIE_NAME = "stargate_delivery_session_v8"
+    REMEMBER_COOKIE_NAME = "stargate_delivery_remember_v8"
 
     # Decrypt sensitive external secrets dynamically at runtime
     GEMINI_API_KEY = secure_env.decrypt_sensitive_value(os.environ.get("GEMINI_API_KEY"))

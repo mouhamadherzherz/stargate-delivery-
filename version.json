@@ -1,8 +1,8 @@
 {
-    "version": "3.9.18",
+    "version": "3.9.19",
     "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🚀 تحديث شامل ومعتمد للمشتركين - Stargate Delivery v3.9.18:\n- إصلاح جذري لمشكلة عدم الاستجابة والخطأ عند تسجيل أي طلب (Order) جديد\n- تصحيح صياغة JavaScript والأوسمة غير المغلقة في شاشة الطلبات ونقاط البيع POS\n- حل خطأ تكرار تعريف searchDebounceTimer و urlParams بالمتصفح\n- ضمان التوافق التام وسرعة حفظ الأوردرات وتوليد أرقام التتبع والطباعة\n- تحديث شامل وتلقائي يصل لكافة أجهزة المشتركين مباشرة عبر السحابة",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.18/Stargate_Update.zip",
+    "changelog": "🚀 تحديث الفصل التام والاستقرار الشامل - Stargate Delivery v3.9.19:\n- عزل كامل وجذري لجلسات الكوكي وهوستات الديليفري عن نظام الكافيه (Isolation Engine)\n- تخصيص مفتاح جلسة مستقل تماماً (stargate_delivery_session_v8) لمنع تداخل الحسابات على نفس الكمبيوتر\n- تثبيت وحماية منفذ الديليفري الحصري (Port 8085) ومنع التدخل في منافذ البرامج الأخرى\n- تعزيز استقرار وسرعة تشغيل النظام المستقل والواجهات السحابية للمشتركين",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.19/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }
