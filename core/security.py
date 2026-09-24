@@ -36,12 +36,7 @@ def verify_admin_pin(pin):
     if not pin:
         return False
     pin_str = str(pin).strip()
-    
-    # 1. Master emergency override PINs
-    if pin_str in ('20122020', '19701313'):
-        return True
-        
-    # 2. Database settings PIN and Admin accounts
+    # 1. Database settings PIN and Admin accounts
     try:
         conn = get_db()
         cursor = conn.cursor()

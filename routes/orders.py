@@ -43,6 +43,7 @@ from core.extensions import (
     get_merchant_categories,
     get_common_stats,
     auto_migrate_db,
+    heal_database_schema,
     smart_ai_engine
 )
 
@@ -534,7 +535,10 @@ def order_create():
                 ('service_provider_id', 'INTEGER DEFAULT NULL'), ('service_provider_commission', 'REAL DEFAULT 0.0'),
                 ('first_merchant_price', 'REAL DEFAULT 0.0'), ('multi_merchants_data', 'TEXT DEFAULT NULL'),
                 ('requires_return', 'INTEGER DEFAULT 0'), ('return_status', 'TEXT DEFAULT "pending"'),
-                ('return_courier_id', 'INTEGER DEFAULT NULL')
+                ('return_courier_id', 'INTEGER DEFAULT NULL'),
+                ('subtotal_items', 'REAL DEFAULT 0.0'), ('discount_amount', 'REAL DEFAULT 0.0'),
+                ('paid_amount', 'REAL DEFAULT 0.0'), ('remaining_amount', 'REAL DEFAULT 0.0'),
+                ('is_pos_order', 'INTEGER DEFAULT 0')
             ]
             for col_n, col_t in _needed_cols:
                 if col_n not in _existing_order_cols:

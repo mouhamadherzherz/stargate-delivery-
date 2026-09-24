@@ -12,3 +12,8 @@ scratch/
 *.gz
 data/backups/
 data/*.key
+scratch_archive/
+Update_Package/
+FlashDrive_Release_v3.5/
+*MAINTENANCE*.txt
+INITIAL_ADMIN_CREDENTIALS.txt

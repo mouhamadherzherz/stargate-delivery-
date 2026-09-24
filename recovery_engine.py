@@ -9,17 +9,15 @@ import sqlite3
 import secrets
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DEFAULT_MASTER_KEY = "STRG-9842-7711-5028-1970"
-
 def generate_secure_master_key():
-    """Generates a cryptographically strong unique master recovery key"""
+    """Generates a cryptographically strong unique master recovery key: STRG-XXXX-XXXX-XXXX-XXXX"""
     parts = [secrets.token_hex(2).upper() for _ in range(4)]
     return f"STRG-{parts[0]}-{parts[1]}-{parts[2]}-{parts[3]}"
 
 def ensure_recovery_and_maintenance(conn):
     """
     Ensures the recovery key hash is registered in settings
-    and the dedicated maintenance user exists in employees table.
+    and a maintenance user is provisioned cleanly without hardcoded backdoors.
     """
     cur = conn.cursor()
     
@@ -31,50 +29,36 @@ def ensure_recovery_and_maintenance(conn):
     if "hardware_lock_signature" not in cols:
         cur.execute("ALTER TABLE settings ADD COLUMN hardware_lock_signature TEXT DEFAULT NULL")
     
-    # Check if recovery key hash is set
+    # Check if recovery key hash is set; if not, generate a secure random one
     cur.execute("SELECT recovery_key_hash FROM settings WHERE id = 1")
     row = cur.fetchone()
     if not row or not row[0]:
-        hashed_key = generate_password_hash(DEFAULT_MASTER_KEY)
+        new_key = generate_secure_master_key()
+        hashed_key = generate_password_hash(new_key)
         cur.execute("UPDATE settings SET recovery_key_hash = ? WHERE id = 1", (hashed_key,))
     
     # 2. Ensure dedicated maintenance account exists in employees
     cur.execute("SELECT id FROM employees WHERE username IN ('maintenance', 'stargate_tech') LIMIT 1")
     m_user = cur.fetchone()
     if not m_user:
-        # Generate custom initial credentials without hardcoded fixed backdoors
         initial_tech_pw = "Maint#" + secrets.token_hex(4).upper()
         initial_tech_pin = str(secrets.randbelow(900000) + 100000)
         tech_pw_hash = generate_password_hash(initial_tech_pw)
         cur.execute("""
             INSERT INTO employees (
                 username, password_hash, display_name, role, pin, is_active,
-                custom_permissions, created_at
+                custom_permissions, created_at, must_change_password
             ) VALUES (
                 'maintenance', ?, 'فريق الدعم الفني والصيانة', 'maintenance', ?, 1,
-                'system_diagnostics,database_repair,recovery_access,credentials_reset', CURRENT_TIMESTAMP
+                'system_diagnostics,database_repair,recovery_access', CURRENT_TIMESTAMP, 1
             )
         """, (tech_pw_hash, initial_tech_pin))
-        
-        # Save credentials to a secure local file on manager PC if accessible
-        try:
-            cred_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "بيانات_حساب_الصيانة_MAINTENANCE.txt")
-            with open(cred_file, "w", encoding="utf-8") as cf:
-                cf.write("====================================================\n")
-                cf.write("  STARGATE ENTERPRISE - بيانات حساب الصيانة الفنية\n")
-                cf.write("====================================================\n\n")
-                cf.write(f"اسم المستخدم: maintenance\n")
-                cf.write(f"كلمة المرور:   {initial_tech_pw}\n")
-                cf.write(f"رمز الـ PIN:   {initial_tech_pin}\n\n")
-                cf.write("ملاحظة: يمكنك تغيير كلمة المرور والـ PIN في أي وقت من لوحة الصيانة أو أداة الاسترداد.\n")
-        except Exception:
-            pass
     
     conn.commit()
 
 
 def verify_master_recovery_key(conn, candidate_key):
-    """Verifies the emergency master recovery key against the secure hash"""
+    """Verifies the emergency master recovery key strictly against the cryptographic hash in DB"""
     if not candidate_key:
         return False
     cand = str(candidate_key).strip().upper().replace(" ", "")
@@ -85,8 +69,7 @@ def verify_master_recovery_key(conn, candidate_key):
         stored_hash = row[0]
         if check_password_hash(stored_hash, cand):
             return True
-    # Fallback to default key check
-    return (cand == DEFAULT_MASTER_KEY)
+    return False
 
 
 def reset_user_credentials(conn, user_id, new_password=None, new_pin=None):

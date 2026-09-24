@@ -42,8 +42,11 @@ class ProductionConfig(BaseConfig):
     """إعدادات بيئة الإنتاج المعتمدة (Production Hardened)."""
     DEBUG = False
     TESTING = False
-    # يُفعّل تلقائياً إذا تم تحديد متغير البيئة أو كان السيرفر يعمل خلف HTTPS
-    SESSION_COOKIE_SECURE = os.environ.get("STARGATE_SECURE_COOKIE", "false").lower() in ("true", "1", "yes") or (os.environ.get("HTTPS", "").lower() == "on")
+    # Enforced secure cookies in production. If running on local intranet without SSL, STARGATE_ALLOW_INSECURE_HTTP=1 can be set.
+    SESSION_COOKIE_SECURE = os.environ.get("STARGATE_ALLOW_INSECURE_HTTP", "").lower() not in ("true", "1", "yes")
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
 
 
 class DevelopmentConfig(BaseConfig):

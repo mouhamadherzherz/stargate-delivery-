@@ -231,11 +231,24 @@ def reset_data():
     raw_mode = (request.form.get('wipe_mode') or request.form.get('reset_type') or 'operational').strip()
     is_factory_reset = raw_mode in ('factory_reset', 'all')
 
+    # 1. Automatic mandatory snapshot before any destructive wipe
+    try:
+        from core.extensions import DB_PATH, DATA_DIR
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = os.path.join(DATA_DIR, "pre_wipe_backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_file = os.path.join(backup_dir, f"db_before_wipe_{timestamp_str}.db")
+        if os.path.exists(DB_PATH):
+            shutil.copy2(DB_PATH, backup_file)
+            logger.info(f"[Wipe Protection] Created mandatory safety backup: {backup_file}")
+    except Exception as snap_ex:
+        logger.warning(f"[Wipe Protection] Safety backup warning: {snap_ex}")
+
     try:
         # Disable foreign keys temporarily during wipe to guarantee zero FK constraints violations
         cursor.execute("PRAGMA foreign_keys = OFF")
 
-        # Delete dependent tables in order
+        # Delete dependent operational tables in order
         cursor.execute("DELETE FROM order_status_history")
         cursor.execute("DELETE FROM order_items")
         cursor.execute("DELETE FROM settlement_items")
@@ -244,7 +257,6 @@ def reset_data():
         cursor.execute("DELETE FROM treasury_transactions")
         cursor.execute("DELETE FROM journal_entries")
         cursor.execute("DELETE FROM ratings")
-        cursor.execute("DELETE FROM audit_log")
 
         if is_factory_reset:
             # Full factory reset: delete entities, master data, and reset balances
@@ -276,6 +288,8 @@ def reset_data():
             cursor.execute("UPDATE treasuries SET balance = 0.0")
             conn.commit()
             success_msg = "تم مسح الشحنات والحركات المالية بنجاح مع الإبقاء على بيانات التجار والمناديب."
+
+        log_audit("data_wipe", "system", session.get('user_id', 0), f"تم تنفيذ عملية مسح بيانات ({raw_mode}) بواسطة المدير.")
 
         if is_api_request():
             return jsonify({'success': True, 'message': success_msg})

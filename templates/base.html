@@ -9,10 +9,14 @@
     <meta name="theme-color" content="#1E1B54">
     <meta name="application-name" content="stargate experts">
     <title>{{ title or company_name }} - نظام محاسبة وإدارة الدلفري</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Modern Cairo Arabic & Global Sans Font Stack -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        window.CSRF_TOKEN = "{{ csrf_token() }}";
+    </script>
     <!-- Local Offline Tailwind CSS Engine -->
     <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
     <script>
@@ -2013,6 +2017,48 @@
     // Poll every 15 seconds
     setInterval(pollLiveDispatch, 15000);
     setTimeout(pollLiveDispatch, 2000);
+
+    // Global CSRF Interceptor for fetch and XMLHttpRequest
+    (function() {
+        const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
+        if (!token) return;
+
+        // Intercept native fetch
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            options = options || {};
+            const method = (options.method || 'GET').toUpperCase();
+            if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                if (options.headers instanceof Headers) {
+                    if (!options.headers.has('X-CSRF-Token')) options.headers.set('X-CSRF-Token', token);
+                    if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                } else if (typeof options.headers === 'object' && options.headers !== null) {
+                    options.headers['X-CSRF-Token'] = token;
+                    options.headers['X-CSRFToken'] = token;
+                } else {
+                    options.headers = { 'X-CSRF-Token': token, 'X-CSRFToken': token };
+                }
+            }
+            return originalFetch.call(this, url, options);
+        };
+
+        // Intercept XMLHttpRequest
+        const originalOpen = XMLHttpRequest.prototype.open;
+        const originalSend = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            this._method = (method || 'GET').toUpperCase();
+            return originalOpen.apply(this, arguments);
+        };
+        XMLHttpRequest.prototype.send = function(body) {
+            if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(this._method)) {
+                try {
+                    this.setRequestHeader('X-CSRF-Token', token);
+                    this.setRequestHeader('X-CSRFToken', token);
+                } catch(e) {}
+            }
+            return originalSend.apply(this, arguments);
+        };
+    })();
     </script>
     {% block scripts %}{% endblock %}
 </body>
