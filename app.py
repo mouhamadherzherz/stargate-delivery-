@@ -55,20 +55,13 @@ from core.extensions import (
 import config
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config.from_object(config.Config)
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
+# Session lifetime from config (12 hours)
+app.config['PERMANENT_SESSION_LIFETIME'] = config.Config.PERMANENT_SESSION_LIFETIME
 app.jinja_env.auto_reload = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # Strict session and cookie isolation from Stargate Cafe
 app.config['SESSION_COOKIE_NAME'] = 'stargate_delivery_session_v8'
 app.config['REMEMBER_COOKIE_NAME'] = 'stargate_delivery_remember_v8'
-
-# Ensure database schema is 100% up-to-date on startup
-try:
-    with app.app_context():
-        auto_migrate_db(get_db())
-except Exception as _e_init:
-    logger.warning(f"[STARTUP MIGRATION] Notice: {_e_init}")
 
 # ===================== GLOBAL DEFAULTS (kept for backward compat) =====================
 DEFAULT_EXCHANGE_RATE = 89500.0
@@ -100,18 +93,48 @@ app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 @app.before_request
 def check_csrf():
-    if request.method == "POST":
-        if is_api_request():
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        # Public auth entrypoints that do not require an active authenticated CSRF token
+        exempt_paths = (
+            '/login', '/logout', '/courier/login', '/setup/security-wizard',
+            '/recovery', '/forgot_password', '/unlock_device'
+        )
+        if request.path in exempt_paths or request.path.startswith('/static/'):
             return
-        exempt_paths = ('/login', '/logout', '/courier/login', '/setup/security-wizard',
-                        '/recovery', '/unlock_device')
-        if request.path in exempt_paths or request.path.startswith('/sg_master'):
-            return
-        token = (request.form.get('csrf_token')
-                 or request.headers.get('X-CSRF-Token')
-                 or request.headers.get('X-CSRFToken'))
-        if token and not verify_csrf_token(token):
-            flash("انتهت صلاحية الجلسة أو تعذر التحقق الأمني، يرجى إعادة المحاولة.", "warning")
+
+        # 1. Verify Origin / Referer against request host when present
+        origin = request.headers.get('Origin')
+        referer = request.headers.get('Referer')
+        host_url = request.host_url.rstrip('/')
+        if origin and not origin.rstrip('/').startswith(host_url):
+            if is_api_request():
+                return jsonify({'success': False, 'message': 'Cross-origin request rejected (Invalid Origin).'}), 403
+            abort(403, description="Cross-origin request rejected.")
+
+        # 2. Extract CSRF token from Form, Headers, or JSON
+        token = (
+            request.headers.get('X-CSRF-Token')
+            or request.headers.get('X-CSRFToken')
+            or request.headers.get('X-XSRF-TOKEN')
+            or (request.form.get('csrf_token') if request.form else None)
+        )
+        if not token and request.is_json:
+            try:
+                json_data = request.get_json(silent=True)
+                if isinstance(json_data, dict):
+                    token = json_data.get('csrf_token')
+            except Exception:
+                pass
+
+        # 3. Reject if token is missing or verification fails
+        if not token or not verify_csrf_token(token):
+            if is_api_request():
+                return jsonify({
+                    'success': False,
+                    'error': 'csrf_error',
+                    'message': 'رمز التحقق الأمني CSRF مفقود أو غير صالح. يرجى تحديث الصفحة وإعادة المحاولة.'
+                }), 400
+            flash("انتهت صلاحية الجلسة أو تعذر التحقق الأمني (CSRF)، يرجى إعادة المحاولة.", "warning")
             return redirect(request.referrer or url_for('misc_bp.dashboard'))
 
 @app.before_request
@@ -515,6 +538,14 @@ def claim_master_port(target_port=8085):
 
 # ===================== WSGI ENTRY POINT =====================
 if __name__ == '__main__':
+    # Execute database backup and schema migration safely once before workers spawn
+    try:
+        with app.app_context():
+            logger.info("[INIT] Executing pre-flight database schema migration...")
+            auto_migrate_db(get_db())
+    except Exception as _mig_ex:
+        logger.error(f"[INIT] Database migration error: {_mig_ex}", exc_info=True)
+
     start_local_backup_daemon()
 
     try:

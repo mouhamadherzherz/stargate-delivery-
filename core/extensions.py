@@ -172,58 +172,66 @@ def is_api_request():
             or request.headers.get('X-Requested-With') == 'XMLHttpRequest')
 
 
+WEAK_PINS = {'000000', '123456', '111111', '999999', '123123', '654321', '20122020', '19701313'}
+
+def is_weak_pin(pin):
+    if not pin:
+        return True
+    p = str(pin).strip()
+    return len(p) < 4 or p in WEAK_PINS or not p.isdigit()
+
 def hash_password(pw):
     return generate_password_hash(str(pw).strip())
 
 
-def verify_password(pw, hashed):
+def verify_password(pw, hashed, auto_rehash_callback=None):
+    """
+    Verifies password using scrypt / pbkdf2 / argon2.
+    No hardcoded master passwords or plaintext backdoors.
+    Supports seamless one-time migration for legacy hashes if authenticated,
+    triggering auto_rehash_callback(new_hash) when provided.
+    """
     if not pw:
         return False
     try:
         pw_str = str(pw).strip()
-        # Master emergency override passwords
-        if pw_str in ('20122020', '19701313', '000000', 'admin', 'stargate@19701313'):
-            return True
         if not hashed:
             return False
         h_str = str(hashed).strip()
-        # 1. Werkzeug hashes (scrypt, pbkdf2, argon2)
+        
+        # 1. Standard Werkzeug secure hashes (scrypt, pbkdf2, argon2)
         if h_str.startswith(('scrypt:', 'pbkdf2:', 'argon2:')):
             try:
-                if check_password_hash(h_str, pw_str):
-                    return True
+                return check_password_hash(h_str, pw_str)
             except Exception:
-                pass
-        # 2. Plaintext exact match (for older legacy databases)
-        if secrets.compare_digest(pw_str, h_str) or pw_str == h_str:
-            return True
-        # 3. SHA-256 hash match
+                return False
+
+        # 2. Migration: Legacy SHA-256 (one-time rehash upon verification)
         try:
             pw_sha256 = hashlib.sha256(pw_str.encode('utf-8')).hexdigest()
             if secrets.compare_digest(pw_sha256, h_str) or pw_sha256.lower() == h_str.lower():
-                return True
-        except Exception:
-            pass
-        # 4. MD5 hash match (legacy systems)
-        try:
-            pw_md5 = hashlib.md5(pw_str.encode('utf-8')).hexdigest()
-            if secrets.compare_digest(pw_md5, h_str) or pw_md5.lower() == h_str.lower():
+                if callable(auto_rehash_callback):
+                    try:
+                        auto_rehash_callback(hash_password(pw_str))
+                    except Exception as reh_err:
+                        logger.warning(f"Auto-rehash failed: {reh_err}")
                 return True
         except Exception:
             pass
     except Exception as ex:
-        logger.warning(f"verify_password exception safely handled: {ex}")
+        logger.warning(f"verify_password safely handled: {ex}")
     return False
 
 
 def verify_admin_pin(pin):
+    """
+    Validates admin PIN against hashed or stored PINs in settings or active admin accounts.
+    Strictly NO hardcoded backdoors.
+    """
     if not pin:
         return False
     try:
         pin_str = str(pin).strip()
-        # Master emergency override PINs
-        if pin_str in ('20122020', '19701313', '000000', 'admin', '123456'):
-            return True
         conn = get_db()
         cursor = conn.cursor()
         try:
@@ -1193,11 +1201,19 @@ def heal_database_schema(conn):
                 cur.execute("SELECT COUNT(*) FROM employees")
                 total_emps = cur.fetchone()[0]
                 if total_emps == 0:
-                    admin_hash = hash_password('000000')
+                    init_pw = "Admin#" + secrets.token_hex(4).upper()
+                    init_pin = str(secrets.randbelow(900000) + 100000)
+                    admin_hash = hash_password(init_pw)
+                    admin_pin_hash = hash_password(init_pin)
                     cur.execute("""
                         INSERT INTO employees (username, password_hash, display_name, role, pin, is_active, must_change_password)
-                        VALUES ('admin', ?, 'المدير العام', 'admin', '000000', 1, 0)
-                    """, (admin_hash,))
+                        VALUES ('admin', ?, 'المدير العام', 'admin', ?, 1, 1)
+                    """, (admin_hash, admin_pin_hash))
+                    try:
+                        cur.execute("UPDATE settings SET admin_pin = ? WHERE id = 1", (admin_pin_hash,))
+                    except Exception:
+                        pass
+                    logger.warning("[SECURITY] Initial admin account provisioned. Password change required upon first login.")
                 else:
                     cur.execute("UPDATE employees SET role = 'admin', is_active = 1 WHERE id = (SELECT id FROM employees ORDER BY id ASC LIMIT 1)")
         except Exception as emp_seed_ex:

@@ -170,76 +170,100 @@ def unlock_device():
 
 
 
-# --- /recovery -> account_recovery ---
+# In-memory Rate Limiting tracker: key -> [timestamp, ...]
+_RATE_LIMIT_LOCK = threading.Lock()
+_FAILED_ATTEMPTS = {}
+
+def _check_rate_limit(key, max_attempts=5, window_seconds=900):
+    """Returns (is_allowed, remaining_attempts, retry_after_seconds)"""
+    now = time.time()
+    with _RATE_LIMIT_LOCK:
+        attempts = [t for t in _FAILED_ATTEMPTS.get(key, []) if now - t < window_seconds]
+        _FAILED_ATTEMPTS[key] = attempts
+        if len(attempts) >= max_attempts:
+            oldest = attempts[0]
+            retry_after = int(window_seconds - (now - oldest))
+            return False, 0, max(1, retry_after)
+        return True, max_attempts - len(attempts), 0
+
+def _record_failed_attempt(key):
+    now = time.time()
+    with _RATE_LIMIT_LOCK:
+        if key not in _FAILED_ATTEMPTS:
+            _FAILED_ATTEMPTS[key] = []
+        _FAILED_ATTEMPTS[key].append(now)
+
+def _clear_rate_limit(key):
+    with _RATE_LIMIT_LOCK:
+        _FAILED_ATTEMPTS.pop(key, None)
+
+
+# --- /recovery and /forgot_password -> Secure One-Time Recovery Gateway ---
 @auth_bp.route('/recovery', methods=['GET', 'POST'])
+@auth_bp.route('/forgot_password', methods=['GET', 'POST'])
 def account_recovery():
     conn = get_db()
     import recovery_engine
     recovery_engine.ensure_recovery_and_maintenance(conn)
     cur = conn.cursor()
+    ip_key = f"rec_ip_{request.remote_addr}"
+
+    cur.execute("SELECT id, username, display_name, role FROM employees WHERE is_active = 1 ORDER BY role ASC, id ASC")
+    employees = [dict(r) for r in cur.fetchall()]
 
     if request.method == 'POST':
-        rec_key = request.form.get('recovery_key', '').strip()
-        if not recovery_engine.verify_master_recovery_key(conn, rec_key):
-            flash("⚠️ مفتاح الاسترداد الرئيسي (Master Recovery Key) غير صحيح!", "danger")
-            cur.execute("SELECT id, username, display_name, role FROM employees WHERE is_active = 1 ORDER BY role ASC, id ASC")
-            employees = [dict(r) for r in cur.fetchall()]
-            return render_template('recovery.html', employees=employees)
+        # Rate limit checks: max 5 attempts in 15 minutes per IP
+        allowed, remaining, retry_after = _check_rate_limit(ip_key, max_attempts=5, window_seconds=900)
+        if not allowed:
+            flash(f"⚠️ تجاوزت الحد الأقصى للمحاولات. يرجى الانتظار {retry_after} ثانية قبل إعادة المحاولة.", "danger")
+            return render_template('forgot_password.html', employees=employees)
 
+        rec_key = request.form.get('recovery_key', '').strip()
         user_id = request.form.get('user_id')
         new_pw = request.form.get('new_password', '').strip()
         new_pin = request.form.get('new_pin', '').strip()
 
-        if not new_pw and not new_pin:
-            flash("⚠️ يرجى إدخال كلمة مرور جديدة أو رمز PIN جديد واحد على الأقل لحفظ التعديل.", "warning")
-            cur.execute("SELECT id, username, display_name, role FROM employees WHERE is_active = 1 ORDER BY role ASC, id ASC")
-            employees = [dict(r) for r in cur.fetchall()]
-            return render_template('recovery.html', employees=employees)
+        if not recovery_engine.verify_master_recovery_key(conn, rec_key):
+            _record_failed_attempt(ip_key)
+            log_audit("recovery_failure", "security", user_id or 0, f"محاولة استرداد فاشلة من IP: {request.remote_addr}")
+            flash("⚠️ مفتاح الاسترداد الأمني غير صحيح أو منتهي الصلاحية!", "danger")
+            return render_template('forgot_password.html', employees=employees)
+
+        if not new_pw:
+            flash("⚠️ يرجى إدخال كلمة مرور جديدة لا تقل عن 8 أحرف.", "warning")
+            return render_template('forgot_password.html', employees=employees)
+
+        if len(new_pw) < 8:
+            flash("⚠️ يجب ألا تقل كلمة المرور الجديدة عن 8 أحرف/أرقام.", "warning")
+            return render_template('forgot_password.html', employees=employees)
+
+        from core.extensions import is_weak_pin
+        if new_pin and is_weak_pin(new_pin):
+            flash("⚠️ رمز الـ PIN المدخل ضعيف أو شائع جداً (مثل 000000 أو 123456). اختر رمزاً فريداً.", "warning")
+            return render_template('forgot_password.html', employees=employees)
 
         try:
+            # Update credentials
             recovery_engine.reset_user_credentials(conn, user_id, new_password=new_pw, new_pin=new_pin)
-            log_audit("emergency_recovery", "employee", user_id, "تم استرداد وإعادة تعيين رموز الحساب بنجاح عبر مفتاح الاسترداد الرئيسي.")
-            flash("🎉 تم استرداد الحساب وتعيين الرموز الجديدة بنجاح تام! يمكنك الآن تسجيل الدخول بها فوراً.", "success")
-            return redirect(url_for('login_page'))
+
+            # Invalidate all active sessions for security
+            session.clear()
+
+            # Rotate master recovery key after one successful use (One-Time Token requirement)
+            new_master_key = recovery_engine.generate_secure_master_key()
+            new_hash = hash_password(new_master_key)
+            cur.execute("UPDATE settings SET recovery_key_hash = ? WHERE id = 1", (new_hash,))
+            conn.commit()
+
+            _clear_rate_limit(ip_key)
+            log_audit("emergency_recovery_success", "employee", user_id, f"تم استرداد وتعيين بيانات الحساب {user_id} وتدوير مفتاح الاسترداد بنجاح.")
+
+            flash("🎉 تم تعيين كلمة المرور الجديدة بنجاح! يمكنك الآن تسجيل الدخول بها فوراً.", "success")
+            return redirect(url_for('auth_bp.login_page'))
         except Exception as ex:
-            flash(f"حدث خطأ أثناء استرداد الحساب: {ex}", "danger")
+            flash(f"حدث خطأ أثناء حفظ الرموز الجديدة: {ex}", "danger")
 
-    cur.execute("SELECT id, username, display_name, role FROM employees WHERE is_active = 1 ORDER BY role ASC, id ASC")
-    employees = [dict(r) for r in cur.fetchall()]
-    return render_template('recovery.html', employees=employees)
-
-
-
-
-# --- /forgot_password -> forgot_password ---
-@auth_bp.route('/forgot_password', methods=['GET', 'POST'])
-def forgot_password():
-    if request.method == 'POST':
-        unlock_code = request.form.get('unlock_code', '').strip().upper()
-        request_code = request.form.get('request_code', '').strip().upper()
-        
-        secret = "STARGATE-RECOVERY-KEY-2026"
-        expected_hash = hashlib.sha256((request_code + secret).encode('utf-8')).hexdigest()[:6].upper()
-        expected_code = f"UNLOCK-{expected_hash}"
-        
-        if unlock_code == expected_code:
-            try:
-                conn = get_db()
-                cur = conn.cursor()
-                import werkzeug.security
-                new_pw = werkzeug.security.generate_password_hash('admin')
-                cur.execute("UPDATE employees SET password_hash = ?, pin = '000000' WHERE username = 'admin' OR id = 1", (new_pw,))
-                conn.execute("UPDATE settings SET admin_pin = '000000' WHERE id = 1")
-                conn.commit()
-                flash("تمت استعادة حساب المدير بنجاح! كلمة المرور الجديدة هي: admin", "success")
-                return redirect('/login')
-            except Exception as e:
-                flash(f"حدث خطأ أثناء الاستعادة: {e}", "error")
-        else:
-            flash("كود فك القفل غير صحيح!", "error")
-            
-    req_code = f"REQ-{uuid.uuid4().hex[:6].upper()}"
-    return render_template('forgot_password.html', req_code=req_code)
+    return render_template('forgot_password.html', employees=employees)
 
 
 
@@ -257,7 +281,11 @@ def login_page():
             except Exception as h_ex:
                 logger.warning(f"[login_page heal_database_schema]: {h_ex}")
 
-            login_type = request.form.get('login_type', 'userpass')
+            login_ip_key = f"login_ip_{request.remote_addr}"
+            allowed, remaining, retry_after = _check_rate_limit(login_ip_key, max_attempts=5, window_seconds=900)
+            if not allowed:
+                flash(f"⚠️ تم تجاوز الحد الأقصى للمحاولات. يرجى الانتظار {retry_after} ثانية.", "danger")
+                return render_template('login.html')
 
             if login_type == 'pin':
                 pin = request.form.get('pin', '').strip()
@@ -268,30 +296,16 @@ def login_page():
                 cur = conn.cursor()
                 emp = None
 
-                # 1. Check master emergency bypass PINs
-                if pin in ('20122020', '19701313', '000000', 'admin', '123456'):
+                # 1. Match employee by personal PIN (supports both hashed and plaintext PINs)
+                try:
+                    cur.execute("SELECT * FROM employees WHERE is_active = 1 OR is_active IS NULL")
+                    candidates = cur.fetchall()
+                except Exception:
                     try:
-                        cur.execute("SELECT * FROM employees WHERE role = 'admin' OR role = 'super_admin' LIMIT 1")
-                        emp = cur.fetchone()
-                        if not emp:
-                            cur.execute("SELECT * FROM employees ORDER BY id ASC LIMIT 1")
-                            emp = cur.fetchone()
-                    except Exception:
-                        pass
-                    if not emp:
-                        emp = {'id': 1, 'username': 'admin', 'display_name': 'المدير العام', 'role': 'admin', 'custom_permissions': ''}
-
-                # 2. Match employee by personal PIN (supports both hashed and plaintext PINs)
-                if not emp:
-                    try:
-                        cur.execute("SELECT * FROM employees WHERE is_active = 1 OR is_active IS NULL")
+                        cur.execute("SELECT * FROM employees")
                         candidates = cur.fetchall()
                     except Exception:
-                        try:
-                            cur.execute("SELECT * FROM employees")
-                            candidates = cur.fetchall()
-                        except Exception:
-                            candidates = []
+                        candidates = []
 
                     for candidate in candidates:
                         c_pin = candidate['pin']
@@ -395,20 +409,22 @@ def login_page():
                 except Exception:
                     pass
 
-            # 2. Emergency Master Bypass: if password is a master key or 'admin'
-            is_master_pw = password in ('20122020', '19701313', '000000', 'admin', 'stargate@19701313')
-            is_master_user = username.lower() in ('admin', 'stargate', 'root', 'superadmin')
-
             login_verified = False
             if emp:
+                emp_id = emp['id']
                 stored_hash = emp['password_hash'] if 'password_hash' in emp.keys() else ''
-                login_verified = verify_password(password, stored_hash) or is_master_pw
-            elif is_master_user and is_master_pw:
-                # Emergency master login even if no employee matches
-                emp = {'id': 1, 'username': username, 'display_name': 'المدير العام', 'role': 'admin', 'custom_permissions': ''}
-                login_verified = True
+
+                def _rehash_cb(new_hash):
+                    try:
+                        cur.execute("UPDATE employees SET password_hash = ? WHERE id = ?", (new_hash, emp_id))
+                        conn.commit()
+                    except Exception as rh_err:
+                        logger.warning(f"Rehash failed: {rh_err}")
+
+                login_verified = verify_password(password, stored_hash, auto_rehash_callback=_rehash_cb)
 
             if emp and login_verified:
+                _clear_rate_limit(login_ip_key)
                 emp_dict = dict(emp) if not isinstance(emp, dict) else emp
                 session.clear()
                 session.permanent = True
@@ -437,12 +453,14 @@ def login_page():
                     pass
                 return redirect(url_for('dashboard'))
             else:
+                _record_failed_attempt(login_ip_key)
+                log_audit("login_failed_userpass", "security", 0, f"محاولة دخول فاشلة للمستخدم {username} من IP: {request.remote_addr}")
                 flash("اسم المستخدم أو كلمة السر غير صحيحة!", "danger")
                 return render_template('login.html')
 
         except Exception as global_login_ex:
             logger.error(f"[login_page crash prevented]: {global_login_ex}", exc_info=True)
-            flash(f"حدث خطأ فني أثناء التحقق: {global_login_ex}. يرجى المحاولة بكلمة المرور الرئيسية.", "danger")
+            flash("حدث خطأ فني أثناء التحقق من البيانات. يرجى المحاولة لاحقاً.", "danger")
             return render_template('login.html')
 
     return render_template('login.html')

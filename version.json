@@ -1,8 +1,8 @@
 {
-    "version": "3.9.20",
+    "version": "3.9.21",
     "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🚀 تحديث الاستقرار الشامل ومعالجة تسجيل الطلبيات - Stargate Delivery v3.9.20:\n- حل مشكلة توقف السيرفر المفاجئ عند إرسال وحفظ الطلبيات على كمبيوتر الموظف\n- استيراد وتفعيل محرك المعالجة التلقائية لقواعد البيانات (heal_database_schema)\n- التحقق التلقائي والفوري من كافة أعمدة نقاط البيع (POS) وحفظ الطلبيات بسلاسة\n- توافق كامل وتلقائي مع النسخ السحابية والمحلية للموظفين والمشتركين",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.20/Stargate_Update.zip",
+    "changelog": "🛡️ التحديث الأمني الشامل والجاهزية للإنتاج - Stargate Delivery v3.9.21:\n- إغلاق وحذف كافة مفاتيح ورموز الدخول الثابتة وبك دورز الطوارئ (20122020، 19701313، 000000، admin)\n- تفعيل حماية CSRF الصارمة على كافة الطلبات وواجهات API وعمليات الخزينة وتعديل الطلبات\n- ترقية نظام تشفير الأسرار والخزنة الرقمية إلى تشفير Fernet المعتمد (AES-128-CBC + HMAC)\n- نظام استرداد حسابات آمن لمرة واحدة (One-Time Recovery Token) مع إلغاء كافة كلمات المرور الافتراضية\n- تفعيل نظام الحماية من التخمين (Rate Limiting) وتقليص مدة الجلسات إلى 12 ساعة وتأمين الكوكيز\n- نسخ احتياطي إجباري وفوري لقاعدة البيانات قبل أي عملية مسح أو إعادة ضبط وتوثيق كل العمليات في سجل التدقيق",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.21/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }
