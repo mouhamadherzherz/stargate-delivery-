@@ -1,8 +1,8 @@
 {
-    "version": "3.9.19",
+    "version": "3.9.20",
     "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🚀 تحديث الفصل التام والاستقرار الشامل - Stargate Delivery v3.9.19:\n- عزل كامل وجذري لجلسات الكوكي وهوستات الديليفري عن نظام الكافيه (Isolation Engine)\n- تخصيص مفتاح جلسة مستقل تماماً (stargate_delivery_session_v8) لمنع تداخل الحسابات على نفس الكمبيوتر\n- تثبيت وحماية منفذ الديليفري الحصري (Port 8085) ومنع التدخل في منافذ البرامج الأخرى\n- تعزيز استقرار وسرعة تشغيل النظام المستقل والواجهات السحابية للمشتركين",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.19/Stargate_Update.zip",
+    "changelog": "🚀 تحديث الاستقرار الشامل ومعالجة تسجيل الطلبيات - Stargate Delivery v3.9.20:\n- حل مشكلة توقف السيرفر المفاجئ عند إرسال وحفظ الطلبيات على كمبيوتر الموظف\n- استيراد وتفعيل محرك المعالجة التلقائية لقواعد البيانات (heal_database_schema)\n- التحقق التلقائي والفوري من كافة أعمدة نقاط البيع (POS) وحفظ الطلبيات بسلاسة\n- توافق كامل وتلقائي مع النسخ السحابية والمحلية للموظفين والمشتركين",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v3.9.20/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }
