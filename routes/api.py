@@ -827,10 +827,8 @@ def api_shift_blind_audit():
     diff_lbp = actual_lbp - expected_lbp
     status_str = "مطابق" if abs(diff_lbp) < 1000 else ("فائض" if diff_lbp > 0 else "عجز")
     
-    cursor.execute('''
-        INSERT INTO audit_log (action, entity_type, entity_id, details, user_role, created_at)
-        VALUES ('blind_cash_audit', 'treasury', 1, ?, ?, CURRENT_TIMESTAMP)
-    ''', (f"جرد أعمى لصندوق الكاش: المتوقع {expected_lbp:,.0f} ل.ل | الفعلي {actual_lbp:,.0f} ل.ل | الفارق: {diff_lbp:,.0f} ل.ل ({status_str}) - ملاحظات: {notes}", session.get('user_role', 'admin')))
+    log_audit(cursor, 'blind_cash_audit', 'treasury', 1,
+              f"جرد أعمى لصندوق الكاش: المتوقع {expected_lbp:,.0f} ل.ل | الفعلي {actual_lbp:,.0f} ل.ل | الفارق: {diff_lbp:,.0f} ل.ل ({status_str}) - ملاحظات: {notes}")
     
     conn.commit()
     return jsonify({

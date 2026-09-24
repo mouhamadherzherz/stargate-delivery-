@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.1.0] - 2026-09-24
+
+### Finance, audit and operations hardening
+- Added migration `009_finance_controls` with idempotency keys, approval status, approver metadata and reversal references for treasury transactions.
+- Treasury movements now validate positive amounts and known transaction types and safely return an existing result for duplicate idempotency keys.
+- Audit records now include actor, IP address, user agent, and optional before/after JSON snapshots.
+- Added verified compressed backup and restore service with SHA-256 manifests, SQLite integrity checks, atomic restore, and retention.
+- Restricted credential resets to administrator roles; maintenance can no longer reset arbitrary employee passwords or PINs.
+- Made the migration compatible with both legacy `created_at` and newer `timestamp` audit schemas.
+- Added finance and backup regression tests.
+
+---
+
+## [4.0.0] - 2026-09-24
+
+### Fixed and hardened
+- Fixed the undefined `login_type` variable that could break all POST login attempts.
+- Hashed employee and administrator PINs during recovery and maintenance-account provisioning.
+- Protected recovery, security-wizard, and database-repair mutations with CSRF; database repair is now administrator-only POST.
+- Replaced weak prefix-based Origin validation with exact scheme/host/port comparison.
+- Removed schema migration from module import and added `migrate.py` for a single pre-deploy migration step.
+- Removed production databases, backups, logs, keys, and update archives from the distributable source package.
+- Added secure first-run credential provisioning using a mode-0600 local file deleted after successful login.
+
+---
+
 ## [3.9.21] - 2026-09-24
 
 ### Security & Production Hardening (P0, P1, P2 Completed)

@@ -44,6 +44,7 @@ def ensure_recovery_and_maintenance(conn):
         initial_tech_pw = "Maint#" + secrets.token_hex(4).upper()
         initial_tech_pin = str(secrets.randbelow(900000) + 100000)
         tech_pw_hash = generate_password_hash(initial_tech_pw)
+        tech_pin_hash = generate_password_hash(initial_tech_pin)
         cur.execute("""
             INSERT INTO employees (
                 username, password_hash, display_name, role, pin, is_active,
@@ -52,7 +53,17 @@ def ensure_recovery_and_maintenance(conn):
                 'maintenance', ?, 'فريق الدعم الفني والصيانة', 'maintenance', ?, 1,
                 'system_diagnostics,database_repair,recovery_access', CURRENT_TIMESTAMP, 1
             )
-        """, (tech_pw_hash, initial_tech_pin))
+        """, (tech_pw_hash, tech_pin_hash))
+        try:
+            credential_path = os.path.join(os.path.dirname(__file__), 'data', 'INITIAL_MAINTENANCE_CREDENTIALS.txt')
+            with open(credential_path, 'w', encoding='utf-8') as credential_file:
+                credential_file.write(
+                    'INITIAL MAINTENANCE CREDENTIALS - CHANGE IMMEDIATELY\\n'
+                    f'username=maintenance\\npassword={initial_tech_pw}\\npin={initial_tech_pin}\\n'
+                )
+            os.chmod(credential_path, 0o600)
+        except Exception:
+            pass
     
     conn.commit()
 
@@ -85,8 +96,11 @@ def reset_user_credentials(conn, user_id, new_password=None, new_pin=None):
         
     if new_pin:
         pin_val = str(new_pin).strip()
+        if not pin_val.isdigit() or len(pin_val) < 6:
+            raise ValueError("PIN must contain at least 6 digits")
+        pin_hash = generate_password_hash(pin_val)
         updates.append("pin = ?")
-        params.append(pin_val)
+        params.append(pin_hash)
         
     if not updates:
         return False
@@ -102,7 +116,7 @@ def reset_user_credentials(conn, user_id, new_password=None, new_pin=None):
     cur.execute("SELECT role FROM employees WHERE id = ?", (user_id,))
     r = cur.fetchone()
     if r and r[0] == 'admin' and new_pin:
-        cur.execute("UPDATE settings SET admin_pin = ? WHERE id = 1", (str(new_pin).strip(),))
+        cur.execute("UPDATE settings SET admin_pin = ? WHERE id = 1", (generate_password_hash(str(new_pin).strip()),))
         
     conn.commit()
     return True

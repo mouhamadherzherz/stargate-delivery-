@@ -287,6 +287,7 @@ def login_page():
                 flash(f"⚠️ تم تجاوز الحد الأقصى للمحاولات. يرجى الانتظار {retry_after} ثانية.", "danger")
                 return render_template('login.html')
 
+            login_type = request.form.get('login_type', 'userpass').strip()
             if login_type == 'pin':
                 pin = request.form.get('pin', '').strip()
                 if not pin:
@@ -318,9 +319,6 @@ def login_page():
                                         break
                                 except Exception:
                                     pass
-                            elif secrets.compare_digest(c_pin_str, pin) or c_pin_str == pin:
-                                emp = candidate
-                                break
 
                 # 3. If not matched, check if it matches the general Admin PIN
                 if not emp and verify_admin_pin(pin):
@@ -380,6 +378,9 @@ def login_page():
                         _cred_file = os.path.join(DATA_DIR, 'INITIAL_ADMIN_CREDENTIALS.txt')
                         if os.path.exists(_cred_file):
                             os.remove(_cred_file)
+                        _maintenance_cred_file = os.path.join(DATA_DIR, 'INITIAL_MAINTENANCE_CREDENTIALS.txt')
+                        if os.path.exists(_maintenance_cred_file):
+                            os.remove(_maintenance_cred_file)
                     except Exception:
                         pass
                     return redirect(url_for('dashboard'))
@@ -446,9 +447,12 @@ def login_page():
                 if session['user_role'] == 'maintenance':
                     return redirect(url_for('maintenance_dashboard'))
                 try:
-                    _cred_file = os.path.join(DATA_DIR, 'INITIAL_ADMIN_CREDENTIALS.txt')
-                    if os.path.exists(_cred_file):
-                        os.remove(_cred_file)
+                        _cred_file = os.path.join(DATA_DIR, 'INITIAL_ADMIN_CREDENTIALS.txt')
+                        if os.path.exists(_cred_file):
+                            os.remove(_cred_file)
+                        _maintenance_cred_file = os.path.join(DATA_DIR, 'INITIAL_MAINTENANCE_CREDENTIALS.txt')
+                        if os.path.exists(_maintenance_cred_file):
+                            os.remove(_maintenance_cred_file)
                 except Exception:
                     pass
                 return redirect(url_for('dashboard'))
@@ -609,18 +613,25 @@ def courier_app_login():
     # PIN Verification
     valid_pin = False
     saved_pin = courier['pin'] or courier['pin_code']
+    if not pin.isdigit() or len(pin) < 6:
+        saved_pin = None
+        valid_pin = False
+        first_time_pin_error = "يجب أن يتكون رمز المندوب من 6 أرقام على الأقل."
+    else:
+        first_time_pin_error = None
     if not saved_pin:
         # First-time login: bind entered PIN
-        cur.execute("UPDATE couriers SET pin = ? WHERE id = ?", (pin, courier['id']))
-        conn.commit()
-        valid_pin = True
-    elif str(saved_pin).strip() == pin:
-        valid_pin = True
+        if not first_time_pin_error:
+            cur.execute("UPDATE couriers SET pin = ? WHERE id = ?", (hash_password(pin), courier['id']))
+            conn.commit()
+            valid_pin = True
+    elif str(saved_pin).startswith(('scrypt:', 'pbkdf2:', 'argon2:')):
+        valid_pin = check_password_hash(str(saved_pin), pin)
 
     if not valid_pin:
         cur.execute("SELECT id, name, phone FROM couriers WHERE status = 'active' ORDER BY name ASC")
         couriers = [dict(c) for c in cur.fetchall()]
-        return render_template('courier_app.html', courier=None, couriers=couriers, error="رمز الـ PIN غير صحيح! يرجى المحاولة مرة أخرى.", company_name=sett['company_name'], exchange_rate=sett['exchange_rate'])
+        return render_template('courier_app.html', courier=None, couriers=couriers, error=first_time_pin_error or "رمز الـ PIN غير صحيح! يرجى المحاولة مرة أخرى.", company_name=sett['company_name'], exchange_rate=sett['exchange_rate'])
 
     session['courier_id'] = courier['id']
     session['courier_name'] = courier['name']

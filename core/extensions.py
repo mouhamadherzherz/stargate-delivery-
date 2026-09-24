@@ -245,8 +245,6 @@ def verify_admin_pin(pin):
                             return True
                     except Exception:
                         pass
-                elif secrets.compare_digest(pin_str, stored) or pin_str == stored:
-                    return True
         except Exception:
             pass
         # Check active admin employees
@@ -262,8 +260,6 @@ def verify_admin_pin(pin):
                                 return True
                         except Exception:
                             pass
-                    elif secrets.compare_digest(ep_str, pin_str) or ep_str == pin_str:
-                        return True
         except Exception:
             pass
         env_pin = os.environ.get('STARGATE_ADMIN_PIN', '').strip()
@@ -420,6 +416,10 @@ def log_audit(cursor_or_action, *args, **kwargs):
     try:
         username = session.get('username', 'system') if session else 'system'
         role = session.get('user_role', 'system') if session else 'system'
+        ip_address = request.headers.get('X-Forwarded-For', request.remote_addr) if request else None
+        user_agent = request.headers.get('User-Agent', '')[:500] if request else ''
+        before_json = json.dumps(kwargs.get('before'), ensure_ascii=False, default=str) if kwargs.get('before') is not None else None
+        after_json = json.dumps(kwargs.get('after'), ensure_ascii=False, default=str) if kwargs.get('after') is not None else None
         if hasattr(cursor_or_action, 'execute'):
             cursor = cursor_or_action
             action = args[0] if len(args) > 0 else 'action'
@@ -428,9 +428,11 @@ def log_audit(cursor_or_action, *args, **kwargs):
             details = args[3] if len(args) > 3 else kwargs.get('details', '')
             user_role = args[4] if len(args) > 4 else kwargs.get('user_role', role)
             cursor.execute("""
-                INSERT INTO audit_log (action, entity_type, entity_id, details, user_role, created_at)
-                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """, (action, entity_type, entity_id, f"[{username}] {details}", user_role))
+                INSERT INTO audit_log (action, entity_type, entity_id, details, user_role, created_by,
+                                       ip_address, user_agent, before_json, after_json, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """, (action, entity_type, entity_id, f"[{username}] {details}", user_role, username,
+                   ip_address, user_agent, before_json, after_json))
             logger.info(f"AUDIT | {action} | {entity_type}:{entity_id} | [{username}] {details}")
         else:
             action = cursor_or_action
@@ -440,9 +442,11 @@ def log_audit(cursor_or_action, *args, **kwargs):
             user_role = args[3] if len(args) > 3 else kwargs.get('user_role', role)
             conn = get_db()
             conn.execute("""
-                INSERT INTO audit_log (action, entity_type, entity_id, details, user_role, created_at)
-                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """, (action, entity_type, entity_id, f"[{username}] {details}", user_role))
+                INSERT INTO audit_log (action, entity_type, entity_id, details, user_role, created_by,
+                                       ip_address, user_agent, before_json, after_json, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """, (action, entity_type, entity_id, f"[{username}] {details}", user_role, username,
+                   ip_address, user_agent, before_json, after_json))
             conn.commit()
             logger.info(f"AUDIT | {action} | {entity_type}:{entity_id} | [{username}] {details}")
     except Exception as ex:
@@ -451,13 +455,31 @@ def log_audit(cursor_or_action, *args, **kwargs):
 
 def update_treasury_balance(cursor, treasury_id, amount, txn_type, category, description,
                              related_id=None, created_by=None, allow_negative=False,
-                             currency='ل.ل', settlement_id=None, exchange_rate=None):
+                             currency='ل.ل', settlement_id=None, exchange_rate=None,
+                             idempotency_key=None, status='approved'):
+    """Apply one atomic treasury movement and reject duplicate business operations."""
     if not created_by:
         try:
             created_by = session.get('display_name') or session.get('username') or 'النظام'
         except Exception:
             created_by = 'النظام'
 
+    if idempotency_key:
+        cursor.execute("SELECT transaction_number, balance_after, currency FROM treasury_transactions WHERE idempotency_key = ? LIMIT 1", (idempotency_key,))
+        existing = cursor.fetchone()
+        if existing:
+            return {
+                'transaction_number': existing[0],
+                'previous_balance': existing[1],
+                'new_balance': existing[1],
+                'currency': existing[2],
+                'duplicate': True,
+            }
+    if float(amount or 0) <= 0:
+        raise ValueError('قيمة الحركة المالية يجب أن تكون أكبر من صفر.')
+    valid_types = {'expense', 'merchant_payout', 'merchant_settlement', 'transfer_out', 'income', 'courier_deposit', 'courier_custody', 'transfer_in'}
+    if txn_type not in valid_types:
+        raise ValueError(f'نوع الحركة المالية غير صالح: {txn_type}')
     cursor.execute("SELECT balance, balance_lbp, balance_usd, name, type FROM treasuries WHERE id = ?", (treasury_id,))
     t_row = cursor.fetchone()
     if not t_row:
@@ -516,10 +538,13 @@ def update_treasury_balance(cursor, treasury_id, amount, txn_type, category, des
     cursor.execute("""
     INSERT INTO treasury_transactions (
         transaction_number, treasury_id, type, category, amount, balance_before, balance_after,
-        created_by, related_id, description, currency, settlement_id, exchange_rate
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        created_by, related_id, description, currency, settlement_id, exchange_rate, idempotency_key, status,
+        approved_by, approved_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (txn_num, treasury_id, txn_type, category, abs_amt, current_bal, new_bal,
-          created_by, related_id, description, curr_code, settlement_id, exchange_rate))
+        created_by, related_id, description, curr_code, settlement_id, exchange_rate, idempotency_key, status,
+        created_by if status == 'approved' else None,
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S') if status == 'approved' else None))
     return new_bal
 
 
@@ -1213,6 +1238,20 @@ def heal_database_schema(conn):
                         cur.execute("UPDATE settings SET admin_pin = ? WHERE id = 1", (admin_pin_hash,))
                     except Exception:
                         pass
+                    # Make first-run access possible without shipping credentials in the release.
+                    # The file is created with restrictive permissions and removed after first login.
+                    try:
+                        credential_path = os.path.join(DATA_DIR, 'INITIAL_ADMIN_CREDENTIALS.txt')
+                        with open(credential_path, 'w', encoding='utf-8') as credential_file:
+                            credential_file.write(
+                                'INITIAL ADMIN CREDENTIALS - CHANGE IMMEDIATELY\\n'
+                                f'username={"admin"}\\n'
+                                f'password={init_pw}\\n'
+                                f'pin={init_pin}\\n'
+                            )
+                        os.chmod(credential_path, 0o600)
+                    except Exception as credentials_ex:
+                        logger.warning(f"Could not write initial credentials file: {credentials_ex}")
                     logger.warning("[SECURITY] Initial admin account provisioned. Password change required upon first login.")
                 else:
                     cur.execute("UPDATE employees SET role = 'admin', is_active = 1 WHERE id = (SELECT id FROM employees ORDER BY id ASC LIMIT 1)")

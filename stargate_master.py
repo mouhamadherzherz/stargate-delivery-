@@ -244,7 +244,10 @@ def password_recovery():
         flash("كود الطلب غير صحيح. يجب أن يبدأ بـ REQ-", "error")
         return redirect('/sg_master/dashboard')
         
-    secret = "STARGATE-RECOVERY-KEY-2026"
+    secret = os.environ.get('STARGATE_MASTER_RECOVERY_SECRET', '').strip()
+    if len(secret) < 32:
+        flash("استرداد التحكم الرئيسي معطل حتى يتم ضبط سر خارجي قوي.", "error")
+        return redirect('/sg_master/dashboard')
     unlock_hash = hashlib.sha256((request_code + secret).encode('utf-8')).hexdigest()[:6].upper()
     unlock_code = f"UNLOCK-{unlock_hash}"
     

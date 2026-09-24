@@ -29,6 +29,7 @@ import atexit
 import tempfile
 import gzip
 import shutil
+from urllib.parse import urlparse
 
 from datetime import datetime, timedelta
 from functools import wraps
@@ -86,6 +87,10 @@ def set_secure_headers(response):
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(self), microphone=()'
     return response
 
 # ===================== CSRF PROTECTION =====================
@@ -95,21 +100,26 @@ app.jinja_env.globals['csrf_token'] = generate_csrf_token
 def check_csrf():
     if request.method in ("POST", "PUT", "PATCH", "DELETE"):
         # Public auth entrypoints that do not require an active authenticated CSRF token
-        exempt_paths = (
-            '/login', '/logout', '/courier/login', '/setup/security-wizard',
-            '/recovery', '/forgot_password', '/unlock_device'
-        )
+        exempt_paths = ('/login', '/courier/login')
         if request.path in exempt_paths or request.path.startswith('/static/'):
             return
 
         # 1. Verify Origin / Referer against request host when present
         origin = request.headers.get('Origin')
         referer = request.headers.get('Referer')
-        host_url = request.host_url.rstrip('/')
-        if origin and not origin.rstrip('/').startswith(host_url):
-            if is_api_request():
-                return jsonify({'success': False, 'message': 'Cross-origin request rejected (Invalid Origin).'}), 403
-            abort(403, description="Cross-origin request rejected.")
+        expected = urlparse(request.host_url)
+        if origin:
+            supplied = urlparse(origin)
+            same_origin = (
+                supplied.scheme == expected.scheme
+                and supplied.hostname == expected.hostname
+                and (supplied.port or (443 if supplied.scheme == 'https' else 80)) ==
+                    (expected.port or (443 if expected.scheme == 'https' else 80))
+            )
+            if not same_origin:
+                if is_api_request():
+                    return jsonify({'success': False, 'message': 'Cross-origin request rejected (Invalid Origin).'}), 403
+                abort(403, description="Cross-origin request rejected.")
 
         # 2. Extract CSRF token from Form, Headers, or JSON
         token = (
@@ -329,18 +339,6 @@ def _ensure_db_exists():
 
 _ensure_db_exists()
 
-# Auto-heal schema and run all migrations on startup
-try:
-    _init_conn = sqlite3.connect(DB_PATH, timeout=30.0)
-    _init_conn.row_factory = sqlite3.Row
-    from core.extensions import heal_database_schema, auto_migrate_db
-    heal_database_schema(_init_conn)
-    auto_migrate_db(_init_conn)
-    _init_conn.close()
-    logger.info("[Init] Database schema healed and migrations applied successfully.")
-except Exception as _e_init:
-    logger.warning(f"[Init Migration Warning]: {_e_init}")
-
 # Backup lifecycle manager on startup
 try:
     import backup_lifecycle_manager
@@ -454,13 +452,15 @@ def page_not_found(e):
                            error_title="الصفحة غير موجودة",
                            error_msg="الصفحة التي تبحث عنها غير موجودة أو تم نقلها."), 404
 
-@app.route('/repair_database')
+@app.route('/repair_database', methods=['POST'])
+@admin_required
 def repair_database():
     try:
         from core.extensions import heal_database_schema, auto_migrate_db
         conn = get_db()
         heal_database_schema(conn)
         auto_migrate_db(conn)
+        log_audit("repair_database", "system", 0, "Database schema repair and migration executed by administrator")
         flash("تم إصلاح وتحديث جداول قاعدة البيانات بنجاح! يمكنك الآن تسجيل الدخول بكل سهولة.", "success")
     except Exception as rep_ex:
         flash(f"تمت محاولة الإصلاح مع التنبيه التالي: {rep_ex}", "warning")
@@ -478,7 +478,7 @@ def internal_error(e):
             pass
         flash("تم إعادة مزامنة حقول قاعدة البيانات تلقائياً. يرجى إعادة تسجيل الدخول الآن.", "info")
         return redirect(url_for('auth_bp.login_page'))
-    return render_template('error_500.html', error=str(e)), 500
+    return render_template('error_500.html', error="حدث خطأ داخلي. يرجى مراجعة سجل النظام."), 500
 
 # ===================== STARTUP DAEMONS =====================
 def start_local_backup_daemon():

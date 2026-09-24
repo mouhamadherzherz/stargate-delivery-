@@ -181,7 +181,7 @@ def download_and_install_update(download_url, base_dir):
             kill_cmds = 'taskkill /F /IM python.exe >nul 2>&1\ntaskkill /F /IM pythonw.exe >nul 2>&1'
             
         bat_path = os.path.join(base_dir, "apply_ota.bat")
-        bat_content = f"""@echo off
+        bat_content = rf"""@echo off
 title Stargate OTA Updater
 chcp 65001 > nul
 echo ===================================================

@@ -124,7 +124,9 @@ def add_employee():
 
     # Fallback password if empty
     if not password:
-        password = pin if pin else '123456'
+        password = secrets.token_urlsafe(18)
+
+    pin_hash = hash_password(pin) if pin else None
 
     conn = get_db()
     cur = conn.cursor()
@@ -132,7 +134,7 @@ def add_employee():
         cur.execute("""
         INSERT INTO employees (username, password_hash, display_name, role, pin, pin_code, phone, is_active, custom_permissions, job_title, job_type, notes, currency, salary, salary_type)
         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 'ل.ل', ?, ?)
-        """, (username, hash_password(password), display_name, role, pin or None, pin or None, phone, custom_permissions, job_title, job_type, notes, parse_safe_float(request.form.get('salary'), 0.0), request.form.get('salary_type', 'monthly').strip() or 'monthly'))
+        """, (username, hash_password(password), display_name, role, pin_hash, pin_hash, phone, custom_permissions, job_title, job_type, notes, parse_safe_float(request.form.get('salary'), 0.0), request.form.get('salary_type', 'monthly').strip() or 'monthly'))
         conn.commit()
         flash(f"تمت إضافة الموظف [{display_name}] بنجاح وتعيين الـ PIN 🧑‍💼", "success")
     except sqlite3.IntegrityError:
@@ -191,7 +193,8 @@ def edit_employee(emp_id):
         if pin:
             updates.append("pin = ?")
             updates.append("pin_code = ?")
-            params.extend([pin, pin])
+            pin_hash = hash_password(pin)
+            params.extend([pin_hash, pin_hash])
 
         params.append(emp_id)
         sql = f"UPDATE employees SET {', '.join(updates)} WHERE id = ?"

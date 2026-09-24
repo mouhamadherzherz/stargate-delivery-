@@ -1,8 +1,8 @@
 {
-    "version": "4.0.0",
+    "version": "4.1.0",
     "release_date": "2026-09-24",
     "is_critical": true,
-    "changelog": "🛡️ التحديث الأمني الشامل والجاهزية للإنتاج - Stargate Delivery v4.0.0:\n- إغلاق وحذف كافة مفاتيح ورموز الدخول الثابتة وبك دورز الطوارئ نهائياً\n- تفعيل حماية CSRF الصارمة على كافة الطلبات وواجهات API\n- ترقية نظام تشفير الأسرار والخزنة الرقمية إلى Fernet\n- حل مشكلة Empty Response وانهيار استجابة الخادم عند إضافة الطلبات\n- نظام استرداد حسابات آمن لمرة واحدة وتشفير PINs وحماية الجلسات\n- فصل وتأمين تحديثات قاعدة البيانات لبيئة الإنتاج",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.0.0/Stargate_Update.zip",
+    "changelog": "🛡️ Stargate Delivery v4.1.0:\n- كل تحسينات v4.0.0 السابقة\n- ترحيل 009 لضبط الحركات المالية ومنع تكرار العملية عبر idempotency key\n- إضافة حالة واعتماد وعكس للحركات المالية\n- تحسين سجل التدقيق بإضافة IP والجهاز والقيم السابقة واللاحقة\n- خدمة نسخ احتياطي قابلة للتحقق ببصمة SHA-256 واستعادة مع integrity check واحتفاظ تلقائي\n- منع دور الصيانة من إعادة تعيين كلمات مرور أو PINs المستخدمين\n- إضافة 5 اختبارات مالية ونسخ احتياطي جديدة",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.1.0/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }

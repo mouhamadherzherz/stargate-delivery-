@@ -9,6 +9,7 @@ from flask import (render_template, request, redirect, url_for,
                    flash, jsonify, send_file, session, Response, abort, Blueprint, g)
 from datetime import datetime, timedelta
 import os, sys, re, json, csv, io, sqlite3, hashlib, secrets, threading, time, tempfile
+from werkzeug.security import check_password_hash
 
 from core.extensions import (
     get_db,
@@ -130,8 +131,9 @@ def add_courier():
     salary = parse_safe_float(request.form.get('salary'), 0.0)
     salary_type = request.form.get('salary_type', 'monthly').strip() or 'monthly'
     pin = request.form.get('pin', '').strip()
+    pin_hash = hash_password(pin) if pin else None
     cursor.execute("INSERT INTO couriers (name, phone, vehicle_type, commission_value, salary, salary_type, pin, pin_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                   (name, phone, vtype, comm, salary, salary_type, pin if pin else None, pin if pin else None))
+                   (name, phone, vtype, comm, salary, salary_type, pin_hash, pin_hash))
     conn.commit()
 
     flash("تمت إضافة السائق بنجاح وتعيين الـ PIN 🛵", "success")
@@ -156,8 +158,9 @@ def edit_courier(courier_id):
     pin = request.form.get('pin', '').strip()
 
     if pin:
+        pin_hash = hash_password(pin)
         cursor.execute("UPDATE couriers SET name=?, phone=?, vehicle_type=?, commission_value=?, status=?, salary=?, salary_type=?, pin=?, pin_code=? WHERE id=?",
-                       (name, phone, vtype, comm, status, salary, salary_type, pin, pin, courier_id))
+                       (name, phone, vtype, comm, status, salary, salary_type, pin_hash, pin_hash, courier_id))
     else:
         cursor.execute("UPDATE couriers SET name=?, phone=?, vehicle_type=?, commission_value=?, status=?, salary=?, salary_type=? WHERE id=?",
                        (name, phone, vtype, comm, status, salary, salary_type, courier_id))

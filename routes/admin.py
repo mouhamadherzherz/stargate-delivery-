@@ -88,7 +88,7 @@ def maintenance_dashboard():
     admin_count = cur.fetchone()[0]
 
     # 4. Employees list
-    cur.execute("SELECT id, username, display_name, role, pin, is_active, last_login FROM employees ORDER BY id ASC")
+    cur.execute("SELECT id, username, display_name, role, is_active, last_login FROM employees ORDER BY id ASC")
     employees_list = [dict(r) for r in cur.fetchall()]
 
     return render_template(
@@ -136,29 +136,10 @@ def maintenance_backup_now():
         return redirect(url_for('dashboard'))
 
     try:
-        import shutil, gzip
-        backup_dir = os.path.join(DATA_DIR, 'backups')
-        os.makedirs(backup_dir, exist_ok=True)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        dest_file_gz = os.path.join(backup_dir, f"stargate_manual_backup_{timestamp}.db.gz")
-        temp_file = os.path.join(backup_dir, f"temp_manual_{timestamp}.db")
-
-        src = sqlite3.connect(DB_PATH, timeout=30.0)
-        dst = sqlite3.connect(temp_file)
-        with dst:
-            src.backup(dst)
-        dst.close()
-        src.close()
-
-        with open(temp_file, 'rb') as f_in, gzip.open(dest_file_gz, 'wb', compresslevel=9) as f_out:
-            shutil.copyfileobj(f_in, f_out)
-
-        try:
-            os.remove(temp_file)
-        except Exception:
-            pass
-
-        flash("🎉 تم إنشاء نسخة احتياطية فورية مشفرة ومضغوطة بنجاح في مجلد النسخ الآمنة!", "success")
+        from services.backup_service import create_backup
+        manifest = create_backup(DB_PATH, os.path.join(DATA_DIR, 'backups'), retention=14)
+        log_audit('backup_created', 'database', None, f"SHA256={manifest['sha256']} size={manifest['size']}")
+        flash("تم إنشاء نسخة احتياطية مضغوطة والتحقق من بصمتها الرقمية بنجاح.", "success")
     except Exception as be:
         flash(f"تعذر إنشاء النسخة الاحتياطية: {be}", "danger")
 
@@ -172,8 +153,8 @@ def maintenance_backup_now():
 @login_required
 def maintenance_reset_user_credentials():
     role = session.get('user_role')
-    if role not in ('admin', 'maintenance'):
-        flash("غير مصرح لك بتعديل بيانات المستخدمين.", "danger")
+    if role not in ('admin', 'super_admin'):
+        flash("إعادة تعيين كلمات المرور وPINs متاحة للمدير العام فقط.", "danger")
         return redirect(url_for('dashboard'))
 
     user_id = request.form.get('user_id')

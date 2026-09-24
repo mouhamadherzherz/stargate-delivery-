@@ -274,6 +274,25 @@ def upgrade_008(conn):
     _safe_add_column(cur, "orders", "collected_amount_expected", "REAL DEFAULT 0.0")
 
 
+def upgrade_009(conn):
+    """rev: 009_finance_controls | Idempotency, approvals, immutable audit metadata."""
+    cur = conn.cursor()
+    _safe_add_column(cur, "treasury_transactions", "idempotency_key", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "treasury_transactions", "status", "TEXT DEFAULT 'approved'")
+    _safe_add_column(cur, "treasury_transactions", "approved_by", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "treasury_transactions", "approved_at", "TIMESTAMP DEFAULT NULL")
+    _safe_add_column(cur, "treasury_transactions", "reversal_of_id", "INTEGER DEFAULT NULL")
+    _safe_add_column(cur, "audit_log", "created_by", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "audit_log", "ip_address", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "audit_log", "user_agent", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "audit_log", "before_json", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "audit_log", "after_json", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "audit_log", "timestamp", "TIMESTAMP DEFAULT NULL")
+    _safe_create_index(cur, "idx_treasury_idempotency", "treasury_transactions", "idempotency_key")
+    _safe_create_index(cur, "idx_treasury_created", "treasury_transactions", "created_at")
+    _safe_create_index(cur, "idx_audit_created", "audit_log", "timestamp")
+
+
 
 def _calculate_checksum(func):
     """حساب البصمة الرقمية SHA-256 لكود الترحيل للتحقق من عدم التلاعب."""
@@ -338,6 +357,13 @@ REVISIONS = [
         "down_rev": "007",
         "upgrade": upgrade_008,
         "checksum": _calculate_checksum(upgrade_008)
+    },
+    {
+        "rev": "009",
+        "name": "009_finance_controls",
+        "down_rev": "008",
+        "upgrade": upgrade_009,
+        "checksum": _calculate_checksum(upgrade_009)
     }
 ]
 
