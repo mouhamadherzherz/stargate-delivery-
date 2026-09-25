@@ -111,10 +111,24 @@
                     </p>
                 </div>
                 {% elif update_msg %}
-                <div class="bg-slate-950/40 border border-slate-800 rounded-xl p-4 text-center">
-                    <p class="text-sm font-bold {{ 'text-emerald-400' if 'أحدث' in update_msg else 'text-amber-400' }}">
+                <div class="bg-slate-950/60 border border-emerald-500/30 rounded-2xl p-6 text-center space-y-3">
+                    <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/10">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <p class="text-base font-bold {{ 'text-emerald-400' if 'أحدث' in update_msg else 'text-amber-400' }}">
                         {{ update_msg }}
                     </p>
+                    {% if update_data and update_data.download_url %}
+                    <form method="POST" class="pt-2" onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').innerHTML = '<i class=\'fa-solid fa-spinner fa-spin ml-2\'></i> جاري إعادة التثبيت...';">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="install">
+                        <input type="hidden" name="download_url" value="{{ update_data.download_url }}">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white text-xs font-bold border border-slate-700 transition cursor-pointer active:scale-95">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>إعادة تنزيل وتثبيت حزمة التحديث السحابية (Force Reinstall)</span>
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>

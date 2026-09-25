@@ -1134,21 +1134,43 @@ def admin_updates():
     import ota_updater
     current_version = getattr(ota_updater, 'CURRENT_VERSION', '2.0.0')
     
-    # Load Firebase URL (same one used by Kill Switch)
+    # Load Firebase URL (robust resolution across frozen, relative, and default paths)
     firebase_url = ""
     try:
         import sys as _sys
-        _base = getattr(_sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-        _ccpath = os.path.join(_base, 'cloud_config.json')
-        if os.path.exists(_ccpath):
-            with open(_ccpath, 'r', encoding='utf-8') as _f:
-                firebase_url = json.load(_f).get('firebase_url', '')
+        _candidates = [
+            os.path.join(getattr(_sys, '_MEIPASS', ''), 'cloud_config.json'),
+            os.path.join(BASE_DIR, 'cloud_config.json'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cloud_config.json')
+        ]
+        for _ccpath in _candidates:
+            if _ccpath and os.path.exists(_ccpath):
+                with open(_ccpath, 'r', encoding='utf-8') as _f:
+                    firebase_url = json.load(_f).get('firebase_url', '')
+                if firebase_url:
+                    break
     except Exception:
         pass
+    if not firebase_url:
+        firebase_url = "https://stargate-experts-default-rtdb.firebaseio.com/"
 
     update_available = False
     update_data = None
     update_msg = ""
+
+    # Auto-check on GET or when explicitly requested
+    if request.method == 'GET' or (request.method == 'POST' and request.form.get('action') == 'check'):
+        try:
+            update_available, update_data, update_msg = ota_updater.check_for_updates(
+                current_url, firebase_url=firebase_url
+            )
+            if request.method == 'POST' and request.form.get('action') == 'check':
+                if update_available:
+                    flash("يوجد تحديث جديد متاح!", "info")
+                else:
+                    flash(update_msg, "success" if "أحدث إصدار" in update_msg else "warning")
+        except Exception as _e_chk:
+            logger.warning(f"[Updates auto-check]: {_e_chk}")
     
     if request.method == 'POST':
         action = request.form.get('action')
@@ -1161,14 +1183,7 @@ def admin_updates():
             return redirect(url_for('admin_updates'))
             
         elif action == 'check':
-            # Use Firebase as primary (same as Kill Switch), fallback to URL
-            update_available, update_data, update_msg = ota_updater.check_for_updates(
-                current_url, firebase_url=firebase_url
-            )
-            if update_available:
-                flash("يوجد تحديث جديد متاح!", "info")
-            else:
-                flash(update_msg, "success" if "أحدث إصدار" in update_msg else "warning")
+            pass  # Already handled above
 
                 
         elif action == 'install_local':
