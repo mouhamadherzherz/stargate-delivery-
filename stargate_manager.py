@@ -8,9 +8,28 @@ from datetime import datetime
 from flask import Flask, render_template, request, jsonify
 import license_manager
 
-app = Flask(__name__, template_folder='manager_templates')
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MANAGER_DB = os.path.join(BASE_DIR, 'manager_data.db')
+# Support both PyInstaller bundle and direct python execution
+if getattr(sys, 'frozen', False):
+    app_data_root = os.environ.get('APPDATA', os.path.dirname(sys.executable))
+    DATA_STORE_DIR = os.path.join(app_data_root, 'StargateManager')
+    os.makedirs(DATA_STORE_DIR, exist_ok=True)
+    BASE_DIR = os.path.dirname(sys.executable)
+    BUNDLE_DIR = getattr(sys, '_MEIPASS', BASE_DIR)
+    MANAGER_DB = os.path.join(DATA_STORE_DIR, 'manager_data.db')
+    # If a local db already exists next to the exe or in repo, migrate it
+    local_db = os.path.join(BASE_DIR, 'manager_data.db')
+    if os.path.exists(local_db) and not os.path.exists(MANAGER_DB):
+        try:
+            shutil.copy2(local_db, MANAGER_DB)
+        except Exception:
+            pass
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    BUNDLE_DIR = BASE_DIR
+    MANAGER_DB = os.path.join(BASE_DIR, 'manager_data.db')
+
+template_dir = os.path.join(BUNDLE_DIR, 'manager_templates')
+app = Flask(__name__, template_folder=template_dir)
 
 def get_db():
     conn = sqlite3.connect(MANAGER_DB)
