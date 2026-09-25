@@ -8,6 +8,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1E1B54">
     <meta name="application-name" content="stargate experts">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/stargate_logo.ico') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='icons/stargate_logo.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/stargate_logo.png') }}">
     <title>{{ title or company_name }} - نظام محاسبة وإدارة الدلفري</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Modern Cairo Arabic & Global Sans Font Stack -->

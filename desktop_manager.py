@@ -62,14 +62,39 @@ def main():
     url = f"http://127.0.0.1:{port}"
     
     # Try opening PyWebView window
+    win_title = 'Stargate Manager - لوحة إدارة المشتركين وتجديد التراخيص'
+    icon_path = os.path.join(stargate_manager.BUNDLE_DIR, 'stargate_logo.ico')
     try:
+        import ctypes
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('stargate.manager.admin.v4')
+        except Exception:
+            pass
+
+        def _apply_mgr_icon():
+            for _ in range(30):
+                time.sleep(0.3)
+                try:
+                    hwnd = ctypes.windll.user32.FindWindowW(None, win_title)
+                    if hwnd and os.path.exists(icon_path):
+                        IMAGE_ICON = 1
+                        LR_LOADFROMFILE = 0x00000010
+                        LR_DEFAULTSIZE = 0x00000040
+                        WM_SETICON = 0x0080
+                        h_big = ctypes.windll.user32.LoadImageW(None, icon_path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE)
+                        h_small = ctypes.windll.user32.LoadImageW(None, icon_path, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+                        if h_big:
+                            ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 1, h_big)
+                        if h_small:
+                            ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 0, h_small)
+                        break
+                except Exception:
+                    pass
+        threading.Thread(target=_apply_mgr_icon, daemon=True).start()
+
         import webview
-        icon_path = os.path.join(stargate_manager.BUNDLE_DIR, 'static', 'favicon.ico')
-        if not os.path.exists(icon_path):
-            icon_path = None
-            
         window = webview.create_window(
-            title='Stargate Manager - لوحة إدارة المشتركين وتجديد التراخيص',
+            title=win_title,
             url=url,
             width=1320,
             height=860,

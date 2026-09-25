@@ -24,6 +24,7 @@ a = Analysis(
         # ── Cloud Config & Version ──
         (f'{BASE}/cloud_config.json', '.'),
         (f'{BASE}/version.json',      '.'),
+        (f'{BASE}/stargate_logo.ico', '.'),
         # ── وحدات Python الداخلية ──
         (f'{BASE}/license_manager.py',          '.'),
         (f'{BASE}/node_lock.py',                '.'),

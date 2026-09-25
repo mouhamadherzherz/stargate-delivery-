@@ -596,10 +596,15 @@ if __name__ == '__main__':
             import webview
             try: webview.initialize('edgechromium')
             except Exception: pass
-            _icon_paths = [os.path.join(STATIC_DIR, 'icons', 'stargate_logo.ico')]
+            _icon_paths = [os.path.join(STATIC_DIR, 'icons', 'stargate_logo.ico'), os.path.join(BASE_DIR, 'stargate_logo.ico')]
             _icon = next((p for p in _icon_paths if os.path.exists(p)), None)
+            _win_title = 'Stargate Delivery Enterprise - نظام إدارة التوصيل والطلبيات العالمي'
             try:
                 import ctypes
+                try:
+                    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('stargate.delivery.enterprise.v4')
+                except Exception:
+                    pass
                 try: ctypes.windll.shcore.SetProcessDpiAwareness(2)
                 except Exception:
                     try: ctypes.windll.user32.SetProcessDPIAware()
@@ -608,8 +613,34 @@ if __name__ == '__main__':
                 _screen_h = ctypes.windll.user32.GetSystemMetrics(1)
             except Exception:
                 _screen_w, _screen_h = 1440, 900
+
+            # Window icon applicator thread
+            def _apply_icon_thread():
+                if not _icon:
+                    return
+                for _ in range(30):
+                    time.sleep(0.3)
+                    try:
+                        import ctypes
+                        hwnd = ctypes.windll.user32.FindWindowW(None, _win_title)
+                        if hwnd:
+                            IMAGE_ICON = 1
+                            LR_LOADFROMFILE = 0x00000010
+                            LR_DEFAULTSIZE = 0x00000040
+                            WM_SETICON = 0x0080
+                            h_big = ctypes.windll.user32.LoadImageW(None, _icon, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE)
+                            h_small = ctypes.windll.user32.LoadImageW(None, _icon, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+                            if h_big:
+                                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 1, h_big)
+                            if h_small:
+                                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 0, h_small)
+                            break
+                    except Exception:
+                        pass
+            threading.Thread(target=_apply_icon_thread, daemon=True).start()
+
             webview.create_window(
-                title='Stargate Delivery Enterprise - نظام إدارة التوصيل والطلبيات العالمي',
+                title=_win_title,
                 url=f'http://127.0.0.1:{_port}',
                 width=_screen_w if _screen_w >= 1024 else 1440,
                 height=_screen_h if _screen_h >= 680 else 900,
