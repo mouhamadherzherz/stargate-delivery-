@@ -1,8 +1,8 @@
 {
-    "version": "4.3.0",
+    "version": "4.3.1",
     "release_date": "2026-09-25",
-    "is_critical": true,
-    "changelog": "🚀 Stargate Delivery v4.3.0 - إصلاح شامل نهائي:\n- ✅ إصلاح جذري لصفحة الكاش (سجل المحاسبة) - خطأ 500 fund_category\n- ✅ إصلاح صفحة الصحة (admin/system-health) - خطأ journal amount\n- ✅ إضافة migration 011 يُصلح قاعدة البيانات تلقائياً عند أي تحديث\n- ✅ جميع الصفحات الـ 28 تعمل بدون أي أخطاء (اختبار كامل)\n- ✅ أعمدة journal_entries الجديدة: fund_category, entry_type, amount",
-    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.3.0/Stargate_Update.zip",
+    "is_critical": false,
+    "changelog": "🚀 تحديث اختباري ناجح v4.3.1:\n- ✅ تأكيد عمل نظام التحديث السحابي OTA بنجاح وسرعة فائقة\n- ✅ تثبيت الشعار والأيقونة الرسمية (STARGATE EXPERTS)\n- ✅ استقرار كامل لجميع العمليات وقواعد البيانات",
+    "download_url": "https://github.com/mouhamadherzherz/stargate-delivery-/releases/download/v4.3.1/Stargate_Update.zip",
     "published_by": "Stargate Master Enterprise"
 }
