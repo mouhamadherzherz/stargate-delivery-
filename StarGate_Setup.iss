@@ -3,7 +3,7 @@
 ; =====================================================================
 
 #define MyAppName      "Stargate Delivery System"
-#define MyAppVersion   "3.9.6"
+#define MyAppVersion   "4.2.0"
 #define MyAppPublisher "Stargate Tech"
 #define MyAppExeName   "StargateDelivery.exe"
 #define MyDistDir      "dist\StargateDelivery"
@@ -22,7 +22,7 @@ SetupIconFile=static\icons\stargate_logo.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
-DisableDirPage=yes
+DisableDirPage=no
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64
 CloseApplications=yes
@@ -35,8 +35,9 @@ Name: "desktopicon"; Description: "Create desktop shortcut"; GroupDescription: "
 Name: "startupicon"; Description: "Run at Windows startup"; GroupDescription: "Auto-start:"
 
 [Dirs]
-Name: "{app}\data";       Permissions: users-full; Flags: uninsneveruninstall
-Name: "{app}\db_backups"; Permissions: users-full; Flags: uninsneveruninstall
+Name: "{app}\data";         Permissions: users-full; Flags: uninsneveruninstall
+Name: "{app}\Backups_Safe"; Permissions: users-full; Flags: uninsneveruninstall
+Name: "{app}\db_backups";   Permissions: users-full; Flags: uninsneveruninstall
 
 [Files]
 Source: "{#MyDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -48,9 +49,29 @@ Name: "{group}\{#MyAppName}";       Filename: "{app}\{#MyAppExeName}"; WorkingDi
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: startupicon
 
-
-
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\__pycache__"
 Type: filesandordirs; Name: "{app}\update_temp"
 Type: files;          Name: "{app}\*.log"
+
+[Code]
+// Guarantee user data and password preservation
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  DataDb, BackupDb, AppDir, BackupDir: String;
+begin
+  if CurStep = ssInstall then
+  begin
+    AppDir := ExpandConstant('{app}');
+    DataDb := AppDir + '\data\stargate_production.db';
+    BackupDir := AppDir + '\Backups_Safe';
+    BackupDb := BackupDir + '\stargate_backup_before_v4.2.0.db';
+    
+    // Automatically save a safeguard copy of existing database
+    if FileExists(DataDb) then
+    begin
+      ForceDirectories(BackupDir);
+      FileCopy(DataDb, BackupDb, False);
+    end;
+  end;
+end;

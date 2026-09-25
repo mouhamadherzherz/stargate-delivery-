@@ -1042,7 +1042,7 @@ def system_health_view():
     cur.execute("SELECT COALESCE(SUM(current_cash_custody), 0) FROM couriers")
     courier_custody = float(cur.fetchone()[0] or 0.0)
 
-    cur.execute("SELECT COUNT(*), COALESCE(SUM(amount), 0) FROM journal_entries")
+    cur.execute("SELECT COUNT(*), COALESCE(SUM(COALESCE(debit,0)+COALESCE(credit,0)), 0) FROM journal_entries")
     j_row = cur.fetchone()
     journal_count = j_row[0]
     journal_total = float(j_row[1] or 0.0)

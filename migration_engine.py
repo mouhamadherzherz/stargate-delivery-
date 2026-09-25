@@ -380,6 +380,25 @@ def upgrade_010(conn):
 
 
 
+def upgrade_011(conn):
+    """rev: 011_journal_entries_extended | Add missing columns to journal_entries for accounting ledger"""
+    cur = conn.cursor()
+    # These columns are inserted by extensions.py but were missing from the original CREATE TABLE
+    _safe_add_column(cur, "journal_entries", "entry_type", "TEXT DEFAULT 'general'")
+    _safe_add_column(cur, "journal_entries", "fund_category", "TEXT DEFAULT 'treasury_vault'")
+    _safe_add_column(cur, "journal_entries", "amount", "REAL DEFAULT 0.0")
+    _safe_add_column(cur, "journal_entries", "related_entity_type", "TEXT DEFAULT NULL")
+    _safe_add_column(cur, "journal_entries", "related_entity_id", "INTEGER DEFAULT NULL")
+    # Backfill amount from debit/credit for existing rows
+    cur.execute("UPDATE journal_entries SET amount = COALESCE(debit, 0) + COALESCE(credit, 0) WHERE amount = 0 OR amount IS NULL")
+    _safe_create_index(cur, "idx_journal_fund_cat", "journal_entries", "fund_category")
+    _safe_create_index(cur, "idx_journal_entry_type", "journal_entries", "entry_type")
+    # Also add missing columns to treasury_transactions if needed
+    _safe_add_column(cur, "treasury_transactions", "balance_before", "REAL DEFAULT 0.0")
+    _safe_add_column(cur, "treasury_transactions", "balance_after", "REAL DEFAULT 0.0")
+    _safe_add_column(cur, "treasury_transactions", "created_by", "TEXT DEFAULT NULL")
+
+
 def _calculate_checksum(func):
     """حساب البصمة الرقمية SHA-256 لكود الترحيل للتحقق من عدم التلاعب."""
     code = inspect.getsource(func).strip()
@@ -457,6 +476,13 @@ REVISIONS = [
         "down_rev": "009",
         "upgrade": upgrade_010,
         "checksum": _calculate_checksum(upgrade_010)
+    },
+    {
+        "rev": "011",
+        "name": "011_journal_entries_extended",
+        "down_rev": "010",
+        "upgrade": upgrade_011,
+        "checksum": _calculate_checksum(upgrade_011)
     }
 ]
 
